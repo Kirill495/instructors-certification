@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: Instructors assignments
+  jpa:
+    hibernate:
+      ddl-auto: none
+    generate-ddl: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: db/migration
+    baseline-on-migrate: true
+    default-schema: instructors_grades
+    schemas: public,instructors_grades
