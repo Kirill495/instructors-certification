@@ -25,7 +25,8 @@ create table instructors_grades.kinds_of_tourism
 create table instructors_grades.grades
 (
     id    int generated always as identity primary key,
-    title varchar
+    title varchar,
+    expires_in int
 );
 
 -- протоколы
