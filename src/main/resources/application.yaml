@@ -1,6 +1,10 @@
 spring:
+  config:
+    import: optional:file:./config/secrets.yaml
   application:
     name: Instructors assignments
+  datasource:
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none
@@ -11,7 +15,7 @@ spring:
         format_sql: true
   flyway:
     enabled: true
-    locations: db/migration
+    locations: classpath:db/migration
     baseline-on-migrate: true
     default-schema: instructors_grades
-    schemas: public,instructors_grades
+    schemas: instructors_grades
