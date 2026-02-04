@@ -40,12 +40,13 @@ create table instructors_grades.protocols
 -- Табличная часть протокола "Туристы"
 create table instructors_grades.protocols_content
 (
-    protocol_id      int references protocol (id) ON DELETE CASCADE,
+    protocol_id      int references instructors_grades.protocols (id) ON DELETE CASCADE,
     row_num          int CHECK (row_num > 0),
-    tourist_id       int references tourists (id),
-    kind_of_tourism  int references kinds_of_tourism (id),
-    grade            int references grades (id),
+    tourist_id       int references instructors_grades.tourists (id),
+    kind_of_tourism  int references instructors_grades.kinds_of_tourism (id),
+    grade            int references instructors_grades.grades (id),
     certification_id varchar(10),
     club             varchar,
-    decision_type    varchar
+    decision_type    varchar,
+    PRIMARY KEY (protocol_id, row_num)
 );

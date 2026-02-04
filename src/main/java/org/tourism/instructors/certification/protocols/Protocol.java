@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "protocols")
+@Table(name = "protocols", schema = "instructors_grades")
 public class Protocol {
     @Id
     @Column(name = "id")
