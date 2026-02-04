@@ -1,13 +1,13 @@
-package org.tourism.instructors.certification.protocols;
+package org.tourism.instructors.domain.protocol;
 
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.tourism.instructors.certification.common.Grade;
-import org.tourism.instructors.certification.common.KindOfTourism;
-import org.tourism.instructors.certification.tourists.Tourist;
+import org.tourism.instructors.domain.catalog.model.Grade;
+import org.tourism.instructors.domain.catalog.model.KindOfTourism;
+import org.tourism.instructors.domain.tourist.model.Tourist;
 
 @Entity
 @Table(name = "protocols_content", schema = "instructors_grades")

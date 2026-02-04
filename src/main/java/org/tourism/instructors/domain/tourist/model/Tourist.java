@@ -1,10 +1,14 @@
-package org.tourism.instructors.certification.tourists;
+package org.tourism.instructors.domain.tourist.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "tourists", schema = "instructors_grades")
 public class Tourist {
     @Id

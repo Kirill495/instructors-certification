@@ -1,4 +1,4 @@
-package org.tourism.instructors.certification.common;
+package org.tourism.instructors.domain.catalog.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;

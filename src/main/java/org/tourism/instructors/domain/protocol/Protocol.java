@@ -1,4 +1,4 @@
-package org.tourism.instructors.certification.protocols;
+package org.tourism.instructors.domain.protocol;
 
 import jakarta.persistence.*;
 
