@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Звания</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Звания</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="/catalog/kinds-of-tourism/new" class="btn btn-primary">Новый</a>
+            <a href="/" class="btn btn-secondary">Главная</a>
+        </div>
+
+        <!-- Filter Checkbox -->
+        <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="showInactiveCheckbox"
+                   th:checked="${showInactive}"
+                   onchange="toggleInactive()">
+            <label class="form-check-label" for="showInactiveCheckbox">
+                Показать неактивные
+            </label>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div th:if="${grades.isEmpty()}" class="alert alert-info">
+                Звания не заведены
+            </div>
+            <table th:unless="${grades.isEmpty()}" class="table table-striped table-hover">
+                <tbody>
+                <tr th:each="grade : ${grades}">
+                    <td th:text="${grade.title}">Название</td>
+                    <td>
+                        <a th:href="@{/catalog/grades/{id}(id=${grade.id})}"
+                           class="btn btn-sm btn-info">Просмотр</a>
+                        <a th:href="@{/catalog/grades/{id}/edit(id=${grade.id})}" class="btn btn-sm btn-info">Изменить</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleInactive() {
+        const checkbox = document.getElementById('showInactiveCheckbox');
+        const showInactive = checkbox.checked;
+        window.location.href = '/catalog/grades?showInactive=' + showInactive;
+    }
+</script>
+</body>
+</html>

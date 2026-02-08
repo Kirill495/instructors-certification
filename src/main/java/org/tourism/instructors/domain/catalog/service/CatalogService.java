@@ -1,0 +1,22 @@
+package org.tourism.instructors.domain.catalog.service;
+
+import org.tourism.instructors.api.catalog.dto.GradeDTO;
+import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
+import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
+
+import java.util.List;
+
+public interface CatalogService {
+    List<KindOfTourismListDTO> findAllKindsOfTourism ();
+
+    List<KindOfTourismListDTO> findActiveKindsOfTourism ();
+
+    KindOfTourismDTO getKindOfTourismById (int id);
+
+    void saveKindOfTourism (KindOfTourismDTO dto);
+
+    List<GradeDTO> findAllGrades();
+    List<GradeDTO> findActiveGrades();
+    GradeDTO findGradeById(int id);
+    void saveGrade (GradeDTO gradeDTO);
+}

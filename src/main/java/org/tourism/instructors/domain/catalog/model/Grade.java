@@ -19,4 +19,7 @@ public class Grade {
 
     @Column(name = "expires_in")
     private int expiresInYears;
+
+    @Column(name = "inactive")
+    private boolean inactive;
 }
