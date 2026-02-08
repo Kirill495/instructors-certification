@@ -37,11 +37,11 @@
                 </div>
 
                 <div class="card-footer">
-                    <a th:href="@{/catalog/kinds-of-tourism/{id}/edit(id=${grade.id})}"
+                    <a th:href="@{/catalog/grades/{id}/edit(id=${grade.id})}"
                        class="btn btn-warning">Изменить</a>
-                    <a href="/catalog/kinds-of-tourism" class="btn btn-secondary">Назад к списку</a>
+                    <a href="/catalog/grades" class="btn btn-secondary">Назад к списку</a>
 
-                    <form th:action="@{/catalog/kinds-of-tourism/{id}/delete(id=${grade.id})}"
+                    <form th:action="@{/catalog/grades/{id}/delete(id=${grade.id})}"
                           method="post" style="display: inline;" class="float-end">
                         <button type="submit" class="btn btn-danger"
                                 onclick="return confirm('Вы уверены, что хотите удалить это звание?')">
