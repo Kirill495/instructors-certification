@@ -7,13 +7,12 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import java.util.List;
 
 public interface CatalogService {
+
     List<KindOfTourismListDTO> findAllKindsOfTourism ();
-
     List<KindOfTourismListDTO> findActiveKindsOfTourism ();
-
     KindOfTourismDTO getKindOfTourismById (int id);
-
     void saveKindOfTourism (KindOfTourismDTO dto);
+    void deleteKindOfTourism (int id);
 
     List<GradeDTO> findAllGrades();
     List<GradeDTO> findActiveGrades();
