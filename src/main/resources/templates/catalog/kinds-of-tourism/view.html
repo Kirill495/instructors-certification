@@ -34,6 +34,22 @@
                             <span th:text="${kindOfTourism.title}">Пешеходный туризм</span>
                         </div>
                     </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>Статус:</strong>
+                        </div>
+                        <div class="col-md-9">
+                            <span th:if="${kindOfTourism.inactive}" class="badge bg-secondary">Неактивный</span>
+                            <span th:unless="${kindOfTourism.inactive}" class="badge bg-success">Активный</span>
+                        </div>
+                    </div>
+
+                    <!-- Warning for inactive -->
+                    <div th:if="${kindOfTourism.inactive}" class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Этот вид туризма помечен как неактивный и не используется в новых протоколах.
+                    </div>
                 </div>
 
                 <div class="card-footer">
