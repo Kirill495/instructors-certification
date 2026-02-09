@@ -65,4 +65,11 @@ public class GradeController {
         return "redirect:/catalog/grades";
     }
 
+    @PostMapping("/{id}/delete")
+    public String deleteGrade(@PathVariable int id,
+                              RedirectAttributes redirectAttributes) {
+        catalogService.deleteGrade(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно удалено");
+        return "redirect:/catalog/grades";
+    }
 }

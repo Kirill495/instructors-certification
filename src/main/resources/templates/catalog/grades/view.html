@@ -34,6 +34,19 @@
                             <span th:text="${grade.title}">Инструктор</span>
                         </div>
                     </div>
+                    <div class="row mb3">
+                        <div class="col-md-3">
+                            <strong>Статус:</strong>
+                        </div>
+                        <div class="col-md-9">
+                            <span th:if="${grade.inactive}" class="badge bg-secondary">Неактивный</span>
+                            <span th:unless="${grade.inactive}" class="badge bg-sucess">Активный</span>
+                        </div>
+                        <div th:if="${grade.inactive}" class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Это звание помечано как неактивное и не может использоваться в новых протоколах.
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card-footer">

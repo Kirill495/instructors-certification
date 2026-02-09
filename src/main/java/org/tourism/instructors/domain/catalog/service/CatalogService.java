@@ -19,4 +19,5 @@ public interface CatalogService {
     List<GradeDTO> findActiveGrades();
     GradeDTO findGradeById(int id);
     void saveGrade (GradeDTO gradeDTO);
+    void deleteGrade (int id);
 }

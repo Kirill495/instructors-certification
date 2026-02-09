@@ -86,4 +86,10 @@ public class CatalogServiceImpl implements CatalogService {
     public void saveGrade (GradeDTO gradeDTO) {
         gradeRepository.save(gradeMapper.toEntity(gradeDTO));
     }
+
+    @Override
+    @Transactional
+    public void deleteGrade (int id) {
+        gradeRepository.deleteById(id);
+    }
 }
