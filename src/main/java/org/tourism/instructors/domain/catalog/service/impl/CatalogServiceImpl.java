@@ -34,7 +34,7 @@ public class CatalogServiceImpl implements CatalogService {
     public List<KindOfTourismListDTO> findAllKindsOfTourism () {
         return kindOfTourismRepository.findAllByOrderByIdAsc()
                        .stream()
-                       .map(model -> new KindOfTourismListDTO(model.getId(), model.getTitle()))
+                       .map(kindOfTourismMapper::toListDTO)
                        .toList();
 
     }
@@ -58,6 +58,12 @@ public class CatalogServiceImpl implements CatalogService {
     @Transactional
     public void saveKindOfTourism (KindOfTourismDTO inputDTO) {
         kindOfTourismRepository.save(kindOfTourismMapper.toEntity(inputDTO));
+    }
+
+    @Override
+    @Transactional
+    public void deleteKindOfTourism (int id) {
+        kindOfTourismRepository.deleteById(id);
     }
 
     @Override

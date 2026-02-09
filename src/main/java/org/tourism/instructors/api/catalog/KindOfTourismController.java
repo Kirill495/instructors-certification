@@ -64,4 +64,12 @@ public class KindOfTourismController {
         redirectAttributes.addFlashAttribute("successMessage", "Вид туризма успешно создан");
         return "redirect:/catalog/kinds-of-tourism";
     }
+
+    @PostMapping("/{id}/delete")
+    public String deleteKindOfTourism(@PathVariable int id,
+                                      RedirectAttributes redirectAttributes) {
+        catalogService.deleteKindOfTourism(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Вид туризма успешно удален");
+        return "redirect:/catalog/kinds-of-tourism";
+    }
 }
