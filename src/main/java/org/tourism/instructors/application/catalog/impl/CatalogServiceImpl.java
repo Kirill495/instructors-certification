@@ -1,4 +1,4 @@
-package org.tourism.instructors.domain.catalog.service.impl;
+package org.tourism.instructors.application.catalog.impl;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,9 +7,9 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import org.tourism.instructors.api.catalog.mapper.GradeMapper;
 import org.tourism.instructors.api.catalog.mapper.KindOfTourismMapper;
+import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
-import org.tourism.instructors.domain.catalog.service.CatalogService;
 
 import java.util.List;
 
@@ -28,6 +28,11 @@ public class CatalogServiceImpl implements CatalogService {
         this.gradeRepository = gradeRepository;
         this.kindOfTourismMapper = kindOfTourismMapper;
         this.gradeMapper = gradeMapper;
+    }
+
+    @Override
+    public int countActiveKindsOfTourism () {
+        return (int) kindOfTourismRepository.countKindOfTourismByInactive(false);
     }
 
     @Override
@@ -64,6 +69,11 @@ public class CatalogServiceImpl implements CatalogService {
     @Transactional
     public void deleteKindOfTourism (int id) {
         kindOfTourismRepository.deleteById(id);
+    }
+
+    @Override
+    public int countActiveGrades () {
+        return gradeRepository.countGradesByInactive(false);
     }
 
     @Override

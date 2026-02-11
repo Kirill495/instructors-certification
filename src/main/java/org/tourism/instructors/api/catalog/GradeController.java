@@ -5,7 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
-import org.tourism.instructors.domain.catalog.service.CatalogService;
+import org.tourism.instructors.application.catalog.CatalogService;
 
 @Controller
 @RequestMapping("/catalog/grades")
