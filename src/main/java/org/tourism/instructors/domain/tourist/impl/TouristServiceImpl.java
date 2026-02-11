@@ -5,7 +5,7 @@ import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.domain.tourist.TouristRepository;
 import org.tourism.instructors.domain.tourist.TouristService;
-import org.tourism.instructors.domain.tourist.dto.TouristDTO;
+import org.tourism.instructors.api.tourist.dto.TouristDTO;
 
 import java.util.List;
 
@@ -37,6 +37,16 @@ public class TouristServiceImpl implements TouristService {
         } else {
             return touristRepository.searchByLastNameStartingWithIgnoreCase(query).stream().map(touristMapper::toLightDTO).toList();
         }
+    }
+
+    @Override
+    public void save (TouristDTO tourist) {
+        touristRepository.save(touristMapper.toEntity(tourist));
+    }
+
+    @Override
+    public TouristDTO findTouristById (int id) {
+        return touristRepository.findById(id).map(touristMapper::toDTO).orElseThrow(() -> new RuntimeException("турист не найден"));
     }
 
     private boolean containsOnlyDigits (String str) {
