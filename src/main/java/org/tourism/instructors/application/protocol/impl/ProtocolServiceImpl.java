@@ -27,6 +27,11 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
+    public int countProtocols () {
+        return (int) protocolRepository.count();
+    }
+
+    @Override
     public ProtocolDTO getProtocolById (int id) {
         return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new RuntimeException("Протокол с ID:" + id + " не найден"));
     }

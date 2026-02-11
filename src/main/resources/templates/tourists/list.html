@@ -27,6 +27,7 @@
                 <thead class="table-dark">
                 <tr>
 <!--                    <th>ID</th>-->
+                    <th>Удостоверение</th>
                     <th>Имя</th>
                     <th>Действия</th>
                 </tr>
@@ -34,13 +35,11 @@
                 <tbody>
                 <tr th:each="tourist : ${tourists}">
 <!--                    <td th:text="${tourist.id}">1</td>-->
-                    <td th:text="${tourist.getfullName}">Иванов</td>
+                    <td th:text="${tourist.getCertificationId()}">Удостоверение</td>
+                    <td th:text="${tourist.getFullName()}">Полное имя</td>
                     <td>
                         <a th:href="@{/tourists/{id}(id=${tourist.id})}" class="btn btn-sm btn-info">Просмотр</a>
                         <a th:href="@{/tourists/{id}/edit(id=${tourist.id})}" class="btn btn-sm btn-warning">Изменить</a>
-                        <a th:href="@{/tourists/{id}/delete(id=${tourist.id})}"
-                           class="btn btn-sm btn-danger"
-                           onclick="return confirm('Вы уверены, что хотите удалить этого туриста?')">Удалить</a>
                     </td>
                 </tr>
                 </tbody>

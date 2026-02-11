@@ -41,7 +41,7 @@
     <!-- Protocol Content -->
     <div class="card mb-4">
         <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Табличная часть: Туристы</h5>
+            <h5 class="mb-0">Туристы</h5>
         </div>
         <div class="card-body">
             <div th:if="${protocol.contentRows.isEmpty()}" class="alert alert-info">
@@ -58,7 +58,7 @@
                         <th style="width: 18%">Звание</th>
                         <th style="width: 10%">№ удост.</th>
                         <th style="width: 15%">Клуб</th>
-                        <th style="width: 14%">Решение</th>
+<!--                        <th style="width: 14%">Решение</th>-->
                     </tr>
                     </thead>
                     <tbody>
@@ -69,12 +69,12 @@
                         <td th:text="${row.gradeTitle}">Инструктор туризма</td>
                         <td th:text="${row.certificationId ?: '-'}">12345</td>
                         <td th:text="${row.club ?: '-'}">Турклуб "Вершина"</td>
-                        <td>
-                            <span th:if="${row.decisionType == 'Присвоить'}" class="badge bg-success" th:text="${row.decisionType}">Присвоить</span>
-                            <span th:if="${row.decisionType == 'Подтвердить'}" class="badge bg-info" th:text="${row.decisionType}">Подтвердить</span>
-                            <span th:if="${row.decisionType == 'Отказать'}" class="badge bg-danger" th:text="${row.decisionType}">Отказать</span>
-                            <span th:if="${row.decisionType == null or row.decisionType == ''}" class="text-muted">-</span>
-                        </td>
+<!--                        <td>-->
+<!--                            <span th:if="${row.decisionType == 'Присвоить'}" class="badge bg-success" th:text="${row.decisionType}">Присвоить</span>-->
+<!--                            <span th:if="${row.decisionType == 'Подтвердить'}" class="badge bg-info" th:text="${row.decisionType}">Подтвердить</span>-->
+<!--                            <span th:if="${row.decisionType == 'Отказать'}" class="badge bg-danger" th:text="${row.decisionType}">Отказать</span>-->
+<!--                            <span th:if="${row.decisionType == null or row.decisionType == ''}" class="text-muted">-</span>-->
+<!--                        </td>-->
                     </tr>
                     </tbody>
                 </table>

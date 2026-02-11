@@ -10,4 +10,6 @@ public interface ProtocolService {
     ProtocolDTO getProtocolById (int id);
 
     void saveProtocol (ProtocolDTO protocolDTO);
+
+    int countProtocols();
 }

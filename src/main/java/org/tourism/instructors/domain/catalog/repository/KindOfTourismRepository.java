@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface KindOfTourismRepository extends JpaRepository<KindOfTourism, Integer> {
 
+    long countKindOfTourismByInactive (boolean isInactive);
     List<KindOfTourism> findByInactiveFalseOrderByIdAsc ();
     List<KindOfTourism> findAllByOrderByIdAsc ();
 }
