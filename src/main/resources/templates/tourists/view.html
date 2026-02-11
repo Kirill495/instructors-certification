@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Просмотр туриста</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <!-- Your tourist view content here -->
+
+    <!-- ... tourist information ... -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Информация</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>ID:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.id}">1</span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Фамилия:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.lastName}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Имя:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.firstName}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Отчество:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.middleName}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Пол:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.getGender()}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Дата рождения:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.dateOfBirth}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Удостоверение:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.certificationId}"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a th:href="@{/tourists/{id}/edit(id=${tourist.id})}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Изменить
+            </a>
+            <a href="/tourists" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Назад к списку
+            </a>
+
+            <!-- Delete button -->
+            <button type="button"
+                    class="btn btn-danger float-end"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i> Удалить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Include reusable delete modal with tourist-specific text -->
+<div th:replace="~{fragments/delete-modal :: deleteModal(
+    itemName=${tourist.lastName + ' ' + tourist.firstName + ' ' + tourist.middleName},
+    itemType='туриста',
+    deleteUrl=@{/tourists/{id}/delete(id=${tourist.id})},
+    warningText='Если этот турист участвует в протоколах, удаление может вызвать ошибку.'
+)}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
