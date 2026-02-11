@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!--
+    Reusable Delete Confirmation Modal Fragment
+
+    Usage in your pages:
+
+    1. Include the fragment at the bottom of your page (before closing </body>):
+       <div th:replace="~{fragments/delete-modal :: deleteModal(
+           itemName=${kindOfTourism.title},
+           itemType='вид туризма',
+           deleteUrl=@{/catalog/kinds-of-tourism/{id}/delete(id=${kindOfTourism.id})},
+           warningText='Если этот вид туризма используется в протоколах, удаление может вызвать ошибку.'
+       )}"></div>
+
+    2. Add button to trigger the modal:
+       <button type="button"
+               class="btn btn-danger"
+               data-bs-toggle="modal"
+               data-bs-target="#deleteModal">
+           <i class="bi bi-trash"></i> Удалить
+       </button>
+-->
+
+<div th:fragment="deleteModal(itemName, itemType, deleteUrl, warningText)"
+     class="modal fade"
+     id="deleteModal"
+     tabindex="-1"
+     aria-labelledby="deleteModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Подтверждение удаления
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    Вы действительно хотите удалить <span th:text="${itemType}">элемент</span>
+                    <strong th:text="${itemName}">название</strong>?
+                </p>
+                <div class="alert alert-warning mb-0" th:if="${warningText != null and !warningText.isEmpty()}">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Внимание:</strong> <span th:text="${warningText}">Это действие нельзя отменить.</span>
+                </div>
+                <div class="alert alert-warning mb-0" th:if="${warningText == null or warningText.isEmpty()}">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Внимание:</strong> Это действие нельзя отменить.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </button>
+                <form th:action="${deleteUrl}"
+                      method="post"
+                      style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Да, удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

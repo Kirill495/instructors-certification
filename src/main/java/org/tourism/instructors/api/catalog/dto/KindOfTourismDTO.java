@@ -13,4 +13,9 @@ public class KindOfTourismDTO {
     private int id;
     private String title;
     private boolean inactive;
+
+    public boolean isNewItem() {
+        return id == 0;
+    }
+
 }
