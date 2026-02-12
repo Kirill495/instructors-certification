@@ -9,7 +9,8 @@ public interface TouristService {
 
     int countTourists();
     List<TouristDTO> getAllTourists ();
-    List<TouristLightDTO> searchTourists (String query);
+    List<TouristLightDTO> searchLightTourists (String query);
+    List<TouristDTO> searchTourists (String query);
     TouristDTO findTouristById(int id);
     void save(TouristDTO tourist);
 }

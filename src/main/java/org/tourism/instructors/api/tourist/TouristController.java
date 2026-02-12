@@ -7,6 +7,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.domain.tourist.TouristService;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/tourists")
 public class TouristController {
@@ -18,8 +20,15 @@ public class TouristController {
     }
 
     @GetMapping
-    public String listTourists(Model model) {
-        model.addAttribute("tourists", touristService.getAllTourists());
+    public String listTourists(@RequestParam(value = "search", required = false) String searchParam, Model model) {
+        List<TouristDTO> tourists;
+        if (searchParam != null && !searchParam.trim().isEmpty()) {
+            tourists = touristService.searchTourists(searchParam);
+        } else {
+            tourists = touristService.getAllTourists();
+        }
+        model.addAttribute("tourists", tourists);
+        model.addAttribute("search", searchParam);
         return "tourists/list";
     }
 

@@ -24,6 +24,6 @@ public class TouristRestController {
         if (query.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        return touristService.searchTourists(query);
+        return touristService.searchLightTourists(query);
     }
 }

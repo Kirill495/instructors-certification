@@ -6,17 +6,33 @@
     <title>Просмотр туриста</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .collapse-toggle {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .collapse-toggle:hover {
+            background-color: #f8f9fa;
+        }
+        .collapse-toggle i {
+            transition: transform 0.3s;
+        }
+        .collapse-toggle[aria-expanded="true"] i {
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
-    <!-- Your tourist view content here -->
+<!--    <h1 class="mb-4">Просмотр туриста</h1>-->
+    <h1 class="mb-4" th:text="${tourist.getFullName()}">Просмотр туриста</h1>
 
-    <!-- ... tourist information ... -->
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Информация</h5>
         </div>
         <div class="card-body">
+            <!-- Basic Information -->
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>ID:</strong>
@@ -25,55 +41,119 @@
                     <span th:text="${tourist.id}">1</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Фамилия:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.lastName}"></span>
+                    <span th:text="${tourist.lastName}">Иванов</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Имя:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.firstName}"></span>
+                    <span th:text="${tourist.firstName}">Иван</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Отчество:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.middleName}"></span>
+                    <span th:text="${tourist.middleName ?: '-'}">Иванович</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Пол:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.getGender()}"></span>
+                    <span th:text="${tourist.gender}">Мужской</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Дата рождения:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.dateOfBirth}"></span>
+                    <span th:text="${#temporals.format(tourist.dateOfBirth, 'dd.MM.yyyy')}">01.01.1990</span>
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-3">
                     <strong>Удостоверение:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.certificationId}"></span>
+                    <span th:text="${tourist.certificationId ?: '-'}">12345</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Collapsible Contact Info -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center collapse-toggle p-2 rounded"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#contactInfo"
+                         aria-expanded="false"
+                         aria-controls="contactInfo">
+                        <strong>
+                            <i class="bi bi-telephone-fill text-primary me-2"></i>
+                            Контактная информация
+                        </strong>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collapsed Content -->
+            <div class="collapse" id="contactInfo">
+                <div class="card card-body bg-light">
+                    <div class="row mb-3" th:if="${tourist.phoneNumber != null and !tourist.phoneNumber.isEmpty()}">
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-telephone me-1"></i> Телефон:</strong>
+                        </div>
+                        <div class="col-md-9">
+                            <a th:href="'tel:' + ${tourist.phoneNumber}"
+                               th:text="${tourist.phoneNumber}"
+                               class="text-decoration-none">
+                                +7 123 456-78-90
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row mb-0" th:if="${tourist.email != null and !tourist.email.isEmpty()}">
+                        <div class="col-md-3">
+                            <strong><i class="bi bi-envelope me-1"></i> E-mail:</strong>
+                        </div>
+                        <div class="col-md-9">
+                            <a th:href="'mailto:' + ${tourist.email}"
+                               th:text="${tourist.email}"
+                               class="text-decoration-none">
+                                ivan@example.com
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Show message if no contact info -->
+                    <div th:if="${(tourist.phoneNumber == null or tourist.phoneNumber.isEmpty())
+                                   and (tourist.email == null or tourist.email.isEmpty())}"
+                         class="text-muted">
+                        <i class="bi bi-info-circle"></i> Контактная информация не указана
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="card-footer">
             <a th:href="@{/tourists/{id}/edit(id=${tourist.id})}" class="btn btn-warning">
                 <i class="bi bi-pencil"></i> Изменить
@@ -95,7 +175,7 @@
 
 <!-- Include reusable delete modal with tourist-specific text -->
 <div th:replace="~{fragments/delete-modal :: deleteModal(
-    itemName=${tourist.lastName + ' ' + tourist.firstName + ' ' + tourist.middleName},
+    itemName=${tourist.lastName + ' ' + tourist.firstName + (tourist.middleName != null ? ' ' + tourist.middleName : '')},
     itemType='туриста',
     deleteUrl=@{/tourists/{id}/delete(id=${tourist.id})},
     warningText='Если этот турист участвует в протоколах, удаление может вызвать ошибку.'
