@@ -6,6 +6,13 @@
     <title>Туристы</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .table-card {
+            max-height: calc(100vh - 350px);
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
@@ -19,11 +26,36 @@
         </a>
     </div>
 
-    <!-- Tourists Table -->
-    <div class="card">
+    <!-- Search Panel -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <input type="text"
+                           class="form-control"
+                           id="searchString"
+                           th:value="${param.search}"
+                           placeholder="Введите минимум 3 символа для поиска...">
+                </div>
+            </div>
+            <div th:if="${param.search}" class="mt-2">
+                <a href="/tourists" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Сбросить фильтр
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tourists Table - FULL TABLE SCROLL VERSION -->
+    <div class="card table-card">
         <div class="card-body">
             <div th:if="${tourists.isEmpty()}" class="alert alert-info">
-                Нет зарегистрированных туристов
+                <span th:if="${param.search}">
+                    По запросу "<span th:text="${param.search}"></span>" туристов не найдено
+                </span>
+                <span th:unless="${param.search}">
+                    Нет зарегистрированных туристов
+                </span>
             </div>
 
             <table th:unless="${tourists.isEmpty()}" class="table table-striped table-hover">
@@ -37,7 +69,7 @@
                 </thead>
                 <tbody>
                 <tr th:each="tourist : ${tourists}">
-                    <td th:text="${tourist.getCertificationId()}">Удостоверение</td>
+                    <td th:text="${tourist.getCertificationId()}" class="cert-id">Удостоверение</td>
                     <td>
                         <a th:href="@{/tourists/{id}(id=${tourist.id})}"
                            th:text="${tourist.getFullName()}"
@@ -56,5 +88,71 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Auto-search when user types 3+ characters
+    const searchInput = document.getElementById('searchString');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+
+        const searchValue = this.value.trim();
+
+        // If less than 3 characters, clear the search
+        if (searchValue.length < 3 && searchValue.length > 0) {
+            return; // Do nothing, wait for more input
+        }
+
+        // Debounce: wait 500ms after user stops typing
+        searchTimeout = setTimeout(function() {
+            if (searchValue.length >= 3) {
+                // Redirect with search parameter
+                window.location.href = '/tourists?search=' + encodeURIComponent(searchValue);
+            } else if (searchValue.length === 0) {
+                // Clear search - show all tourists
+                window.location.href = '/tourists';
+            }
+        }, 500);
+    });
+
+    // Highlight matching text in tourist names
+    function highlightSearchTerm() {
+        const searchTerm = searchInput.value.trim();
+
+        // Only highlight if search term is 3+ characters
+        if (searchTerm.length < 3) {
+            return;
+        }
+
+        // Find all tourist name links in the table
+        const nameLinks = document.querySelectorAll('tbody a.kind-link, td.cert-id');
+        nameLinks.forEach(link => {
+            const originalText = link.textContent;
+            // Create case-insensitive regex to find all matches
+
+            const regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
+            // Replace matches with highlighted version
+
+            const highlightedText = originalText.replace(regex, '<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 2px;">$1</mark>');
+            link.innerHTML = highlightedText;
+
+        });
+    }
+
+    // Escape special regex characters in search term
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Run highlighting when page loads
+    if (searchInput.value.trim().length >= 3) {
+        highlightSearchTerm();
+    }
+
+    // Auto-focus search input on page load and move cursor to end
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+</script>
 </body>
 </html>

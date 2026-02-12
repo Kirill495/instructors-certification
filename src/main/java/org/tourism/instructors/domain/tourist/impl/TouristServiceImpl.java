@@ -6,6 +6,7 @@ import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.domain.tourist.TouristRepository;
 import org.tourism.instructors.domain.tourist.TouristService;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
+import org.tourism.instructors.domain.tourist.model.Tourist;
 
 import java.util.List;
 
@@ -31,11 +32,20 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public List<TouristLightDTO> searchTourists (String query) {
+    public List<TouristLightDTO> searchLightTourists (String query) {
+        return searchTouristsInner(query).stream().map(touristMapper::toLightDTO).toList();
+    }
+
+    @Override
+    public List<TouristDTO> searchTourists (String query) {
+        return searchTouristsInner(query).stream().map(touristMapper::toDTO).toList();
+    }
+
+    private List<Tourist> searchTouristsInner (String query) {
         if (containsOnlyDigits(query)) {
-            return touristRepository.searchByCertificationId(query).stream().map(touristMapper::toLightDTO).toList();
+            return touristRepository.searchByCertificationId(query);
         } else {
-            return touristRepository.searchByLastNameStartingWithIgnoreCase(query).stream().map(touristMapper::toLightDTO).toList();
+            return touristRepository.searchByLastNameStartingWithIgnoreCase(query);
         }
     }
 
