@@ -62,7 +62,23 @@
                     <strong>Дата рождения:</strong>
                 </div>
                 <div class="col-md-9">
-                    <span th:text="${tourist.dateOfBirth}"></span>
+                    <span th:text="${tourist.getDateOfBirth()}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Телефон:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.getPhoneNumber()}"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>E-mail:</strong>
+                </div>
+                <div class="col-md-9">
+                    <span th:text="${tourist.getEmail()}"></span>
                 </div>
             </div>
             <div class="row mb-3">
