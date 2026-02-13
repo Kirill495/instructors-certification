@@ -1,9 +1,19 @@
 package org.tourism.instructors.domain.protocol;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "protocols", schema = "instructors_grades")
 public class Protocol {
@@ -20,4 +30,26 @@ public class Protocol {
 
     @Column(name = "order_number", length = 12)
     private String order;
+
+    @OneToMany(mappedBy = "protocol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    List<ProtocolContent> protocolContents = new ArrayList<>();
+
+//    public void setProtocolContents(List<ProtocolContent> protocolContents) {
+//        this.protocolContents = protocolContents;
+//        if (protocolContents != null) {
+//            for (ProtocolContent row : protocolContents) {
+//                row.setProtocol(this);
+//            }
+//        }
+//    }
+//
+//    public void addProtocolContent(ProtocolContent content) {
+//        protocolContents.add(content);
+//        content.setProtocol(this);
+//    }
+//
+//    public void removeProtocolContent(ProtocolContent content) {
+//        protocolContents.remove(content);
+//        content.setProtocol(this);
+//    }
 }

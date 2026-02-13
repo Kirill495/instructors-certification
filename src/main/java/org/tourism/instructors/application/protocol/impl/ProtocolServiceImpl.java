@@ -36,6 +36,7 @@ public class ProtocolServiceImpl implements ProtocolService {
         return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new RuntimeException("Протокол с ID:" + id + " не найден"));
     }
 
+    @Transactional
     @Override
     public void saveProtocol (ProtocolDTO protocolDTO) {
         protocolRepository.save(protocolMapper.toEntity(protocolDTO));

@@ -2,9 +2,8 @@ package org.tourism.instructors.api.protocol;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.catalog.CatalogService;
@@ -33,11 +32,28 @@ public class ProtocolController {
         model.addAttribute("protocol", protocolService.getProtocolById(id));
         return "protocols/view";
     }
+
+    @GetMapping("/{id}/edit")
+    public String editProtocol(@PathVariable int id, Model model) {
+        model.addAttribute("protocol", protocolService.getProtocolById(id));
+        model.addAttribute("grades", catalogService.findActiveGrades());
+        model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
+        return "protocols/edit";
+    }
+
     @GetMapping("/new")
     public String newProtocol(Model model) {
         model.addAttribute("protocol", new ProtocolDTO());
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         return "protocols/edit";
+    }
+
+    @PostMapping("/save")
+    public String saveProtocol(@ModelAttribute ProtocolDTO protocol,
+                               RedirectAttributes redirectAttributes) {
+        protocolService.saveProtocol(protocol);
+        redirectAttributes.addFlashAttribute("successMessage", "Протокол записан");
+        return "redirect:/protocols";
     }
 }

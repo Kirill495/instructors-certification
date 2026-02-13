@@ -50,7 +50,7 @@
                     <td th:text="${protocol.id}">1</td>
                     <td th:text="${protocol.number}">01/2024</td>
                     <td th:text="${#temporals.format(protocol.date, 'dd.MM.yyyy')}">01.01.2024</td>
-                    <td th:text="${protocol.orderNumber ?: '-'}">123</td>
+                    <td th:text="${protocol.order ?: '-'}">123</td>
                     <td>
                         <span class="badge bg-primary" th:text="${protocol.contentRows.size()}">5</span>
                     </td>

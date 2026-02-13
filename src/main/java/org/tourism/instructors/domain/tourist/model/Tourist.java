@@ -40,4 +40,8 @@ public class Tourist {
 
     @Column(name = "certification_id")
     private String certificationId;
+
+    public String getFullName() {
+        return lastName + " " + firstName + " " + middleName;
+    }
 }
