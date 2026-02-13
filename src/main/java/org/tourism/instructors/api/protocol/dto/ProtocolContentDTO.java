@@ -10,11 +10,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProtocolContentDTO {
-    private int protocolId;
-    private int rowNum;
-    private int touristId;
-    private int kindOfTourismId;
-    private int gradeId;
+    private Integer protocolId;
+    private Integer rowNum;
+    private Integer touristId;
+    private Integer kindOfTourismId;
+    private Integer gradeId;
     private String certificationId;
     private String club;
 
