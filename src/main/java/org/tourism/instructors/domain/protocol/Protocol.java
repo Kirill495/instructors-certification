@@ -34,22 +34,4 @@ public class Protocol {
     @OneToMany(mappedBy = "protocol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<ProtocolContent> protocolContents = new ArrayList<>();
 
-//    public void setProtocolContents(List<ProtocolContent> protocolContents) {
-//        this.protocolContents = protocolContents;
-//        if (protocolContents != null) {
-//            for (ProtocolContent row : protocolContents) {
-//                row.setProtocol(this);
-//            }
-//        }
-//    }
-//
-//    public void addProtocolContent(ProtocolContent content) {
-//        protocolContents.add(content);
-//        content.setProtocol(this);
-//    }
-//
-//    public void removeProtocolContent(ProtocolContent content) {
-//        protocolContents.remove(content);
-//        content.setProtocol(this);
-//    }
 }

@@ -3,6 +3,7 @@ package org.tourism.instructors.application.protocol.impl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
@@ -22,13 +23,18 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
-    public List<ProtocolDTO> getProtocols () {
-        return protocolRepository.findAll().stream().map(protocolMapper::toDTO).toList();
+    public List<ProtocolForListDTO> getProtocolsForList () {
+        return protocolRepository.findAllProtocolsWithContent().stream().map(protocolMapper::toProtocolForListDTO).toList();
     }
 
     @Override
     public int countProtocols () {
         return (int) protocolRepository.count();
+    }
+
+    @Override
+    public List<ProtocolForListDTO> searchProtocols (String search) {
+        return protocolRepository.searchByTouristLastNameStartingWithIgnoreCase(search).stream().map(protocolMapper::toProtocolForListDTO).toList();
     }
 
     @Override
