@@ -22,8 +22,13 @@ public class ProtocolController {
     }
 
     @GetMapping
-    public String listProtocols(Model model) {
-        model.addAttribute("protocols", protocolService.getProtocols());
+    public String listProtocols(@RequestParam(value = "search", required = false) String search, Model model) {
+        if (search != null && !search.trim().isEmpty()) {
+            model.addAttribute("protocols", protocolService.searchProtocols(search));
+        } else {
+            model.addAttribute("protocols", protocolService.getProtocolsForList());
+        }
+        model.addAttribute("search", search);
         return "protocols/list";
     }
 

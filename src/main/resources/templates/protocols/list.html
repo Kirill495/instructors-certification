@@ -6,10 +6,25 @@
     <title>Протоколы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .table-card {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+        }
+    </style>
+    <style>
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .clickable-row:hover {
+            background-color: #e9ecef !important;
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-5">
-    <h1 class="mb-4">Протоколы кадровой комиссии</h1>
+<div class="container mt-3">
+    <h1 class="mb-2">Протоколы кадровой комиссии</h1>
 
     <!-- Success Message -->
     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
@@ -18,17 +33,37 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="mb-3">
-        <a href="/protocols/new" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Создать протокол
-        </a>
-        <a href="/" class="btn btn-secondary">
-            <i class="bi bi-house"></i> Главная
-        </a>
+    <div class="mb-2">
+        <div class="row g-2">
+            <div class="col-auto">
+                <a href="/protocols/new" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Добавить
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    <i class="bi bi-house"></i> Главная
+                </a>
+            </div>
+            <div class="col">
+                <div class="position-relative">
+                    <input type="text"
+                           class="form-control"
+                           id="searchString"
+                           th:value="${param.search}"
+                           placeholder="Введите минимум 3 символа для поиска...">
+                    <button type="button"
+                            class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-secondary"
+                            id="clearSearch"
+                            style="display: none; padding: 0.375rem 0.75rem; text-decoration: none;"
+                            title="Очистить поиск">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Protocols Table -->
-    <div class="card">
+    <div class="card table-card">
         <div class="card-body">
             <div th:if="${protocols.isEmpty()}" class="alert alert-info">
                 <i class="bi bi-info-circle"></i> Нет протоколов
@@ -37,41 +72,31 @@
             <table th:unless="${protocols.isEmpty()}" class="table table-striped table-hover">
                 <thead class="table-dark">
                 <tr>
-                    <th style="width: 8%">ID</th>
-                    <th style="width: 15%">Номер</th>
-                    <th style="width: 12%">Дата</th>
-                    <th style="width: 15%">№ приказа</th>
-                    <th style="width: 12%">Кол-во строк</th>
-                    <th style="width: 38%">Действия</th>
+                    <th style="width: 5%">Номер</th>
+                    <th style="width: 15%">Дата</th>
+                    <th style="width: 5%">№ приказа</th>
+                    <th style="width: 75%">Туристы</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="protocol : ${protocols}">
-                    <td th:text="${protocol.id}">1</td>
-                    <td th:text="${protocol.number}">01/2024</td>
+                <tr th:each="protocol : ${protocols}"
+                    class="clickable-row"
+                    th:onclick="'window.location.href=\'/protocols/' + ${protocol.id} + '\''">
+<!--                    <td>-->
+<!--                        <a th:href="@{/protocols/{id}(id=${protocol.id})}"-->
+<!--                           th:text="${protocol.number}"-->
+<!--                           class="protocol-link">-->
+<!--                            Номер протокола-->
+<!--                        </a>-->
+<!--                    </td>-->
+                    <td th:text="${protocol.number ?: '-'}">123</td>
                     <td th:text="${#temporals.format(protocol.date, 'dd.MM.yyyy')}">01.01.2024</td>
                     <td th:text="${protocol.order ?: '-'}">123</td>
                     <td>
-                        <span class="badge bg-primary" th:text="${protocol.contentRows.size()}">5</span>
-                    </td>
-                    <td>
-                        <a th:href="@{/protocols/{id}(id=${protocol.id})}"
-                           class="btn btn-sm btn-info">
-                            <i class="bi bi-eye"></i> Просмотр
-                        </a>
-                        <a th:href="@{/protocols/{id}/edit(id=${protocol.id})}"
-                           class="btn btn-sm btn-warning">
-                            <i class="bi bi-pencil"></i> Изменить
-                        </a>
-                        <form th:action="@{/protocols/{id}/delete(id=${protocol.id})}"
-                              method="post"
-                              style="display: inline;">
-                            <button type="submit"
-                                    class="btn btn-sm btn-danger"
-                                    onclick="return confirm('Вы уверены, что хотите удалить этот протокол?')">
-                                <i class="bi bi-trash"></i> Удалить
-                            </button>
-                        </form>
+                        <a th:each="tourist : ${protocol.getTourists()}"
+                           th:href="@{/tourists/{id}(id=${tourist.id})}"
+                              th:text="${tourist.getFullName()}"
+                                  class="badge bg-secondary me-1 tourist-name">tourist_name</a>
                     </td>
                 </tr>
                 </tbody>
@@ -81,5 +106,95 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const searchInput = document.getElementById('searchString');
+    const clearButton = document.getElementById('clearSearch');
+    let searchTimeout;
+
+    // Show/hide clear button based on input content
+    function toggleClearButton() {
+        if (searchInput.value.trim().length > 0) {
+            clearButton.style.display = 'block';
+        } else {
+            clearButton.style.display = 'none';
+        }
+    }
+
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        toggleClearButton();
+        window.location.href = '/protocols';
+    });
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        toggleClearButton();
+
+        const searchValue = this.value.trim();
+
+        // If less than 3 characters, clear the search
+        if (searchValue.length < 3 && searchValue.length > 0) {
+            return; // Do nothing, wait for more input
+        }
+
+        // Debounce: wait 500ms after user stops typing
+        searchTimeout = setTimeout(function() {
+            if (searchValue.length >= 3) {
+                // Redirect with search parameter
+                window.location.href = '/protocols?search=' + encodeURIComponent(searchValue);
+            } else if (searchValue.length === 0) {
+                // Clear search - show all protocols
+                window.location.href = '/protocols';
+            }
+        }, 500);
+    });
+
+    // Highlight matching text in tourist names
+    function highlightSearchTerm() {
+        const searchTerm = searchInput.value.trim();
+
+        // Only highlight if search term is 3+ characters
+        if (searchTerm.length < 3) {
+            return;
+        }
+
+        // Find all tourist name links in the table
+        const nameLinks = document.querySelectorAll('tbody a.tourist-name');
+        nameLinks.forEach(link => {
+            const originalText = link.textContent;
+            // Create case-insensitive regex to find all matches
+
+            const regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
+            // Replace matches with highlighted version
+
+            const highlightedText = originalText.replace(regex, '<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 2px;">$1</mark>');
+            link.innerHTML = highlightedText;
+
+        });
+    }
+
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Run highlighting when page loads
+    if (searchInput.value.trim().length >= 3) {
+        highlightSearchTerm();
+    }
+
+    // Show clear button if there's initial value
+    toggleClearButton();
+
+    // Prevent row click when clicking tourist badges
+    document.querySelectorAll('a.tourist-name').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.stopPropagation(); // Stop the click from bubbling to the row
+        });
+    });
+
+    // Auto-focus search input on page load and move cursor to end
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+</script>
 </body>
 </html>

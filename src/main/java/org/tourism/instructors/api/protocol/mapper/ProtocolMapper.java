@@ -5,6 +5,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
 
@@ -25,4 +26,7 @@ public interface ProtocolMapper {
             }
         }
     }
+
+    @Mapping(target = "tourists", source="protocolContents")
+    ProtocolForListDTO toProtocolForListDTO(Protocol protocol);
 }
