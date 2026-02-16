@@ -1,13 +1,12 @@
 package org.tourism.instructors.application.protocol;
 
-import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 
-import java.util.List;
-
 public interface ProtocolService {
-    List<ProtocolForListDTO> getProtocolsForList ();
+    Page<ProtocolForListDTO> getProtocolsForList (String searchString, Pageable pageable);
 
     ProtocolDTO getProtocolById (int id);
 
@@ -15,5 +14,4 @@ public interface ProtocolService {
 
     int countProtocols();
 
-    List<ProtocolForListDTO> searchProtocols (String search);
 }
