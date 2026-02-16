@@ -1,5 +1,8 @@
 package org.tourism.instructors.application.protocol.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
@@ -23,18 +26,23 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
-    public List<ProtocolForListDTO> getProtocolsForList () {
-        return protocolRepository.findAllProtocolsWithContent().stream().map(protocolMapper::toProtocolForListDTO).toList();
+    public Page<ProtocolForListDTO> getProtocolsForList (String searchString, Pageable pageable) {
+        Page<Integer> protocolIdPage;
+        if (searchString != null && !searchString.trim().isEmpty()) {
+            protocolIdPage = protocolRepository.searchByTouristLastNameStartingWithIgnoreCase(searchString, pageable);
+        } else {
+            protocolIdPage = protocolRepository.findAllProtocols(pageable);
+        }
+        if (protocolIdPage.isEmpty()) {
+            return Page.empty();
+        }
+        List<ProtocolForListDTO> protocols = protocolRepository.getProtocolWithContentByIDs(protocolIdPage.getContent(), pageable.getSort()).stream().map(protocolMapper::toProtocolForListDTO).toList();
+        return new PageImpl<>(protocols, pageable, protocolIdPage.getTotalElements());
     }
 
     @Override
     public int countProtocols () {
         return (int) protocolRepository.count();
-    }
-
-    @Override
-    public List<ProtocolForListDTO> searchProtocols (String search) {
-        return protocolRepository.searchByTouristLastNameStartingWithIgnoreCase(search).stream().map(protocolMapper::toProtocolForListDTO).toList();
     }
 
     @Override

@@ -1,12 +1,17 @@
 package org.tourism.instructors.api.protocol;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
-import org.tourism.instructors.application.protocol.ProtocolService;
+import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
+import org.tourism.instructors.application.protocol.ProtocolService;
 
 @Controller
 @RequestMapping("/protocols")
@@ -22,14 +27,57 @@ public class ProtocolController {
     }
 
     @GetMapping
-    public String listProtocols(@RequestParam(value = "search", required = false) String search, Model model) {
-        if (search != null && !search.trim().isEmpty()) {
-            model.addAttribute("protocols", protocolService.searchProtocols(search));
-        } else {
-            model.addAttribute("protocols", protocolService.getProtocolsForList());
-        }
-        model.addAttribute("search", search);
+    public String listProtocols(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false, defaultValue = "asc") String order,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            Model model) {
+
+        Sort sortObj = createSort(sort, order);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<ProtocolForListDTO> pageProtocol;
+        pageProtocol = protocolService.getProtocolsForList(search, pageable);
+
+        addPaginationAttributes(model, pageProtocol, page, size, sort, order);
         return "protocols/list";
+    }
+
+    private void addPaginationAttributes(Model model, Page<ProtocolForListDTO> page, int currentPage, int size, String sort, String order) {
+
+        model.addAttribute("protocols", page.getContent());
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", page.getTotalPages());
+        model.addAttribute("totalElements", page.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("sortField", sort);
+        model.addAttribute("sortOrder", order);
+
+        int totalPages = page.getTotalPages();
+        int pageStart = Math.max(0, currentPage - 4);
+        int pageEnd = Math.min(totalPages - 1, currentPage + 5);
+
+        if (pageEnd - pageStart < 9) {
+            if (pageStart == 0) {
+                pageEnd = Math.min(9, totalPages - 1);
+            } else if (pageEnd == totalPages - 1) {
+                pageStart = Math.max(0, totalPages - 10);
+            }
+        }
+
+        model.addAttribute("pageStart", pageStart);
+        model.addAttribute("pageEnd", pageEnd);
+
+    }
+
+    private static Sort createSort (String sort, String order) {
+        Sort sortObj = Sort.unsorted();
+        if (sort != null) {
+            Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sortObj = Sort.by(direction, sort);
+        }
+        return sortObj;
     }
 
     @GetMapping("/{id}")
