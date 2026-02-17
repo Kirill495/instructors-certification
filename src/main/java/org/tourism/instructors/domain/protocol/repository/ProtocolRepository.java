@@ -9,23 +9,31 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tourism.instructors.domain.protocol.Protocol;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
 public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
 
-    @Query("SELECT DISTINCT p.number FROM Protocol p")
-    Page<Integer> findAllProtocols(Pageable pageable);
+    @Query("SELECT DISTINCT p.id as id, p.number as number, p.date as date FROM Protocol p")
+    Page<ProtocolProjection> findAllProtocols(Pageable pageable);
 
-    @Query("SELECT DISTINCT p.number " +
+    @Query("SELECT DISTINCT p.id as id, p.number as number, p.date as date " +
                    "FROM Protocol p LEFT JOIN p.protocolContents c LEFT JOIN c.tourist " +
                    "WHERE c.tourist.lastName ILIKE CONCAT(:search, '%')" +
                    "OR c.tourist.firstName ILIKE CONCAT(:search, '%')")
-    Page<Integer> searchByTouristLastNameStartingWithIgnoreCase (@Param("search") String search, Pageable pageable);
+    Page<ProtocolProjection> searchByTouristLastNameStartingWithIgnoreCase (@Param("search") String search, Pageable pageable);
 
     @Query("SELECT p FROM Protocol p " +
            "LEFT JOIN FETCH p.protocolContents c " +
            "LEFT JOIN FETCH c.tourist " +
-           "WHERE p.number IN :numbers")
-    List<Protocol> getProtocolWithContentByIDs(@Param("numbers") List<Integer> numbers, Sort sort);
+           "WHERE p.id IN :ids")
+    List<Protocol> getProtocolWithContentByIDs(@Param("ids") List<Integer> ids, Sort sort);
+
+    @SuppressWarnings("unused")
+    interface ProtocolProjection {
+        Integer getId();
+        String getNumber();
+        LocalDate getDate();
+    }
 }
