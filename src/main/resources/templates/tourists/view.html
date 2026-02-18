@@ -24,23 +24,14 @@
 </head>
 <body>
 <div class="container mt-5">
-<!--    <h1 class="mb-4">Просмотр туриста</h1>-->
-    <h1 class="mb-4" th:text="${tourist.getFullName()}">Просмотр туриста</h1>
+    <!--    <h1 class="mb-4">Просмотр туриста</h1>-->
+    <h3 class="mb-2" th:text="${tourist.getFullName()}">Просмотр туриста</h3>
 
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Информация</h5>
         </div>
         <div class="card-body">
-            <!-- Basic Information -->
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>ID:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.id}">1</span>
-                </div>
-            </div>
 
             <div class="row mb-3">
                 <div class="col-md-3">
@@ -139,7 +130,7 @@
                             <a th:href="'mailto:' + ${tourist.email}"
                                th:text="${tourist.email}"
                                class="text-decoration-none">
-                                ivan@example.com
+                                <span class="__cf_email__" data-cfemail="d0b9a6b1be90b5a8b1bda0bcb5feb3bfbd">[email&#160;protected]</span>
                             </a>
                         </div>
                     </div>
@@ -152,6 +143,60 @@
                     </div>
                 </div>
             </div>
+
+            <hr>
+
+            <!-- Collapsible Grade Assignments -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center collapse-toggle p-2 rounded"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#gradeAssignments"
+                         aria-expanded="false"
+                         aria-controls="gradeAssignments">
+                        <strong>
+                            <i class="bi bi-award-fill text-primary me-2"></i>
+                            Присвоенные разряды
+                        </strong>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse" id="gradeAssignments">
+                <div class="card card-body bg-light p-0">
+                    <div th:if="${tourist.assignments != null and !tourist.assignments.isEmpty()}">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Вид туризма</th>
+                                <th>Разряд</th>
+                                <th>Дата присвоения</th>
+                                <th>Действителен до</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="a : ${tourist.assignments}">
+                                <td th:text="${a.kindOfTourism?.title ?: '-'}">Пешеходный</td>
+                                <td th:text="${a.grade?.title ?: '-'}">III</td>
+                                <td th:text="${#temporals.format(a.date, 'dd.MM.yyyy')}">01.01.2024</td>
+                                <td>
+                                        <span th:with="expired=${a.validThrough != null and a.validThrough.isBefore(#temporals.createNow().toLocalDate())}"
+                                              th:class="${expired} ? 'text-danger' : 'text-success'"
+                                              th:text="${a.validThrough != null ? #temporals.format(a.validThrough, 'dd.MM.yyyy') : '-'}">
+                                            01.01.2027
+                                        </span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:if="${tourist.assignments == null or tourist.assignments.isEmpty()}"
+                         class="text-muted p-3">
+                        <i class="bi bi-info-circle"></i> Разряды не присвоены
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card-footer">
@@ -159,7 +204,7 @@
                 <i class="bi bi-pencil"></i> Изменить
             </a>
             <a href="/tourists" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Назад к списку
+                <i class="bi bi-arrow-left"></i> К списку
             </a>
 
             <!-- Delete button -->

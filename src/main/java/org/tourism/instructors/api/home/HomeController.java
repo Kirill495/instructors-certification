@@ -5,7 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.catalog.CatalogService;
-import org.tourism.instructors.domain.tourist.TouristService;
+import org.tourism.instructors.application.tourist.TouristService;
 
 @Controller
 public class HomeController {

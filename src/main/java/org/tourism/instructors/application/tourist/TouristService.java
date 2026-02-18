@@ -1,4 +1,4 @@
-package org.tourism.instructors.domain.tourist;
+package org.tourism.instructors.application.tourist;
 
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
