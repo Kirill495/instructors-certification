@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
-import org.tourism.instructors.domain.tourist.TouristService;
+import org.tourism.instructors.application.tourist.TouristService;
 
 import java.util.Collections;
 import java.util.List;

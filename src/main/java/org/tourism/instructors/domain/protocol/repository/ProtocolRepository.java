@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.tourism.instructors.domain.catalog.model.Grade;
+import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.protocol.Protocol;
 
 import java.time.LocalDate;
@@ -29,6 +31,27 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
            "LEFT JOIN FETCH c.tourist " +
            "WHERE p.id IN :ids")
     List<Protocol> getProtocolWithContentByIDs(@Param("ids") List<Integer> ids, Sort sort);
+
+    @Query("SELECT p.id as protocolId, " +
+                   "p.date as protocolDate, " +
+                   "t.id as touristId, " +
+                   "c.grade as grade, " +
+                   "c.kindOfTourism as kindOfTourism " +
+                   "FROM Protocol p " +
+                   "LEFT JOIN  p.protocolContents c " +
+                   "LEFT JOIN c.grade g " +
+                   "LEFT JOIN c.kindOfTourism k " +
+                   "LEFT JOIN  c.tourist t " +
+               "WHERE c.tourist.id in (:tourist_ids)")
+    List<GradeAssignmentProjection> getAssignments(@Param("tourist_ids") List<Integer> touristIds);
+
+    interface GradeAssignmentProjection {
+        Integer getProtocolId();
+        LocalDate getProtocolDate();
+        Integer getTouristId();
+        Grade getGrade ();
+        KindOfTourism getKindOfTourism();
+    }
 
     @SuppressWarnings("unused")
     interface ProtocolProjection {

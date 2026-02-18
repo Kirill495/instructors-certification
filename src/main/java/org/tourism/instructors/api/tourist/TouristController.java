@@ -5,7 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
-import org.tourism.instructors.domain.tourist.TouristService;
+import org.tourism.instructors.application.tourist.TouristService;
 
 import java.util.List;
 

@@ -1,11 +1,13 @@
-package org.tourism.instructors.domain.tourist.impl;
+package org.tourism.instructors.application.tourist.impl;
 
 import org.springframework.stereotype.Service;
+import org.tourism.instructors.api.protocol.mapper.GradeAssignmentMapper;
+import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
+import org.tourism.instructors.application.tourist.TouristService;
+import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.TouristRepository;
-import org.tourism.instructors.domain.tourist.TouristService;
-import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 
 import java.util.List;
@@ -14,11 +16,15 @@ import java.util.List;
 public class TouristServiceImpl implements TouristService {
 
     private final TouristRepository touristRepository;
+    private final ProtocolRepository protocolRepository;
     private final TouristMapper touristMapper;
+    private final GradeAssignmentMapper gradeAssignmentMapper;
 
-    public TouristServiceImpl (TouristRepository touristRepository, TouristMapper touristMapper) {
+    public TouristServiceImpl (TouristRepository touristRepository, ProtocolRepository protocolRepository, TouristMapper touristMapper, GradeAssignmentMapper gradeAssignmentMapper) {
         this.touristRepository = touristRepository;
+        this.protocolRepository = protocolRepository;
         this.touristMapper = touristMapper;
+        this.gradeAssignmentMapper = gradeAssignmentMapper;
     }
 
     @Override
@@ -56,7 +62,10 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public TouristDTO findTouristById (int id) {
-        return touristRepository.findById(id).map(touristMapper::toDTO).orElseThrow(() -> new RuntimeException("турист не найден"));
+        TouristDTO touristInfo = touristRepository.findById(id).map(touristMapper::toDTO).orElseThrow(() -> new RuntimeException("турист не найден"));
+        List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
+        touristInfo.setAssignments(assignments.stream().map(gradeAssignmentMapper::toDTO).toList());
+        return touristInfo;
     }
 
     private boolean containsOnlyDigits (String str) {
