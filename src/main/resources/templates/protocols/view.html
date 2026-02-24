@@ -116,7 +116,8 @@
 
     <!-- Action Buttons -->
     <div class="d-flex justify-content-between mb-5">
-        <a href="/protocols" class="btn btn-secondary">
+        <a th:href="@{/protocols(highlightId=${protocol.id})} + '#protocol-' + ${protocol.id}"
+           class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Назад к списку
         </a>
 

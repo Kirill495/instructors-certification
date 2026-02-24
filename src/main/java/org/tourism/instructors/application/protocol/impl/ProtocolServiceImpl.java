@@ -5,6 +5,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
@@ -65,6 +66,11 @@ public class ProtocolServiceImpl implements ProtocolService {
     @Override
     public int countProtocols () {
         return (int) protocolRepository.count();
+    }
+
+    @Override
+    public int getProtocolIndex (int highLightedId) {
+        return protocolRepository.countOfRowsBefore(highLightedId);
     }
 
     @Override

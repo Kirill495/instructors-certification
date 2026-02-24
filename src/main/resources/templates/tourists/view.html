@@ -145,7 +145,6 @@
             </div>
 
             <hr>
-
             <!-- Collapsible Grade Assignments -->
             <div class="row mb-2">
                 <div class="col-12">
@@ -154,9 +153,25 @@
                          data-bs-target="#gradeAssignments"
                          aria-expanded="false"
                          aria-controls="gradeAssignments">
+
                         <strong>
                             <i class="bi bi-award-fill text-primary me-2"></i>
-                            Присвоенные разряды
+                            <span th:if="${tourist.validAssignments == null or tourist.validAssignments.isEmpty()}">
+                                <span th:if="${tourist.getAssignments() == null or tourist.getAssignments().isEmpty()}">
+                                Информация о званиях отсутствует
+                                </span>
+                                <span th:unless="${tourist.getAssignments() == null or tourist.getAssignments().isEmpty()}">
+                                    <span th:text="${tourist.getAssignments.getLast().grade.title}"></span>
+                                    истек
+                                    <span th:text="${#temporals.format(tourist.getAssignments.getLast().validThrough, 'dd.MM.yyyy')}"></span>
+                                </span>
+                            </span>
+                            <span th:if="${tourist.getValidAssignments() != null and !tourist.getValidAssignments().isEmpty()}">
+                            <span th:text="${tourist.getValidAssignments().getFirst().grade.title}"></span>
+                            истекает
+                            <span th:text="${#temporals.format(tourist.getValidAssignments().getFirst().validThrough, 'dd.MM.yyyy')}"></span>
+                        </span>
+
                         </strong>
                         <i class="bi bi-chevron-down"></i>
                     </div>

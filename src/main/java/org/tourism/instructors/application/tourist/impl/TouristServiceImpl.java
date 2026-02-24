@@ -62,9 +62,9 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public TouristDTO findTouristById (int id) {
-        TouristDTO touristInfo = touristRepository.findById(id).map(touristMapper::toDTO).orElseThrow(() -> new RuntimeException("турист не найден"));
+        Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new RuntimeException("турист не найден"));
         List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
-        touristInfo.setAssignments(assignments.stream().map(gradeAssignmentMapper::toDTO).toList());
+        TouristDTO touristInfo = touristMapper.toDTO(tourist, assignments);
         return touristInfo;
     }
 
