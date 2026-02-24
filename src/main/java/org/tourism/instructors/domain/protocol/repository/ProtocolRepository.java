@@ -32,6 +32,9 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
            "WHERE p.id IN :ids")
     List<Protocol> getProtocolWithContentByIDs(@Param("ids") List<Integer> ids, Sort sort);
 
+    @Query("SELECT count(*) FROM Protocol p WHERE p.id < :protocolId")
+    int countOfRowsBefore(@Param("protocolId") int protocolId);
+
     @Query("SELECT p.id as protocolId, " +
                    "p.date as protocolDate, " +
                    "t.id as touristId, " +

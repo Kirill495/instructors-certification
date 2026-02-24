@@ -87,14 +87,14 @@
                     <th style="width: 10%; cursor: pointer;"
                         th:onclick="'sortTable(\'number\')'">
                         Номер
-<!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
+                        <!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
                         <i th:if="${sortField == 'number' && sortOrder == 'asc'}" class="bi bi-sort-numeric-down ms-1"></i>
                         <i th:if="${sortField == 'number' && sortOrder == 'desc'}" class="bi bi-sort-numeric-up ms-1"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;"
                         th:onclick="'sortTable(\'date\')'">
                         Дата
-<!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
+                        <!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
                         <i th:if="${sortField == 'date' && sortOrder == 'asc'}" class="bi bi-sort-down ms-1"></i>
                         <i th:if="${sortField == 'date' && sortOrder == 'desc'}" class="bi bi-sort-up ms-1"></i>
                     </th>
@@ -102,17 +102,11 @@
                     <th style="width: 70%">Туристы</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody th:fragment="tableRows">
                 <tr th:each="protocol : ${protocols}"
+                    th:id="'protocol-' + ${protocol.id}"
                     class="clickable-row"
-                    th:onclick="'window.location.href=\'/protocols/' + ${protocol.id} + '\''">
-                    <!--                    <td>-->
-                    <!--                        <a th:href="@{/protocols/{id}(id=${protocol.id})}"-->
-                    <!--                           th:text="${protocol.number}"-->
-                    <!--                           class="protocol-link">-->
-                    <!--                            Номер протокола-->
-                    <!--                        </a>-->
-                    <!--                    </td>-->
+                    th:onclick="'window.location.href=\'/protocols/' + ${protocol.getId()} + '\''">
                     <td th:text="${protocol.number ?: '-'}">123</td>
                     <td th:text="${#temporals.format(protocol.date, 'dd.MM.yyyy')}">01.01.2024</td>
                     <td th:text="${protocol.order ?: '-'}">123</td>
@@ -129,11 +123,7 @@
                               data-bs-toggle="tooltip"
                               data-bs-placement="top"
                               data-bs-html="true"
-                              th:attr="data-bs-title='<ul class=&quot;mb-0 ps-3&quot;>' +
-                                  ${#strings.listJoin(
-                                      protocol.getTourists().subList(2, protocol.getTourists().size())
-                                      .![('<li>' + fullName + '</li>')], '')} +
-                                  '</ul>'"
+                              th:attr="data-bs-title=${protocol.getTooltipHtml()}"
                               th:text="${protocol.getTourists().size() - 2} + ' more'">3 more</span>
                     </td>
                 </tr>
@@ -142,58 +132,32 @@
         </div>
     </div>
 
-    <!-- Pagination -->
-    <nav th:if="${totalPages > 1}" aria-label="Protocol pagination" class="mt-3">
-        <ul class="pagination justify-content-center">
-            <!-- First Page -->
-            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                <a class="page-link" th:href="@{/protocols(page=0, size=${pageSize}, search=${param.search}, sort=${sortField}, order=${sortOrder})}"
-                   aria-label="First">
-                    <span aria-hidden="true">&laquo;&laquo;</span>
-                </a>
-            </li>
+    <!-- Infinite scroll sentinel -->
+    <div id="scroll-sentinel" class="mt-2" style="height: 1px;"></div>
 
-            <!-- Previous Page -->
-            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                <a class="page-link" th:href="@{/protocols(page=${currentPage - 1}, size=${pageSize}, search=${param.search}, sort=${sortField}, order=${sortOrder})}"
-                   aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="text-center text-muted py-2" style="display: none;">
+        <div class="spinner-border spinner-border-sm me-1" role="status"></div>
+        Загрузка...
+    </div>
 
-            <!-- Page Numbers -->
-            <li th:each="pageNum : ${#numbers.sequence(pageStart, pageEnd)}"
-                class="page-item"
-                th:classappend="${pageNum == currentPage} ? 'active'">
-                <a class="page-link"
-                   th:href="@{/protocols(page=${pageNum}, size=${pageSize}, search=${param.search}, sort=${sortField}, order=${sortOrder})}"
-                   th:text="${pageNum + 1}">1</a>
-            </li>
+    <!-- End of list indicator -->
+    <div id="end-of-list" class="text-center text-muted small py-2" style="display: none;">
+        Все записи загружены (всего: <span id="total-elements" th:text="${totalElements}">0</span>)
+    </div>
 
-            <!-- Next Page -->
-            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                <a class="page-link" th:href="@{/protocols(page=${currentPage + 1}, size=${pageSize}, search=${param.search}, sort=${sortField}, order=${sortOrder})}"
-                   aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-
-            <!-- Last Page -->
-            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                <a class="page-link" th:href="@{/protocols(page=${totalPages - 1}, size=${pageSize}, search=${param.search}, sort=${sortField}, order=${sortOrder})}"
-                   aria-label="Last">
-                    <span aria-hidden="true">&raquo;&raquo;</span>
-                </a>
-            </li>
-        </ul>
-
-        <!-- Page Info -->
-        <div class="text-center text-muted small">
-            Страница <span th:text="${currentPage + 1}">1</span> из <span th:text="${totalPages}">10</span>
-            (всего записей: <span th:text="${totalElements}">100</span>)
-        </div>
-    </nav>
+    <!-- Hidden metadata for JS -->
+    <div id="pagination-meta"
+         th:attr="data-current-page=${currentPage},
+                  data-total-pages=${totalPages},
+                  data-page-size=${pageSize},
+                  data-sort-field=${sortField},
+                  data-sort-order=${sortOrder},
+                  data-search=${searchQuery}"
+         style="display: none;"></div>
 </div>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -308,6 +272,168 @@
     // Auto-focus search input on page load and move cursor to end
     searchInput.focus();
     searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+
+    // ── Infinite Scroll ──────────────────────────────────────────────────────
+    (function () {
+        const meta = document.getElementById('pagination-meta');
+        if (!meta) return;
+
+        let currentPage   = parseInt(meta.dataset.currentPage, 10);
+        const totalPages  = parseInt(meta.dataset.totalPages, 10);
+        const pageSize    = meta.dataset.pageSize;
+        const sortField   = meta.dataset.sortField;
+        const sortOrder   = meta.dataset.sortOrder;
+        const search      = meta.dataset.search;
+
+        const sentinel    = document.getElementById('scroll-sentinel');
+        const loader      = document.getElementById('loading-indicator');
+        const endMsg      = document.getElementById('end-of-list');
+        const tableCard   = document.querySelector('.table-card');
+
+        // If everything already fits on one page, show the "all loaded" message
+        if (currentPage >= totalPages - 1) {
+            endMsg.style.display = 'block';
+        }
+
+        let isFetching = false;
+
+        function buildUrl(page) {
+            const params = new URLSearchParams();
+            params.set('page', page);
+            params.set('size', pageSize);
+            if (sortField) params.set('sort', sortField);
+            if (sortOrder) params.set('order', sortOrder);
+            if (search)    params.set('search', search);
+            return '/protocols?' + params.toString();
+        }
+
+        async function loadNextPage() {
+            if (isFetching || currentPage >= totalPages - 1) return;
+
+            isFetching = true;
+            loader.style.display = 'block';
+
+            try {
+                const nextPage = currentPage + 1;
+                const response = await fetch(buildUrl(nextPage), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const html = await response.text();
+
+                // Backend returns the tableRows fragment — just a <tbody> with <tr>s inside.
+                // Wrap in a table so DOMParser can parse table elements correctly.
+                const parser = new DOMParser();
+                const doc    = parser.parseFromString('<table>' + html + '</table>', 'text/html');
+                const newRows = doc.querySelectorAll('tbody tr');
+
+                if (newRows.length > 0) {
+                    const tbody = document.querySelector('tbody');
+                    newRows.forEach(row => {
+                        tbody.appendChild(document.adoptNode(row));
+                    });
+
+                    // Re-attach click-stop for newly added tourist badge links
+                    tbody.querySelectorAll('a.tourist-name').forEach(link => {
+                        link.addEventListener('click', e => e.stopPropagation());
+                    });
+
+                    // Re-initialize tooltips for newly added badges
+                    tbody.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        new bootstrap.Tooltip(el);
+                    });
+
+                    // Re-run search highlight on new rows
+                    if (searchInput.value.trim().length >= 3) {
+                        highlightSearchTerm();
+                    }
+                }
+
+                currentPage = nextPage;
+
+                if (currentPage >= totalPages - 1) {
+                    endMsg.style.display = 'block';
+                    observer.disconnect(); // No more pages — stop observing
+                }
+            } catch (err) {
+                console.error('Infinite scroll fetch failed:', err);
+            } finally {
+                isFetching = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        // Use IntersectionObserver to watch the sentinel element.
+        // The sentinel sits outside the scrollable .table-card div, so we
+        // observe relative to the viewport.  If you prefer to trigger earlier,
+        // increase the rootMargin (e.g. '200px').
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadNextPage();
+            }
+        }, {
+            root: null,       // viewport
+            rootMargin: '0px',
+            threshold: 0.1
+        });
+
+        if (currentPage < totalPages - 1) {
+            observer.observe(sentinel);
+        }
+
+        // Also trigger on scroll inside the .table-card container
+        // (the card has overflow-y: auto, so the sentinel may never reach
+        // the viewport while the card is scrolled internally)
+        if (tableCard) {
+            tableCard.addEventListener('scroll', function () {
+                const { scrollTop, scrollHeight, clientHeight } = tableCard;
+                // Trigger when user is within 100px of the bottom of the card
+                if (scrollHeight - scrollTop - clientHeight < 100) {
+                    loadNextPage();
+                }
+            });
+        }
+    })();
+    // ── End Infinite Scroll ──────────────────────────────────────────────────
+
+    // ── Scroll to highlighted protocol ──────────────────────────────────────────
+    (function() {
+        const hash = window.location.hash;
+        if (!hash || !hash.startsWith('#protocol-')) return;
+
+        const target = document.getElementById(hash.slice(1));
+        if (!target) return;
+
+        // .table-card has overflow-y: auto, so the scrollable container is the card,
+        // not the page. We must scroll it manually to center the row.
+        const tableCard = document.querySelector('.table-card');
+        const cardRect  = tableCard.getBoundingClientRect();
+        const rowRect   = target.getBoundingClientRect();
+        const offset    = rowRect.top - cardRect.top - (tableCard.clientHeight / 2) + (target.offsetHeight / 2);
+        tableCard.scrollBy({ top: offset, behavior: 'smooth' });
+
+        // Wait for scroll to finish, then flash the highlight.
+        // 'smooth' scroll typically takes ~300-500ms.
+        setTimeout(() => {
+            target.style.backgroundColor = '#fff3cd';
+
+            // Hold the highlight, then fade out to the striped row color
+            setTimeout(() => {
+                target.style.transition = 'background-color 1.5s ease';
+                const isOdd = target.rowIndex % 2 !== 0;
+                target.style.backgroundColor = isOdd ? 'rgba(0,0,0,0.05)' : '#ffffff';
+            }, 1500);
+
+            // Clean up all inline styles after fade completes so CSS takes over cleanly
+            setTimeout(() => {
+                target.style.transition = '';
+                target.style.backgroundColor = '';
+            }, 3200);
+        }, 400);
+    })();
+    // ── End scroll to highlighted protocol ──────────────────────────────────────
 </script>
 </body>
 </html>

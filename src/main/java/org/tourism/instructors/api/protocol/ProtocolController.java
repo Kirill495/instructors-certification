@@ -33,18 +33,35 @@ public class ProtocolController {
             @RequestParam(required = false, defaultValue = "asc") String order,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestParam(required = false) Integer highlightId,
+            @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
             Model model) {
 
         Sort sortObj = createSort(sort, order);
-        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Pageable pageable;
+        if (highlightId != null && page == 0) {
+            int rowIndex = protocolService.getProtocolIndex(highlightId);
+            if (rowIndex >= 0) {
+                int targetPage = rowIndex / size;
+                int expandedSize = size * (targetPage + 1);
+                pageable = PageRequest.of(0, expandedSize, sortObj);
+            } else {
+                pageable = PageRequest.of(page, size, sortObj);
+            }
+        } else {
+            pageable = PageRequest.of(page, size, sortObj);
+        }
         Page<ProtocolForListDTO> pageProtocol;
         pageProtocol = protocolService.getProtocolsForList(search, pageable);
 
-        addPaginationAttributes(model, pageProtocol, page, size, sort, order);
+        addPaginationAttributes(model, pageProtocol, search, page, size, sort, order);
+        if ("XMLHttpRequest".equals(requestedWith)) {
+            return "protocols/list :: tableRows";
+        }
         return "protocols/list";
     }
 
-    private void addPaginationAttributes(Model model, Page<ProtocolForListDTO> page, int currentPage, int size, String sort, String order) {
+    private void addPaginationAttributes(Model model, Page<ProtocolForListDTO> page, String searchQuery, int currentPage, int size, String sort, String order) {
 
         model.addAttribute("protocols", page.getContent());
         model.addAttribute("currentPage", currentPage);
@@ -53,6 +70,7 @@ public class ProtocolController {
         model.addAttribute("pageSize", size);
         model.addAttribute("sortField", sort);
         model.addAttribute("sortOrder", order);
+        model.addAttribute("searchQuery", searchQuery);
 
         int totalPages = page.getTotalPages();
         int pageStart = Math.max(0, currentPage - 4);
@@ -76,6 +94,8 @@ public class ProtocolController {
         if (sort != null) {
             Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
             sortObj = Sort.by(direction, sort);
+        } else {
+            sortObj = Sort.by(Sort.Direction.ASC, "number");
         }
         return sortObj;
     }
