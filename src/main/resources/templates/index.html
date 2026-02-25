@@ -10,8 +10,8 @@
         .hero-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 60px 0;
-            margin-bottom: 40px;
+            padding: 20px 0;
+            margin-bottom: 20px;
         }
         .nav-card {
             transition: transform 0.3s, box-shadow 0.3s;
@@ -35,9 +35,6 @@
             font-weight: 600;
             margin-bottom: 15px;
         }
-        .stats-card {
-            border-left: 4px solid #667eea;
-        }
     </style>
 </head>
 <body>
@@ -46,15 +43,9 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h1 class="display-4 fw-bold mb-3">
+                <h1 class="display-8 fw-bold mb-9">
                     <i class="bi bi-compass"></i> Учет инструкторов туризма
                 </h1>
-                <p class="lead">
-                    Протоколы аттестаций и учет туристов
-                </p>
-            </div>
-            <div class="col-md-4 text-end">
-                <i class="bi bi-award-fill" style="font-size: 8rem; opacity: 0.3;"></i>
             </div>
         </div>
     </div>
@@ -62,44 +53,7 @@
 
 <div class="container mb-5">
 
-    <!-- Quick Stats (Optional - you can populate these with real data) -->
-    <div class="row mb-5">
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Всего протоколов</h6>
-                    <h2 class="mb-0" th:text="${stats != null ? stats.protocolsCount : '-'}">-</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Туристов в базе</h6>
-                    <h2 class="mb-0" th:text="${stats != null ? stats.touristsCount : '-'}">-</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Видов туризма</h6>
-                    <h2 class="mb-0" th:text="${stats != null ? stats.kindsCount : '-'}">-</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Званий</h6>
-                    <h2 class="mb-0" th:text="${stats != null ? stats.gradesCount : '-'}">-</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Navigation Cards -->
-    <h2 class="mb-4">Основные разделы</h2>
     <div class="row g-4 mb-5">
 
         <!-- Protocols -->
@@ -110,14 +64,11 @@
                         <div class="icon">
                             <i class="bi bi-file-earmark-text"></i>
                         </div>
-                        <h5 class="card-title">Протоколы</h5>
+                        <h5 class="card-title" th:text="'Протоколы' + ${stats != null ? ' (' + stats.protocolsCount + ')' : ''}">Протоколы</h5>
                         <p class="text-muted">
                             Протоколы аттестационной комиссии
                         </p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="/protocols" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-list"></i> Список
-                            </a>
                             <a href="/protocols/new" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus"></i> Создать
                             </a>
@@ -135,14 +86,11 @@
                         <div class="icon">
                             <i class="bi bi-people"></i>
                         </div>
-                        <h5 class="card-title">Туристы</h5>
+                        <h5 class="card-title" th:text="'Туристы' + ${stats != null ? ' (' + stats.touristsCount + ')' : ''}">Туристы</h5>
                         <p class="text-muted">
                             База данных туристов и инструкторов
                         </p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="/tourists" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-list"></i> Список
-                            </a>
                             <a href="/tourists/new" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus"></i> Добавить
                             </a>
@@ -165,9 +113,6 @@
                             Справочник видов туризма
                         </p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="/catalog/kinds-of-tourism" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-list"></i> Список
-                            </a>
                             <a href="/catalog/kinds-of-tourism/new" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus"></i> Добавить
                             </a>
@@ -190,9 +135,6 @@
                             Справочник инструкторских званий
                         </p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="/catalog/grades" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-list"></i> Список
-                            </a>
                             <a href="/catalog/grades/new" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus"></i> Добавить
                             </a>
@@ -241,7 +183,7 @@
 <footer class="bg-light py-4 mt-5">
     <div class="container text-center text-muted">
         <p class="mb-0">
-            <i class="bi bi-compass"></i> Система учета инструкторов туризма &copy; 2024
+            <i class="bi bi-compass"></i> Система учета инструкторов туризма &copy; 2026
         </p>
     </div>
 </footer>
