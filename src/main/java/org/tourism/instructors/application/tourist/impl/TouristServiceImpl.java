@@ -1,6 +1,9 @@
 package org.tourism.instructors.application.tourist.impl;
 
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.tourism.instructors.api.protocol.mapper.GradeAssignmentMapper;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
@@ -8,8 +11,8 @@ import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.TouristService;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
-import org.tourism.instructors.domain.tourist.TouristRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
+import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,10 +41,11 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public List<TouristDTO> getAllTourists () {
-        List<Tourist> tourists = touristRepository.findAll();
-        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(tourists);
-        return tourists.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+    public Page<TouristDTO> getAllTourists (Pageable pageable) {
+        Page<Tourist> touristsPage = touristRepository.findAll(pageable);
+        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(touristsPage.getContent());
+        List<TouristDTO> touristDTOs = touristsPage.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+        return new PageImpl<>(touristDTOs, pageable, touristsPage.getTotalElements());
     }
 
     @Override
@@ -50,11 +54,12 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public List<TouristDTO> searchTourists (String query) {
+    public Page<TouristDTO> searchTourists (String query, Pageable pageable) {
 
         List<Tourist> tourists = searchTouristsInner(query);
         Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(tourists);
-        return tourists.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+        List<TouristDTO> touristDTOs = tourists.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+        return new PageImpl<>(touristDTOs, pageable, touristDTOs.size());
     }
 
     private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
