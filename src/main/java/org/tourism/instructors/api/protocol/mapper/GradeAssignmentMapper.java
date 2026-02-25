@@ -10,7 +10,9 @@ import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 @Mapper(componentModel = "spring", uses = {GradeMapper.class, KindOfTourismMapper.class})
 public interface GradeAssignmentMapper {
 
+//    @Mapping(target = "protocolId" )
     @Mapping(target = "date", expression = "java(model.getProtocolDate())")
     @Mapping(target = "validThrough", expression = "java(model.getProtocolDate().plusYears(model.getGrade().getExpiresInYears()))")
+    @Mapping(target = "valid", expression = "java(model.getProtocolDate().plusYears(model.getGrade().getExpiresInYears()).isAfter(java.time.LocalDate.now()))")
     TouristDTO.AssignmentDTO toDTO(ProtocolRepository.GradeAssignmentProjection model);
 }

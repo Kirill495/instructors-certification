@@ -29,7 +29,6 @@ public class TouristDTO {
     private String phoneNumber;
     private String email;
     private List<AssignmentDTO> assignments;
-    private List<AssignmentDTO> validAssignments;
     public String getFullName() {
         return lastName + " " + firstName + " " + middleName;
     }
@@ -42,11 +41,13 @@ public class TouristDTO {
     @Getter
     @Setter
     public static class AssignmentDTO {
+        private int protocolId;
         @DateTimeFormat(pattern = "yyyy-MM-dd")
         private LocalDate date;
         @DateTimeFormat(pattern = "yyyy-MM-dd")
         private LocalDate validThrough;
         private GradeDTO grade;
         private KindOfTourismDTO kindOfTourism;
+        private boolean valid;
     }
 }
