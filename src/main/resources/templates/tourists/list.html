@@ -4,13 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Туристы</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        .table-card {
-            max-height: calc(100vh - 150px);
+        /*
+         * The key technique: make the TABLE itself a CSS grid container.
+         * thead and tbody become grid items that share the same column template.
+         * tbody gets overflow-y: auto so only the rows scroll — the header stays fixed.
+         *
+         * Column widths are defined once via --col-* variables and applied to both
+         * thead tr and tbody tr via grid-template-columns, so they always align.
+         */
+        :root {
+            --col-cert:   18%;
+            --col-name:   24%;
+            --col-gender: 10%;
+            --col-dob:    15%;
+            --col-grade:  33%;
+            --grid-cols: var(--col-cert) var(--col-name) var(--col-gender) var(--col-dob) var(--col-grade);
+        }
+
+        .table-wrapper {
+            /* The outer box — controls total height and clips overflow */
+            max-height: calc(100vh - 180px);
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        table.grid-table {
+            /* Turn the whole table into a grid so thead/tbody share column sizes */
+            display: grid;
+            grid-template-columns: 1fr;   /* single column: each row spans full width */
+            grid-template-rows: auto 1fr;  /* header: natural height; body: fills rest  */
+            height: 100%;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table.grid-table thead {
+            display: grid;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            width: 100%;
+        }
+
+        table.grid-table thead tr,
+        table.grid-table tbody tr {
+            display: grid;
+            grid-template-columns: var(--grid-cols);
+            width: 100%;
+        }
+
+        table.grid-table tbody {
+            display: block;
             overflow-y: auto;
+            scrollbar-gutter: stable;
+            /* subtract thead height — 45px covers most cases; tweak if needed */
+            max-height: calc(100vh - 180px - 45px);
+        }
+
+        table.grid-table th,
+        table.grid-table td {
+            /* Reset table-cell display since we're using grid */
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        table.grid-table th {
+            font-weight: 600;
+            user-select: none;
+        }
+
+        table.grid-table tbody tr:hover td {
+            background-color: rgba(0, 0, 0, 0.04);
+        }
+
+        /* Bootstrap's table-striped via nth-child since we can't rely on CSS table display */
+        table.grid-table tbody tr:nth-child(even) td {
+            background-color: rgba(0, 0, 0, 0.025);
+        }
+
+        .clickable-row {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -18,7 +100,7 @@
 <div class="container mt-3">
     <h1 class="mb-2">Туристы</h1>
 
-    <!-- Buttons and Search on One Line -->
+    <!-- Buttons and Search -->
     <div class="mb-2">
         <div class="row g-2">
             <div class="col-auto">
@@ -46,137 +128,249 @@
         </div>
     </div>
 
-    <!-- Tourists Table - FULL TABLE SCROLL VERSION -->
-    <div class="card table-card">
-        <div class="card-body">
-            <div th:if="${tourists.isEmpty()}" class="alert alert-info">
-                <span th:if="${param.search}">
-                    По запросу "<span th:text="${param.search}"></span>" туристов не найдено
-                </span>
-                <span th:unless="${param.search}">
-                    Нет зарегистрированных туристов
-                </span>
-            </div>
+    <!-- Empty state -->
+    <div th:if="${tourists.isEmpty()}" class="alert alert-info">
+        <span th:if="${param.search}">
+            По запросу "<span th:text="${param.search}"></span>" туристов не найдено
+        </span>
+        <span th:unless="${param.search}">
+            Нет зарегистрированных туристов
+        </span>
+    </div>
 
-            <table th:unless="${tourists.isEmpty()}" class="table table-striped table-hover">
-                <thead class="table-dark">
-                <tr>
-                    <th>Удостоверение</th>
-                    <th>ФИО</th>
-                    <th>Пол</th>
-                    <th>День рождения</th>
-                    <th>Звания</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="tourist : ${tourists}"
-                    class="clickable-row"
-                    th:onclick="'window.location.href=\'/tourists/' + ${tourist.getId()} + '\''">
-                    <td th:text="${tourist.getCertificationId()}" class="cert-id">Удостоверение</td>
-                    <td class="tourist-name" th:text="${tourist.getFullName()}">ФИО</td>
-                    <td th:text="${tourist.getGender()}">Пол</td>
-                    <td th:text="${tourist.getDateOfBirth()}">День рождения</td>
-                    <td>
-                        <a th:if="${tourist.getAssignments() != null && !tourist.getAssignments().isEmpty()}"
-                           th:href="@{/protocols/{id}(id=${tourist.getAssignments().getLast().protocolId})}"
-                           th:text="${tourist.getAssignments().getLast().getGrade().getTitle() + ' до ' + #temporals.format(tourist.getAssignments().getLast().getValidThrough(), 'dd.MM.yyyy') }"
-                           class="badge bg-secondary me-1 assignment-info">assignment-info</a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+    <!-- Table -->
+    <div th:unless="${tourists.isEmpty()}" class="table-wrapper">
+        <table class="grid-table">
+<!--            <thead class="table-dark">-->
+            <thead>
+            <tr>
+                <th style="cursor: pointer;" th:onclick="'sortTable(\'certificationId\')'">
+                    Удостоверение
+                    <i th:if="${sortField == 'certificationId' && sortOrder == 'asc'}" class="bi bi-sort-down ms-1"></i>
+                    <i th:if="${sortField == 'certificationId' && sortOrder == 'desc'}" class="bi bi-sort-up ms-1"></i>
+                </th>
+                <th style="cursor: pointer;" th:onclick="'sortTable(\'lastName\')'">
+                    ФИО
+                    <i th:if="${sortField == 'lastName' && sortOrder == 'asc'}" class="bi bi-sort-down ms-1"></i>
+                    <i th:if="${sortField == 'lastName' && sortOrder == 'desc'}" class="bi bi-sort-up ms-1"></i>
+                </th>
+                <th>Пол</th>
+                <th>День рождения</th>
+                <th>Звания</th>
+            </tr>
+            </thead>
+            <tbody th:fragment="tableRows" id="tourists-tbody">
+            <tr th:each="tourist : ${tourists}"
+                class="clickable-row"
+                th:onclick="'window.location.href=\'/tourists/' + ${tourist.getId()} + '\''">
+                <td th:text="${tourist.getCertificationId()}" class="cert-id"></td>
+                <td class="tourist-name" th:text="${tourist.getFullName()}"></td>
+                <td th:text="${tourist.getGender()}"></td>
+                <td th:text="${tourist.getDateOfBirth()}"></td>
+                <td>
+                    <a th:if="${tourist.getAssignments() != null && !tourist.getAssignments().isEmpty()}"
+                       th:href="@{/protocols/{id}(id=${tourist.getAssignments().getLast().protocolId})}"
+                       th:text="${tourist.getAssignments().getLast().getGrade().getTitle() + ' до ' + #temporals.format(tourist.getAssignments().getLast().getValidThrough(), 'dd.MM.yyyy')}"
+                       class="badge bg-secondary me-1 assignment-info"
+                       onclick="event.stopPropagation()"></a>
+                </td>
+            </tr>
+            <!-- Infinite scroll sentinel (inside tbody so IntersectionObserver works correctly) -->
+            <tr id="scroll-sentinel" style="height: 1px; border: none;"><td colspan="5" style="border: none; padding: 0;"></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="text-center text-muted py-2" style="display: none;">
+        <div class="spinner-border spinner-border-sm me-1" role="status"></div>
+        Загрузка...
+    </div>
+
+    <!-- End of list indicator -->
+    <div id="end-of-list" class="text-center text-muted small py-2" style="display: none;">
+        Все записи загружены (всего: <span id="total-elements" th:text="${totalElements}">0</span>)
+    </div>
+
+    <!-- Hidden metadata for JS -->
+    <div id="pagination-meta"
+         th:attr="data-current-page=${currentPage},
+                  data-total-pages=${totalPages},
+                  data-page-size=${pageSize},
+                  data-sort-field=${sortField},
+                  data-sort-order=${sortOrder},
+                  data-search=${searchQuery}"
+         style="display: none;">
     </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    // Auto-search when user types 3+ characters
+    // ── Search ───────────────────────────────────────────────────────────────
     const searchInput = document.getElementById('searchString');
     const clearButton = document.getElementById('clearSearch');
     let searchTimeout;
 
-    // Show/hide clear button based on input content
     function toggleClearButton() {
-        if (searchInput.value.trim().length > 0) {
-            clearButton.style.display = 'block';
-        } else {
-            clearButton.style.display = 'none';
-        }
+        clearButton.style.display = searchInput.value.trim().length > 0 ? 'block' : 'none';
     }
 
-    // Clear search when clicking the X button
-    clearButton.addEventListener('click', function() {
+    clearButton.addEventListener('click', function () {
         searchInput.value = '';
         toggleClearButton();
         window.location.href = '/tourists';
     });
 
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         clearTimeout(searchTimeout);
         toggleClearButton();
-
-        const searchValue = this.value.trim();
-
-        // If less than 3 characters, clear the search
-        if (searchValue.length < 3 && searchValue.length > 0) {
-            return; // Do nothing, wait for more input
-        }
-
-        // Debounce: wait 500ms after user stops typing
-        searchTimeout = setTimeout(function() {
-            if (searchValue.length >= 3) {
-                // Redirect with search parameter
-                window.location.href = '/tourists?search=' + encodeURIComponent(searchValue);
-            } else if (searchValue.length === 0) {
-                // Clear search - show all tourists
-                window.location.href = '/tourists';
-            }
+        const v = this.value.trim();
+        if (v.length > 0 && v.length < 3) return;
+        searchTimeout = setTimeout(() => {
+            window.location.href = v.length >= 3
+                ? '/tourists?search=' + encodeURIComponent(v)
+                : '/tourists';
         }, 500);
     });
 
-    // Highlight matching text in tourist names
+    // ── Highlight ────────────────────────────────────────────────────────────
     function highlightSearchTerm() {
-        const searchTerm = searchInput.value.trim();
-
-        // Only highlight if search term is 3+ characters
-        if (searchTerm.length < 3) {
-            return;
-        }
-
-        // Find all tourist name links in the table
-        const nameLinks = document.querySelectorAll('tbody td.tourist-name, td.cert-id');
-        nameLinks.forEach(link => {
-            const originalText = link.textContent;
-            // Create case-insensitive regex to find all matches
-
-            const regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
-            // Replace matches with highlighted version
-
-            const highlightedText = originalText.replace(regex, '<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 2px;">$1</mark>');
-            link.innerHTML = highlightedText;
-
+        const term = searchInput.value.trim();
+        if (term.length < 3) return;
+        const regex = new RegExp('(' + escapeRegex(term) + ')', 'gi');
+        document.querySelectorAll('tbody td.tourist-name, tbody td.cert-id').forEach(td => {
+            td.innerHTML = td.textContent.replace(
+                regex,
+                '<mark style="background-color:#ffeb3b;padding:2px 4px;border-radius:2px;">$1</mark>'
+            );
         });
     }
 
-    // Escape special regex characters in search term
-    function escapeRegex(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    function escapeRegex(s) {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // Run highlighting when page loads
-    if (searchInput.value.trim().length >= 3) {
-        highlightSearchTerm();
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    function sortTable(field) {
+        const p = new URLSearchParams(window.location.search);
+        const newOrder = (p.get('sort') === field && (p.get('order') || 'asc') === 'asc') ? 'desc' : 'asc';
+        p.set('sort', field);
+        p.set('order', newOrder);
+        window.location.href = '/tourists?' + p.toString();
     }
 
-    // Show clear button if there's initial value
+    // ── Init ─────────────────────────────────────────────────────────────────
+    if (searchInput.value.trim().length >= 3) highlightSearchTerm();
     toggleClearButton();
-
-    // Auto-focus search input on page load and move cursor to end
     searchInput.focus();
     searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+
+    // ── Infinite Scroll ──────────────────────────────────────────────────────
+    (function () {
+        const meta = document.getElementById('pagination-meta');
+        if (!meta) return;
+
+        let currentPage      = parseInt(meta.dataset.currentPage, 10);
+        const totalPages     = parseInt(meta.dataset.totalPages, 10);
+        const pageSize       = meta.dataset.pageSize;
+        const sortField      = meta.dataset.sortField;
+        const sortOrder      = meta.dataset.sortOrder;
+        const search         = meta.dataset.search;
+
+        const sentinel       = document.getElementById('scroll-sentinel');
+        const loader         = document.getElementById('loading-indicator');
+        const endMsg         = document.getElementById('end-of-list');
+        const tbody          = document.getElementById('tourists-tbody');
+
+        if (!tbody || !sentinel) return;
+
+        if (currentPage >= totalPages - 1) endMsg.style.display = 'block';
+
+        let isFetching = false;
+
+        function buildUrl(page) {
+            const p = new URLSearchParams();
+            p.set('page', page);
+            p.set('size', pageSize);
+            if (sortField) p.set('sort', sortField);
+            if (sortOrder) p.set('order', sortOrder);
+            if (search)    p.set('search', search);
+            return '/api/tourists?' + p.toString();
+        }
+
+        async function loadNextPage() {
+            if (isFetching || currentPage >= totalPages - 1) return;
+            isFetching = true;
+            loader.style.display = 'block';
+
+            try {
+                const nextPage = currentPage + 1;
+                const res = await fetch(buildUrl(nextPage));
+                if (!res.ok) throw new Error('Network error');
+                const data = await res.json();
+
+                data.content.forEach(tourist => {
+                    // Insert before the sentinel row so it stays last
+                    tbody.insertBefore(buildRow(tourist), sentinel);
+                });
+
+                if (searchInput.value.trim().length >= 3) highlightSearchTerm();
+
+                currentPage = nextPage;
+                if (currentPage >= data.totalPages - 1) {
+                    endMsg.style.display = 'block';
+                    observer.disconnect();
+                }
+            } catch (err) {
+                console.error('Infinite scroll error:', err);
+            } finally {
+                isFetching = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        function buildRow(tourist) {
+            const tr = document.createElement('tr');
+            tr.className = 'clickable-row';
+            tr.onclick = () => window.location.href = `/tourists/${tourist.id}`;
+
+            const lastAssignment = tourist.assignments?.at(-1);
+            const assignmentHtml = lastAssignment
+                ? `<a href="/protocols/${lastAssignment.protocolId}"
+                      class="badge bg-secondary me-1 assignment-info"
+                      onclick="event.stopPropagation()">
+                       ${lastAssignment.grade?.title ?? ''} до ${lastAssignment.validThrough ?? ''}
+                   </a>`
+                : '';
+
+            tr.innerHTML = `
+                <td class="cert-id">${tourist.certificationId ?? ''}</td>
+                <td class="tourist-name">${tourist.fullName ?? ''}</td>
+                <td>${tourist.gender ?? ''}</td>
+                <td>${tourist.dateOfBirth ?? ''}</td>
+                <td>${assignmentHtml}</td>
+            `;
+            return tr;
+        }
+
+        // Observe the sentinel relative to tbody (the real scroll container)
+        const observer = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) loadNextPage();
+        }, {
+            root: tbody,
+            rootMargin: '100px',
+            threshold: 0
+        });
+
+        if (currentPage < totalPages - 1) observer.observe(sentinel);
+
+        // Belt-and-suspenders: also fire on tbody scroll
+        tbody.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = tbody;
+            if (scrollHeight - scrollTop - clientHeight < 100) loadNextPage();
+        });
+    })();
+    // ── End Infinite Scroll ──────────────────────────────────────────────────
 </script>
 </body>
 </html>

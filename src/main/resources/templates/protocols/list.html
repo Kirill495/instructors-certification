@@ -87,14 +87,12 @@
                     <th style="width: 10%; cursor: pointer;"
                         th:onclick="'sortTable(\'number\')'">
                         Номер
-                        <!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
                         <i th:if="${sortField == 'number' && sortOrder == 'asc'}" class="bi bi-sort-numeric-down ms-1"></i>
                         <i th:if="${sortField == 'number' && sortOrder == 'desc'}" class="bi bi-sort-numeric-up ms-1"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;"
                         th:onclick="'sortTable(\'date\')'">
                         Дата
-                        <!--                        <i class="bi bi-arrow-down-up ms-1"></i>-->
                         <i th:if="${sortField == 'date' && sortOrder == 'asc'}" class="bi bi-sort-down ms-1"></i>
                         <i th:if="${sortField == 'date' && sortOrder == 'desc'}" class="bi bi-sort-up ms-1"></i>
                     </th>
@@ -154,7 +152,8 @@
                   data-sort-field=${sortField},
                   data-sort-order=${sortOrder},
                   data-search=${searchQuery}"
-         style="display: none;"></div>
+         style="display: none;">
+    </div>
 </div>
 
 

@@ -1,13 +1,15 @@
 package org.tourism.instructors.api.tourist;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.tourist.TouristService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/tourists")
@@ -20,16 +22,40 @@ public class TouristController {
     }
 
     @GetMapping
-    public String listTourists(@RequestParam(value = "search", required = false) String searchParam, Model model) {
-        List<TouristDTO> tourists;
-        if (searchParam != null && !searchParam.trim().isEmpty()) {
-            tourists = touristService.searchTourists(searchParam);
+    public String listTourists(@RequestParam(required = false) String search,
+                               @RequestParam(required = false, defaultValue = "certificationId") String sort,
+                               @RequestParam(required = false, defaultValue = "asc") String order,
+                               @RequestParam(required = false, defaultValue = "0") int page,
+                               @RequestParam(required = false, defaultValue = "20") int size,
+                               @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
+                               Model model) {
+        Sort sortObj = createSort(sort, order);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<TouristDTO> touristsPage;
+        if (search != null && !search.trim().isEmpty()) {
+            touristsPage = touristService.searchTourists(search, pageable);
         } else {
-            tourists = touristService.getAllTourists();
+            touristsPage = touristService.getAllTourists(pageable);
         }
-        model.addAttribute("tourists", tourists);
-        model.addAttribute("search", searchParam);
+
+        addPaginationAttributes(model, touristsPage, search, page, size, sort, order);
+        if ("XMLHttpRequest".equals(requestedWith)) {
+            return "tourists/list :: tableRows";
+        }
         return "tourists/list";
+    }
+
+    private static void addPaginationAttributes (Model model, Page<TouristDTO> touristsPage, String search, int currentPage, int size, String sort, String order) {
+        model.addAttribute("tourists", touristsPage.getContent());
+
+        model.addAttribute("search", search);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", touristsPage.getTotalPages());
+        model.addAttribute("totalElements", touristsPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("sortField", sort);
+        model.addAttribute("sortOrder", order);
+        model.addAttribute("searchQuery", search);
     }
 
     @GetMapping("/{id}")
@@ -59,4 +85,14 @@ public class TouristController {
         redirectAttributes.addFlashAttribute("success", "Данные туриста успешно обновлены");
         return "redirect:/tourists";
     }
+
+    private static Sort createSort(String sort, String order) {
+        Sort sortObj = Sort.unsorted();
+        if (sort != null) {
+            Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sortObj = Sort.by(direction, sort);
+        }
+        return sortObj;
+    }
+
 }
