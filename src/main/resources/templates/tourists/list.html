@@ -65,20 +65,23 @@
                     <th>ФИО</th>
                     <th>Пол</th>
                     <th>День рождения</th>
+                    <th>Звания</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="tourist : ${tourists}">
+                <tr th:each="tourist : ${tourists}"
+                    class="clickable-row"
+                    th:onclick="'window.location.href=\'/tourists/' + ${tourist.getId()} + '\''">
                     <td th:text="${tourist.getCertificationId()}" class="cert-id">Удостоверение</td>
-                    <td>
-                        <a th:href="@{/tourists/{id}(id=${tourist.id})}"
-                           th:text="${tourist.getFullName()}"
-                           class="tourist-name">
-                            ФИО
-                        </a>
-                    </td>
+                    <td class="tourist-name" th:text="${tourist.getFullName()}">ФИО</td>
                     <td th:text="${tourist.getGender()}">Пол</td>
                     <td th:text="${tourist.getDateOfBirth()}">День рождения</td>
+                    <td>
+                        <a th:if="${tourist.getAssignments() != null && !tourist.getAssignments().isEmpty()}"
+                           th:href="@{/protocols/{id}(id=${tourist.getAssignments().getLast().protocolId})}"
+                           th:text="${tourist.getAssignments().getLast().getGrade().getTitle() + ' до ' + #temporals.format(tourist.getAssignments().getLast().getValidThrough(), 'dd.MM.yyyy') }"
+                           class="badge bg-secondary me-1 assignment-info">assignment-info</a>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -144,7 +147,7 @@
         }
 
         // Find all tourist name links in the table
-        const nameLinks = document.querySelectorAll('tbody a.tourist-name, td.cert-id');
+        const nameLinks = document.querySelectorAll('tbody td.tourist-name, td.cert-id');
         nameLinks.forEach(link => {
             const originalText = link.textContent;
             // Create case-insensitive regex to find all matches

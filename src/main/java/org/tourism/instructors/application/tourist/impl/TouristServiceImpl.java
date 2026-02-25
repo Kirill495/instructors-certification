@@ -1,5 +1,6 @@
 package org.tourism.instructors.application.tourist.impl;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.tourism.instructors.api.protocol.mapper.GradeAssignmentMapper;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
@@ -10,7 +11,11 @@ import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.TouristRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class TouristServiceImpl implements TouristService {
@@ -34,7 +39,9 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public List<TouristDTO> getAllTourists () {
-        return touristRepository.findAll().stream().map(touristMapper::toDTO).toList();
+        List<Tourist> tourists = touristRepository.findAll();
+        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(tourists);
+        return tourists.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
     }
 
     @Override
@@ -44,7 +51,22 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public List<TouristDTO> searchTourists (String query) {
-        return searchTouristsInner(query).stream().map(touristMapper::toDTO).toList();
+
+        List<Tourist> tourists = searchTouristsInner(query);
+        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(tourists);
+        return tourists.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+    }
+
+    private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
+        return assignments.getOrDefault(tourist.getId(), Collections.emptyList()).stream().sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate)).toList();
+    }
+
+    private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments (List<Tourist> tourists) {
+        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = protocolRepository
+            .getAssignments(tourists.stream().map(Tourist::getId).toList())
+            .stream()
+            .collect(Collectors.groupingBy(ProtocolRepository.GradeAssignmentProjection::getTouristId));
+        return assignments;
     }
 
     private List<Tourist> searchTouristsInner (String query) {
