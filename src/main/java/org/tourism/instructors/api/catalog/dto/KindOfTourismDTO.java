@@ -10,7 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class KindOfTourismDTO {
-    private int id;
+    private Integer id;
     private String title;
     private boolean inactive;
 
