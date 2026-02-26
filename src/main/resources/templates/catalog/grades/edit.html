@@ -12,25 +12,15 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-6 offset-md-3">
-            <h1 class="mb-4" th:text="${grade.id == 0 ? 'Новое звание' : 'Редактировать звание'}">
+            <h1 class="mb-4" th:text="${grade.isNew() ? 'Новое звание' : 'Редактировать звание'}">
                 Редактировать звание
             </h1>
 
             <div class="card">
                 <div class="card-body">
-                    <form th:action="${grade.id == 0 ? '/catalog/grades/new' : '/catalog/grades/' + grade.id + '/edit'}"
+                    <form th:action="${grade.isNew() ? '/catalog/grades/new' : '/catalog/grades/' + grade.id + '/edit'}"
                           th:object="${grade}"
                           method="post">
-
-                        <!-- ID (readonly if editing) -->
-                        <div th:if="${grade.id != 0}" class="mb-3">
-                            <label for="id" class="form-label">ID</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="id"
-                                   th:field="*{id}"
-                                   readonly>
-                        </div>
 
                         <!-- Title -->
                         <div class="mb-3">
@@ -41,6 +31,16 @@
                                    th:field="*{title}"
                                    required
                                    placeholder="Введите звание">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="expiresInYears" class="form-label">Срок действия <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="expiresInYears"
+                                   th:field="*{expiresInYears}"
+                                   required
+                                   placeholder="срок действия">
                         </div>
 
                         <!-- Inactive Checkbox -->
@@ -61,7 +61,7 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                             <a href="/catalog/grades" class="btn btn-secondary">Отмена</a>
                             <button type="submit" class="btn btn-primary">
-                                <span th:text="${grade.id == 0 ? 'Создать' : 'Сохранить'}">Сохранить</span>
+                                <span th:text="${grade.isNew() ? 'Создать' : 'Сохранить'}">Сохранить</span>
                             </button>
                         </div>
                     </form>

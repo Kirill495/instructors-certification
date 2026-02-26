@@ -10,8 +10,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GradeDTO {
-    private int id;
+    private Integer id;
     private String title;
     private boolean inactive;
     private int expiresInYears;
+    public boolean isNew() {
+        return id == null;
+    }
 }
