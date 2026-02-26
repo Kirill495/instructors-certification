@@ -36,13 +36,11 @@
             </div>
             <table th:unless="${grades.isEmpty()}" class="table table-striped table-hover">
                 <tbody>
-                <tr th:each="grade : ${grades}">
+                <tr th:each="grade : ${grades}"
+                    class="clickable-row"
+                    th:onclick="'window.location.href=\'/catalog/grades/' + ${grade.id} + '\''">
                     <td th:text="${grade.title}">Название</td>
-                    <td>
-                        <a th:href="@{/catalog/grades/{id}(id=${grade.id})}"
-                           class="btn btn-sm btn-info">Просмотр</a>
-                        <a th:href="@{/catalog/grades/{id}/edit(id=${grade.id})}" class="btn btn-sm btn-info">Изменить</a>
-                    </td>
+                    <td th:text="${grade.expiresInYears}">Срок действия</td>
                 </tr>
                 </tbody>
             </table>

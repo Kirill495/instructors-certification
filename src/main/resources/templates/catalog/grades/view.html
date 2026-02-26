@@ -19,29 +19,21 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-3">
-                            <strong>ID:</strong>
-                        </div>
-                        <div class="col-md-9">
-                            <span th:text="${grade.id}">1</span>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-3">
                             <strong>Название:</strong>
                         </div>
                         <div class="col-md-9">
                             <span th:text="${grade.title}">Инструктор</span>
                         </div>
                     </div>
-                    <div class="row mb3">
+                    <div class="row mb-3">
                         <div class="col-md-3">
-                            <strong>Статус:</strong>
+                            <strong>Срок действия (лет):</strong>
                         </div>
                         <div class="col-md-9">
-                            <span th:if="${grade.inactive}" class="badge bg-secondary">Неактивный</span>
-                            <span th:unless="${grade.inactive}" class="badge bg-sucess">Активный</span>
+                            <span th:text="${grade.expiresInYears}">0</span>
                         </div>
+                    </div>
+                    <div th:if="${grade.inactive}" class="row mb3">
                         <div th:if="${grade.inactive}" class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i>
                             Это звание помечано как неактивное и не может использоваться в новых протоколах.
