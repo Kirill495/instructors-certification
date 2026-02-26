@@ -18,7 +18,7 @@ import java.util.List;
 @Getter
 @Setter
 public class TouristDTO {
-    private int id;
+    private Integer id;
     private String certificationId;
     private String firstName;
     private String lastName;
