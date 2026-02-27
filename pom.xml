@@ -32,6 +32,7 @@
 		<org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+		<org.apache.poi.version>5.4.1</org.apache.poi.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -102,6 +103,11 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${org.apache.poi.version}</version>
 		</dependency>
 	</dependencies>
 
