@@ -5,7 +5,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.tourism.instructors.api.protocol.mapper.GradeAssignmentMapper;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
@@ -26,13 +25,13 @@ public class TouristServiceImpl implements TouristService {
     private final TouristRepository touristRepository;
     private final ProtocolRepository protocolRepository;
     private final TouristMapper touristMapper;
-    private final GradeAssignmentMapper gradeAssignmentMapper;
 
-    public TouristServiceImpl (TouristRepository touristRepository, ProtocolRepository protocolRepository, TouristMapper touristMapper, GradeAssignmentMapper gradeAssignmentMapper) {
+    public TouristServiceImpl (TouristRepository touristRepository,
+                               ProtocolRepository protocolRepository,
+                               TouristMapper touristMapper) {
         this.touristRepository = touristRepository;
         this.protocolRepository = protocolRepository;
         this.touristMapper = touristMapper;
-        this.gradeAssignmentMapper = gradeAssignmentMapper;
     }
 
     @Override
@@ -62,24 +61,9 @@ public class TouristServiceImpl implements TouristService {
         return new PageImpl<>(touristDTOs, pageable, touristDTOs.size());
     }
 
-    private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
-        return assignments.getOrDefault(tourist.getId(), Collections.emptyList()).stream().sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate)).toList();
-    }
-
-    private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments (List<Tourist> tourists) {
-        Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = protocolRepository
-            .getAssignments(tourists.stream().map(Tourist::getId).toList())
-            .stream()
-            .collect(Collectors.groupingBy(ProtocolRepository.GradeAssignmentProjection::getTouristId));
-        return assignments;
-    }
-
-    private List<Tourist> searchTouristsInner (String query) {
-        if (containsOnlyDigits(query)) {
-            return touristRepository.searchByCertificationId(query);
-        } else {
-            return touristRepository.searchByLastNameStartingWithIgnoreCase(query);
-        }
+    @Override
+    public void delete (int touristId) {
+        touristRepository.deleteById(touristId);
     }
 
     @Override
@@ -91,8 +75,26 @@ public class TouristServiceImpl implements TouristService {
     public TouristDTO findTouristById (int id) {
         Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new RuntimeException("турист не найден"));
         List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
-        TouristDTO touristInfo = touristMapper.toDTO(tourist, assignments);
-        return touristInfo;
+        return touristMapper.toDTO(tourist, assignments);
+    }
+
+    private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
+        return assignments.getOrDefault(tourist.getId(), Collections.emptyList()).stream().sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate)).toList();
+    }
+
+    private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments (List<Tourist> tourists) {
+        return protocolRepository
+            .getAssignments(tourists.stream().map(Tourist::getId).toList())
+            .stream()
+            .collect(Collectors.groupingBy(ProtocolRepository.GradeAssignmentProjection::getTouristId));
+    }
+
+    private List<Tourist> searchTouristsInner (String query) {
+        if (containsOnlyDigits(query)) {
+            return touristRepository.searchByCertificationId(query);
+        } else {
+            return touristRepository.searchByLastNameStartingWithIgnoreCase(query);
+        }
     }
 
     private boolean containsOnlyDigits (String str) {

@@ -15,11 +15,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProtocolDTO {
-    private int id;
+    private Integer id;
     private String number;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
     private String order;
     private List<ProtocolContentDTO> contentRows = new ArrayList<>();
+    public boolean isNewItem() {
+        return id == null;
+    }
 }
 
