@@ -76,6 +76,14 @@ public class TouristController {
         return "tourists/edit";
     }
 
+    @PostMapping("/new")
+    public String createTourist(@ModelAttribute TouristDTO touristDTO,
+                                RedirectAttributes redirectAttributes) {
+        touristService.save(touristDTO);
+        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста сохранены");
+        return "redirect:/tourists";
+    }
+
     @PostMapping("/{id}/edit")
     public String updateTourist(@PathVariable int id,
                                 @ModelAttribute TouristDTO tourist,
@@ -83,6 +91,14 @@ public class TouristController {
         tourist.setId(id);
         touristService.save(tourist);
         redirectAttributes.addFlashAttribute("success", "Данные туриста успешно обновлены");
+        return "redirect:/tourists";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String deleteTourist(@PathVariable int id,
+                                RedirectAttributes redirectAttributes) {
+        touristService.delete(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста удалены");
         return "redirect:/tourists";
     }
 

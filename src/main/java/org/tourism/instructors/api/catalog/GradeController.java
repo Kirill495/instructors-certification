@@ -61,7 +61,7 @@ public class GradeController {
     public String createGrade(@ModelAttribute GradeDTO gradeDTO,
                               RedirectAttributes redirectAttributes) {
         catalogService.saveGrade(gradeDTO);
-        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно обновлено");
+        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно создано");
         return "redirect:/catalog/grades";
     }
 

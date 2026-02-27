@@ -161,7 +161,7 @@
                             </span>
                             <span th:unless="${tourist.assignments == null or tourist.getAssignments().isEmpty()}"
                                   th:text="${tourist.assignments.getLast().grade.title} + ${tourist.assignments.getLast().isValid ? ' истекает ': ' истек '} + ${#temporals.format(tourist.getAssignments.getLast().validThrough, 'dd.MM.yyyy')}"></span>
-                        </span>
+                            </span>
 
                         </strong>
                         <i class="bi bi-chevron-down"></i>

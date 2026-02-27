@@ -19,3 +19,10 @@ spring:
     baseline-on-migrate: true
     default-schema: instructors_grades
     schemas: instructors_grades
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        orm.jdbc.bind: TRACE
+

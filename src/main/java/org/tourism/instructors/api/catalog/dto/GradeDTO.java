@@ -14,7 +14,7 @@ public class GradeDTO {
     private String title;
     private boolean inactive;
     private int expiresInYears;
-    public boolean isNew() {
+    public boolean isNewItem () {
         return id == null;
     }
 }

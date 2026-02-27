@@ -44,13 +44,13 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-6 offset-md-3">
-            <h1 class="mb-4" th:text="${tourist.id == null ? 'Новый турист' : 'Редактировать данные туриста'}">
+            <h1 class="mb-4" th:text="${tourist.isNewItem() ? 'Новый турист' : 'Редактировать данные туриста'}">
                 Редактировать данные туриста
             </h1>
 
             <div class="card">
                 <div class="card-body">
-                    <form th:action="${tourist.id == null ? '/tourists/new' : '/tourists/' + tourist.id + '/edit'}"
+                    <form th:action="${tourist.isNewItem() ? '/tourists/new' : '/tourists/' + tourist.id + '/edit'}"
                           th:object="${tourist}"
                           method="post">
 
@@ -172,7 +172,7 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                             <a href="/tourists" class="btn btn-secondary">Отмена</a>
                             <button type="submit" class="btn btn-primary">
-                                <span th:text="${tourist.id == null ? 'Создать' : 'Сохранить'}">Сохранить</span>
+                                <span th:text="${tourist.isNewItem() ? 'Создать' : 'Сохранить'}">Сохранить</span>
                             </button>
                         </div>
                     </form>

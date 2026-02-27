@@ -34,7 +34,7 @@ public class TouristDTO {
     }
 
     public boolean isNewItem() {
-        return id == 0;
+        return id == null;
     }
 
     @NoArgsConstructor
