@@ -13,6 +13,7 @@ function sortTable(field) {
     // Build new URL with sort parameters
     urlParams.set('sort', field);
     urlParams.set('order', newOrder);
+    urlParams.set('order', newOrder);
 
     window.location.href = '/protocols?' + urlParams.toString();
 }
@@ -272,14 +273,8 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
 })();
 // ── End scroll to highlighted protocol ──────────────────────────────────────
 // ── Excel Export ────────────────────────────────────────────────────────────
-async function exportToExcel() {
-    const btn = document.querySelector('button[onclick="exportToExcel()"]');
+async function downloadExcel(btn, exportUrl, modal) {
     const originalHtml = btn.innerHTML;
-
-    // Build query params from current page state (search + sort)
-    const urlParams = new URLSearchParams(window.location.search);
-    const exportUrl = '/api/report/protocols?' + urlParams.toString();
-
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Экспорт...';
 
@@ -293,13 +288,21 @@ async function exportToExcel() {
         a.href = url;
 
         const disposition = response.headers.get('Content-Disposition');
-        const match = disposition && disposition.match(/filename="?([^"]+)"?/);
-        a.download = match ? match[1] : 'protocols.xlsx';
+        let filename = 'protocols.xlsx';
+        if (disposition) {
+            const rfc5987 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            const plain   = disposition.match(/filename="?([^";]+)"?/);
+            if (rfc5987) filename = decodeURIComponent(rfc5987[1]);
+            else if (plain) filename = plain[1];
+        }
+        a.download = filename;
 
         document.body.appendChild(a);
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+
+        if (modal) modal.hide();
     } catch (err) {
         alert('Не удалось экспортировать: ' + err.message);
     } finally {
@@ -307,4 +310,20 @@ async function exportToExcel() {
         btn.innerHTML = originalHtml;
     }
 }
+
+document.getElementById('exportConfirmBtn').addEventListener('click', async function () {
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTill = document.getElementById('dateTill').value;
+
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTill) params.set('dateTill', dateTill);
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+    await downloadExcel(this, '/api/report/protocols?' + params.toString(), modal);
+});
+
+document.getElementById('exportAllBtn').addEventListener('click', async function () {
+    await downloadExcel(this, '/api/report/protocols', null);
+});
 // ── End Excel Export ─────────────────────────────────────────────────────────

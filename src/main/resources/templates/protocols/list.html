@@ -46,7 +46,7 @@
 
     <!-- Toolbar -->
     <div class="mb-2">
-        <div class="row g-2">
+        <div class="row g-2 align-items-center">
             <div class="col-auto">
                 <a href="/protocols/new" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Добавить
@@ -54,9 +54,6 @@
                 <a href="/" class="btn btn-secondary">
                     <i class="bi bi-house"></i> Главная
                 </a>
-                <button type="button" class="btn btn-success" onclick="exportToExcel()" title="Экспорт в Excel">
-                    <i class="bi bi-file-earmark-excel"></i> Excel
-                </button>
             </div>
             <div class="col">
                 <div class="position-relative">
@@ -72,6 +69,25 @@
                             title="Очистить поиск">
                         <i class="bi bi-x-circle-fill"></i>
                     </button>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="dropdown">
+                    <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#exportModal">
+                                <i class="bi bi-calendar-range me-2"></i>За период...
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" id="exportAllBtn">
+                                <i class="bi bi-download me-2"></i>Все данные
+                            </button>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -156,6 +172,44 @@
                   data-sort-order=${sortOrder},
                   data-search=${searchQuery}"
          style="display: none;">
+    </div>
+</div>
+
+<!-- Export Period Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Период выгрузки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="dateFrom" class="form-label">С</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" id="dateFrom">
+                        <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('dateFrom').value = ''">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-1">
+                    <label for="dateTill" class="form-label">По</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" id="dateTill">
+                        <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('dateTill').value = ''">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" id="exportConfirmBtn">
+                    <i class="bi bi-file-earmark-excel"></i> Сформировать
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
