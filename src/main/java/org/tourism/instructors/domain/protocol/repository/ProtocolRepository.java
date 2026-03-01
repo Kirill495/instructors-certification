@@ -13,9 +13,30 @@ import org.tourism.instructors.domain.protocol.Protocol;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
+
+    @Query("SELECT p.date as assignmentDate, " +
+                   "t.firstName as firstName, " +
+                   "t.lastName as lastName, " +
+                   "t.middleName as middleName, " +
+                   "c.club as club, " +
+                   "g.title as gradeTitle, " +
+                   "COALESCE(g.expiresInYears, 0) as expiresInYears, " +
+                   "COALESCE(k.title, '') as kindOfTourismTitle " +
+           "FROM " +
+               "Protocol p " +
+               "LEFT JOIN p.protocolContents AS c " +
+               "LEFT JOIN c.tourist AS t " +
+               "LEFT JOIN c.grade as g " +
+               "LEFT JOIN c.kindOfTourism as k " +
+           "WHERE p.date between :dateFrom AND :dateTill " +
+           "ORDER BY assignmentDate")
+    List<ReportAssignmentProjection> getAssignmentsForReport(
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTill") LocalDate dateTill);
 
     @Query("SELECT DISTINCT p.id as id, p.number as number, p.date as date FROM Protocol p")
     Page<ProtocolProjection> findAllProtocols(Pageable pageable);
@@ -61,5 +82,17 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
         Integer getId();
         String getNumber();
         LocalDate getDate();
+    }
+
+    interface ReportAssignmentProjection {
+        String getFirstName();
+        String getLastName();
+        String getMiddleName();
+        String getClub();
+        String getGradeTitle();
+        int getExpiresInYears();
+        String getKindOfTourismTitle();
+        LocalDate getAssignmentDate();
+
     }
 }
