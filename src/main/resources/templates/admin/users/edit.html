@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${user.isNewItem() ? 'Новый пользователь' : 'Редактировать пользователя'}">Пользователь</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h1 class="mb-4" th:text="${user.isNewItem() ? 'Новый пользователь' : 'Редактировать пользователя'}">
+                Пользователь
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="${user.isNewItem() ? '/admin/users/new' : '/admin/users/' + user.id + '/edit'}"
+                          th:object="${user}"
+                          method="post">
+
+                        <div class="mb-3" th:if="${user.isNewItem()}">
+                            <label for="name" class="form-label">Имя пользователя <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="name"
+                                   th:field="*{name}"
+                                   required
+                                   placeholder="Введите имя пользователя">
+                        </div>
+
+                        <div class="mb-3" th:unless="${user.isNewItem()}">
+                            <label class="form-label">Имя пользователя</label>
+                            <p class="form-control-plaintext fw-bold" th:text="${user.name}"></p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Пароль
+                                <span th:if="${user.isNewItem()}" class="text-danger">*</span>
+                                <small th:unless="${user.isNewItem()}" class="text-muted">(оставьте пустым, чтобы не менять)</small>
+                            </label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   th:field="*{password}"
+                                   th:required="${user.isNewItem()}"
+                                   placeholder="Введите пароль">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Роль <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role" th:field="*{role}" required>
+                                <option value="ROLE_USER" th:selected="${user.role == 'ROLE_USER'}">Пользователь</option>
+                                <option value="ROLE_ADMIN" th:selected="${user.role == 'ROLE_ADMIN'}">Администратор</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <a href="/admin/users" class="btn btn-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary"
+                                    th:text="${user.isNewItem() ? 'Создать' : 'Сохранить'}">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
