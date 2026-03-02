@@ -1,0 +1,95 @@
+/* Table styling for Excel-like appearance */
+.protocol-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.protocol-table thead th {
+    background-color: #e9ecef;
+    font-weight: 600;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+    vertical-align: middle;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.protocol-table tbody td {
+    padding: 4px;
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.protocol-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Make form controls fit table cells */
+.protocol-table select,
+.protocol-table input[type="text"] {
+    width: 100%;
+    border: 1px solid #ced4da;
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+.protocol-table select:focus,
+.protocol-table input[type="text"]:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Row number column */
+.row-num-cell {
+    width: 50px;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* Delete button column */
+.delete-cell {
+    width: 60px;
+    text-align: center;
+}
+
+.delete-cell .btn {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+/* Column widths */
+.tourist-col { width: 25%; }
+.kind-col { width: 20%; }
+.grade-col { width: 20%; }
+.cert-col { width: 15%; }
+.club-col { width: 20%; }
+
+/* Select2 customization for table */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 31px;
+    padding: 2px 8px;
+    font-size: 14px;
+}
+
+/* Table container with scrolling */
+.table-container {
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
