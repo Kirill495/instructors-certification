@@ -9,6 +9,7 @@ import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.TouristService;
+import org.tourism.instructors.application.tourist.expetion.TouristCannotBeDeletedException;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
@@ -63,6 +64,9 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public void delete (int touristId) {
+        if (!protocolRepository.getAssignments(List.of(touristId)).isEmpty()) {
+            throw new TouristCannotBeDeletedException("У туриста есть присвоения званий. Невозможно удалить.", touristId);
+        }
         touristRepository.deleteById(touristId);
     }
 

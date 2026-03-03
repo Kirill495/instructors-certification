@@ -90,7 +90,7 @@ public class ProtocolController {
     }
 
     private static Sort createSort (String sort, String order) {
-        Sort sortObj = Sort.unsorted();
+        Sort sortObj;
         if (sort != null) {
             Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
             sortObj = Sort.by(direction, sort);
@@ -129,4 +129,11 @@ public class ProtocolController {
         redirectAttributes.addFlashAttribute("successMessage", "Протокол записан");
         return "redirect:/protocols";
     }
+    @PostMapping("/{id}/delete")
+    public String deleteProtocol(@PathVariable int id, RedirectAttributes redirectAttributes) {
+        protocolService.deleteProtocol(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Протокол удален");
+        return "redirect:/protocols";
+    }
+
 }
