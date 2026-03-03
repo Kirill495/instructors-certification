@@ -1,0 +1,33 @@
+# Version control
+.git
+
+# Build output (Maven rebuilds inside Docker)
+target/
+
+# IDE files
+.idea
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings
+.factorypath
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Secrets and local config (passed via env vars in docker-compose)
+config/
+.env
+
+# Maven wrapper (not used — Dockerfile uses mvn from the Maven image)
+mvnw
+mvnw.cmd
+.mvn/
+
+# Documentation
+*.md
