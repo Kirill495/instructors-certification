@@ -13,7 +13,6 @@ import org.tourism.instructors.domain.protocol.Protocol;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
@@ -55,6 +54,7 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
 
     @Query("SELECT count(*) FROM Protocol p WHERE p.id < :protocolId")
     int countOfRowsBefore(@Param("protocolId") int protocolId);
+
 
     @Query("SELECT p.id as protocolId, " +
                    "p.date as protocolDate, " +

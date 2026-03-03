@@ -23,6 +23,11 @@
     </style>
 </head>
 <body>
+<div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Deletion not allowed:</strong>
+    <span th:text="${errorMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
 <div class="container mt-5">
     <!--    <h1 class="mb-4">Просмотр туриста</h1>-->
     <h3 class="mb-2" th:text="${tourist.getFullName()}">Просмотр туриста</h3>
@@ -160,7 +165,7 @@
                                 Информация о званиях отсутствует
                             </span>
                             <span th:unless="${tourist.assignments == null or tourist.getAssignments().isEmpty()}"
-                                  th:text="${tourist.assignments.getLast().grade.title} + ${tourist.assignments.getLast().isValid ? ' истекает ': ' истек '} + ${#temporals.format(tourist.getAssignments.getLast().validThrough, 'dd.MM.yyyy')}"></span>
+                                  th:text="${tourist.assignments.getLast().grade.title} + ${tourist.assignments.getLast().isValid ? ' истекает ': ' истек '} + ${#temporals.format(tourist.getAssignments.getLast().validThrough, 'dd.MM.yyyy')}">
                             </span>
 
                         </strong>
@@ -176,7 +181,7 @@
                             <thead class="table-light">
                             <tr>
                                 <th>Вид туризма</th>
-                                <th>Разряд</th>
+                                <th>Звание</th>
                                 <th>Дата присвоения</th>
                                 <th>Действителен до</th>
                             </tr>
@@ -199,7 +204,7 @@
                     </div>
                     <div th:if="${tourist.assignments == null or tourist.assignments.isEmpty()}"
                          class="text-muted p-3">
-                        <i class="bi bi-info-circle"></i> Разряды не присвоены
+                        <i class="bi bi-info-circle"></i> Звания не присваивались
                     </div>
                 </div>
             </div>

@@ -90,7 +90,7 @@ public class TouristController {
                                 RedirectAttributes redirectAttributes) {
         tourist.setId(id);
         touristService.save(tourist);
-        redirectAttributes.addFlashAttribute("success", "Данные туриста успешно обновлены");
+        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста успешно обновлены");
         return "redirect:/tourists";
     }
 
@@ -98,7 +98,7 @@ public class TouristController {
     public String deleteTourist(@PathVariable int id,
                                 RedirectAttributes redirectAttributes) {
         touristService.delete(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста удалены");
+        redirectAttributes.addFlashAttribute("successMessage", "Сведения о туристе удалены");
         return "redirect:/tourists";
     }
 

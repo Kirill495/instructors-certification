@@ -5,7 +5,6 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
@@ -13,6 +12,8 @@ import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
+import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
+import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 
 import java.util.Comparator;
@@ -82,5 +83,12 @@ public class ProtocolServiceImpl implements ProtocolService {
     @Override
     public void saveProtocol (ProtocolDTO protocolDTO) {
         protocolRepository.save(protocolMapper.toEntity(protocolDTO));
+    }
+
+    @Transactional
+    @Override
+    public void deleteProtocol (int protocolId) {
+        Protocol protocol = protocolRepository.findById(protocolId).orElseThrow(() -> new ProtocolNotFoundException(protocolId));
+        protocolRepository.delete(protocol);
     }
 }
