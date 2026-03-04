@@ -1,10 +1,7 @@
 package org.tourism.instructors.api.tourist.dto;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
@@ -17,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class TouristDTO {
     private Integer id;
     private String certificationId;

@@ -9,7 +9,7 @@ import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.TouristService;
-import org.tourism.instructors.application.tourist.expetion.TouristCannotBeDeletedException;
+import org.tourism.instructors.application.tourist.exception.TouristCannotBeDeletedException;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
