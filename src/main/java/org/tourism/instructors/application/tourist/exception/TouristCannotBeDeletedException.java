@@ -1,4 +1,4 @@
-package org.tourism.instructors.application.tourist.expetion;
+package org.tourism.instructors.application.tourist.exception;
 
 import lombok.Getter;
 

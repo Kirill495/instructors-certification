@@ -19,6 +19,11 @@ spring:
     baseline-on-migrate: true
     default-schema: instructors_grades
     schemas: instructors_grades
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN}
+    username: ${TELEGRAM_BOT_USERNAME}
+
 logging:
   level:
     org:
