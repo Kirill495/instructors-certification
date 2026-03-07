@@ -114,37 +114,49 @@
             <!-- Collapsed Content -->
             <div class="collapse" id="contactInfo">
                 <div class="card card-body bg-light">
-                    <div class="row mb-3" th:if="${tourist.phoneNumber != null and !tourist.phoneNumber.isEmpty()}">
-                        <div class="col-md-3">
-                            <strong><i class="bi bi-telephone me-1"></i> Телефон:</strong>
-                        </div>
-                        <div class="col-md-9">
-                            <a th:href="'tel:' + ${tourist.phoneNumber}"
-                               th:text="${tourist.phoneNumber}"
-                               class="text-decoration-none">
-                                +7 123 456-78-90
-                            </a>
-                        </div>
-                    </div>
 
-                    <div class="row mb-0" th:if="${tourist.email != null and !tourist.email.isEmpty()}">
-                        <div class="col-md-3">
-                            <strong><i class="bi bi-envelope me-1"></i> E-mail:</strong>
-                        </div>
-                        <div class="col-md-9">
-                            <a th:href="'mailto:' + ${tourist.email}"
-                               th:text="${tourist.email}"
-                               class="text-decoration-none">
-                                <span class="__cf_email__" data-cfemail="d0b9a6b1be90b5a8b1bda0bcb5feb3bfbd">[email&#160;protected]</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Show message if no contact info -->
-                    <div th:if="${(tourist.phoneNumber == null or tourist.phoneNumber.isEmpty())
-                                   and (tourist.email == null or tourist.email.isEmpty())}"
+                    <div th:if="${tourist.getContactInfo == null or tourist.getContactInfo.isEmpty()}"
                          class="text-muted">
                         <i class="bi bi-info-circle"></i> Контактная информация не указана
+                    </div>
+
+                    <div th:each="contact, iter : ${tourist.getContactInfo}"
+                         th:class="${iter.last ? 'row mb-0' : 'row mb-3'}">
+
+                        <th:block th:if="${contact.type.name() == 'PHONE_NUMBER'}">
+                            <div class="col-md-3">
+                                <strong><i class="bi bi-telephone me-1"></i> Телефон:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <a th:href="'tel:' + ${contact.value}"
+                                   th:text="${contact.value}"
+                                   class="text-decoration-none"></a>
+                            </div>
+                        </th:block>
+
+                        <th:block th:if="${contact.type.name() == 'EMAIL'}">
+                            <div class="col-md-3">
+                                <strong><i class="bi bi-envelope me-1"></i> E-mail:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <a th:href="'mailto:' + ${contact.value}"
+                                   th:text="${contact.value}"
+                                   class="text-decoration-none"></a>
+                            </div>
+                        </th:block>
+
+                        <th:block th:if="${contact.type.name() == 'TELEGRAM'}">
+                            <div class="col-md-3">
+                                <strong><i class="bi bi-telegram me-1"></i> Telegram:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <span th:text="${contact.value}"></span>
+                                <span th:if="${contact.details != null and contact.details.nickName != null}"
+                                      th:text="' (' + ${contact.details.nickName} + ')'"
+                                      class="text-muted"></span>
+                            </div>
+                        </th:block>
+
                     </div>
                 </div>
             </div>

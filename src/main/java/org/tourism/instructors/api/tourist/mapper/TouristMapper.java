@@ -8,6 +8,7 @@ import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
+import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.util.List;
 
@@ -20,4 +21,7 @@ public interface TouristMapper {
     @Mapping(target = "id", ignore = true)
     TouristDTO toDTO(PendingTourist pending);
 
+    TouristDTO toDTO (Tourist model,
+                      List<ProtocolRepository.GradeAssignmentProjection> assignments,
+                      List<ContactInfoItem> contactInfo);
 }
