@@ -10,8 +10,11 @@ import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.TouristService;
 import org.tourism.instructors.application.tourist.exception.TouristCannotBeDeletedException;
+import org.tourism.instructors.application.tourist.exception.TouristNotFoundException;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
+import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
+import org.tourism.instructors.domain.tourist.repository.ContactInfoRepository;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
 import java.util.Collections;
@@ -26,13 +29,16 @@ public class TouristServiceImpl implements TouristService {
     private final TouristRepository touristRepository;
     private final ProtocolRepository protocolRepository;
     private final TouristMapper touristMapper;
+    private final ContactInfoRepository contactInfoRepository;
 
     public TouristServiceImpl (TouristRepository touristRepository,
                                ProtocolRepository protocolRepository,
-                               TouristMapper touristMapper) {
+                               TouristMapper touristMapper,
+                               ContactInfoRepository contactInfoRepository) {
         this.touristRepository = touristRepository;
         this.protocolRepository = protocolRepository;
         this.touristMapper = touristMapper;
+        this.contactInfoRepository = contactInfoRepository;
     }
 
     @Override
@@ -77,9 +83,17 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public TouristDTO findTouristById (int id) {
-        Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new RuntimeException("турист не найден"));
+        Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new TouristNotFoundException(id));
         List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
-        return touristMapper.toDTO(tourist, assignments);
+        List<ContactInfoItem> contactInfo = getContactInfo(tourist);
+        return touristMapper.toDTO(tourist, assignments, contactInfo);
+    }
+
+    private @NonNull List<ContactInfoItem> getContactInfo (Tourist tourist) {
+        return contactInfoRepository.findAllByTouristId(tourist.getId())
+                       .stream()
+                       .sorted(Comparator.comparing(ContactInfoItem::getType).thenComparing(ContactInfoItem::getValue))
+                       .toList();
     }
 
     private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {

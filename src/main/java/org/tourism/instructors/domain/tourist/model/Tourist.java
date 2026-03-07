@@ -3,8 +3,10 @@ package org.tourism.instructors.domain.tourist.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -40,6 +42,9 @@ public class Tourist {
 
     @Column(name = "certification_id")
     private String certificationId;
+
+    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ContactInfoItem> contactInfo;
 
     public String getFullName() {
         return lastName + " " + firstName + " " + middleName;
