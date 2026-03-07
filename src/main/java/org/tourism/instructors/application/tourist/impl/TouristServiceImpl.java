@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 public class TouristServiceImpl implements TouristService {
 
@@ -68,6 +70,7 @@ public class TouristServiceImpl implements TouristService {
         return new PageImpl<>(touristDTOs, pageable, touristDTOs.size());
     }
 
+    @Transactional
     @Override
     public void delete (int touristId) {
         if (!protocolRepository.getAssignments(List.of(touristId)).isEmpty()) {
@@ -76,9 +79,12 @@ public class TouristServiceImpl implements TouristService {
         touristRepository.deleteById(touristId);
     }
 
+    @Transactional
     @Override
-    public void save (TouristDTO tourist) {
-        touristRepository.save(touristMapper.toEntity(tourist));
+    public void save (TouristDTO touristDTO) {
+        Tourist tourist = touristMapper.toEntity(touristDTO);
+        touristRepository.save(tourist);
+        contactInfoRepository.saveAll(tourist.getContactInfo());
     }
 
     @Override
@@ -97,7 +103,10 @@ public class TouristServiceImpl implements TouristService {
     }
 
     private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
-        return assignments.getOrDefault(tourist.getId(), Collections.emptyList()).stream().sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate)).toList();
+        return assignments.getOrDefault(tourist.getId(), Collections.emptyList())
+                       .stream()
+                       .sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate))
+                       .toList();
     }
 
     private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments (List<Tourist> tourists) {

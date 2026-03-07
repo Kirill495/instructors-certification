@@ -131,28 +131,34 @@
                             <div class="form-text">Формат: ДД.ММ.ГГГГ</div>
                         </div>
 
-                        <!-- Phone Number -->
+                        <!-- Contact Info -->
                         <div class="mb-3">
-                            <label class="form-label" for="phoneNumber">
-                                Телефон
-                            </label>
-                            <input type="tel"
-                                   class="form-control"
-                                   id="phoneNumber"
-                                   th:field="*{phoneNumber}"
-                                   placeholder="+7 123 456-78-90">
-                        </div>
-
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label class="form-label" for="email">
-                                e-mail
-                            </label>
-                            <input type="email"
-                                   class="form-control"
-                                   id="email"
-                                   th:field="*{email}"
-                                   placeholder="ivan@example.com">
+                            <label class="form-label">Контактная информация</label>
+                            <div id="contactInfoList">
+                                <div th:each="contact, iter : *{contactInfo}"
+                                     class="contact-row input-group mb-2">
+                                    <input type="hidden"
+                                           th:name="'contactInfo[' + ${iter.index} + '].id'"
+                                           th:value="${contact.id}">
+                                    <select th:field="*{contactInfo[__${iter.index}__].type}"
+                                            class="form-select"
+                                            style="max-width: 160px;">
+                                        <option value="PHONE_NUMBER">Телефон</option>
+                                        <option value="EMAIL">E-mail</option>
+                                        <option value="TELEGRAM">Telegram</option>
+                                    </select>
+                                    <input th:field="*{contactInfo[__${iter.index}__].value}"
+                                           type="text"
+                                           class="form-control"
+                                           placeholder="Значение">
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            onclick="removeContact(this)">✕</button>
+                                </div>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm mt-1"
+                                    onclick="addContact()">+ Добавить контакт</button>
                         </div>
 
                         <!-- Certification ID -->
@@ -183,5 +189,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/tourists-edit.js"></script>
 </body>
 </html>

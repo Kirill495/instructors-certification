@@ -20,6 +20,10 @@
         .collapse-toggle[aria-expanded="true"] i {
             transform: rotate(180deg);
         }
+        hr {
+            margin-top: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
     </style>
 </head>
 <body>
@@ -28,74 +32,30 @@
     <span th:text="${errorMessage}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<div class="container mt-5">
-    <!--    <h1 class="mb-4">Просмотр туриста</h1>-->
-    <h3 class="mb-2" th:text="${tourist.getFullName()}">Просмотр туриста</h3>
+<div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-baseline mb-2">
+        <h3 class="mb-0">
+            <span th:text="${tourist.getFullName()}">Просмотр туриста</span>
+            <i th:if="${tourist.gender?.name() == 'MALE'}"   class="bi bi-gender-male  text-primary"></i>
+            <i th:if="${tourist.gender?.name() == 'FEMALE'}" class="bi bi-gender-female text-danger"></i>
+        </h3>
+        <span th:if="${tourist.certificationId != null}"
+              class="badge bg-warning text-dark fs-6"
+              th:text="${tourist.certificationId}"
+              data-bs-toggle="tooltip"
+              th:title="'Удостоверение №' + ${tourist.certificationId}">№ 12345</span>
+    </div>
 
     <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Информация</h5>
-        </div>
-        <div class="card-body">
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Фамилия:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.lastName}">Иванов</span>
-                </div>
+        <div class="card-body p-1">
+            <div class="mb-2 ps-2">
+                <i class="bi bi-calendar me-1"></i>
+                <strong>Дата рождения: </strong>
+                <span th:text="${#temporals.format(tourist.dateOfBirth, 'dd.MM.yyyy')}">01.01.1990</span>
             </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Имя:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.firstName}">Иван</span>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Отчество:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.middleName ?: '-'}">Иванович</span>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Пол:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.gender}">Мужской</span>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Дата рождения:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${#temporals.format(tourist.dateOfBirth, 'dd.MM.yyyy')}">01.01.1990</span>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <strong>Удостоверение:</strong>
-                </div>
-                <div class="col-md-9">
-                    <span th:text="${tourist.certificationId ?: '-'}">12345</span>
-                </div>
-            </div>
-
             <hr>
-
             <!-- Collapsible Contact Info -->
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center collapse-toggle p-2 rounded"
                          data-bs-toggle="collapse"
@@ -121,46 +81,32 @@
                     </div>
 
                     <div th:each="contact, iter : ${tourist.getContactInfo}"
-                         th:class="${iter.last ? 'row mb-0' : 'row mb-3'}">
+                         th:class="${iter.last ? 'mb-0' : 'mb-2'}">
 
                         <th:block th:if="${contact.type.name() == 'PHONE_NUMBER'}">
-                            <div class="col-md-3">
-                                <strong><i class="bi bi-telephone me-1"></i> Телефон:</strong>
-                            </div>
-                            <div class="col-md-9">
-                                <a th:href="'tel:' + ${contact.value}"
-                                   th:text="${contact.value}"
-                                   class="text-decoration-none"></a>
-                            </div>
+                            <i class="bi bi-telephone me-1"></i>
+                            <a th:href="'tel:' + ${contact.value}"
+                               th:text="${contact.value}"
+                               class="text-decoration-none"></a>
                         </th:block>
 
                         <th:block th:if="${contact.type.name() == 'EMAIL'}">
-                            <div class="col-md-3">
-                                <strong><i class="bi bi-envelope me-1"></i> E-mail:</strong>
-                            </div>
-                            <div class="col-md-9">
-                                <a th:href="'mailto:' + ${contact.value}"
-                                   th:text="${contact.value}"
-                                   class="text-decoration-none"></a>
-                            </div>
+                            <i class="bi bi-envelope me-1"></i>
+                            <a th:href="'mailto:' + ${contact.value}"
+                               th:text="${contact.value}"
+                               class="text-decoration-none"></a>
                         </th:block>
 
                         <th:block th:if="${contact.type.name() == 'TELEGRAM'}">
-                            <div class="col-md-3">
-                                <strong><i class="bi bi-telegram me-1"></i> Telegram:</strong>
-                            </div>
-                            <div class="col-md-9">
-                                <span th:text="${contact.value}"></span>
-                                <span th:if="${contact.details != null and contact.details.nickName != null}"
-                                      th:text="' (' + ${contact.details.nickName} + ')'"
-                                      class="text-muted"></span>
-                            </div>
+                            <i class="bi bi-telegram me-1"></i>
+                            <span th:if="${contact.details != null and contact.details.nickName != null}"
+                                  th:text="' (' + ${contact.details.nickName} + ')'"
+                                  class="text-muted"></span>
                         </th:block>
 
                     </div>
                 </div>
             </div>
-
             <hr>
             <!-- Collapsible Grade Assignments -->
             <div class="row mb-2">
@@ -189,7 +135,8 @@
             <div class="collapse" id="gradeAssignments">
                 <div class="card card-body bg-light p-0">
                     <div th:if="${tourist.assignments != null and !tourist.assignments.isEmpty()}">
-                        <table class="table table-sm table-hover mb-0">
+                        <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 small">
                             <thead class="table-light">
                             <tr>
                                 <th>Вид туризма</th>
@@ -199,20 +146,17 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="a : ${tourist.assignments}">
+                            <tr th:each="a : ${tourist.assignments}"
+                                th:with="expired=${a.validThrough != null and a.validThrough.isBefore(#temporals.createNow().toLocalDate())}"
+                                th:class="${expired} ? 'table-danger' : 'table-success'">
                                 <td th:text="${a.kindOfTourism?.title ?: '-'}">Пешеходный</td>
                                 <td th:text="${a.grade?.title ?: '-'}">III</td>
                                 <td th:text="${#temporals.format(a.date, 'dd.MM.yyyy')}">01.01.2024</td>
-                                <td>
-                                        <span th:with="expired=${a.validThrough != null and a.validThrough.isBefore(#temporals.createNow().toLocalDate())}"
-                                              th:class="${expired} ? 'text-danger' : 'text-success'"
-                                              th:text="${a.validThrough != null ? #temporals.format(a.validThrough, 'dd.MM.yyyy') : '-'}">
-                                            01.01.2027
-                                        </span>
-                                </td>
+                                <td th:text="${a.validThrough != null ? #temporals.format(a.validThrough, 'dd.MM.yyyy') : '-'}">01.01.2024</td>
                             </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     <div th:if="${tourist.assignments == null or tourist.assignments.isEmpty()}"
                          class="text-muted p-3">
@@ -243,12 +187,16 @@
 
 <!-- Include reusable delete modal with tourist-specific text -->
 <div th:replace="~{fragments/delete-modal :: deleteModal(
-    itemName=${tourist.lastName + ' ' + tourist.firstName + (tourist.middleName != null ? ' ' + tourist.middleName : '')},
+    itemName=${tourist.getFullName()},
     itemType='туриста',
     deleteUrl=@{/tourists/{id}/delete(id=${tourist.id})},
     warningText='Если этот турист участвует в протоколах, удаление может вызвать ошибку.'
 )}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+</script>
+
 </body>
 </html>

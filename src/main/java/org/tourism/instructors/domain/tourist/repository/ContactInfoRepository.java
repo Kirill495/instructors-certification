@@ -10,4 +10,5 @@ import java.util.List;
 public interface ContactInfoRepository extends JpaRepository<ContactInfoItem, Integer> {
 
     List<ContactInfoItem> findAllByTouristId (Integer touristId);
+
 }
