@@ -13,7 +13,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
+//        http.authorizeHttpRequests(auth -> auth
+//                                                   .anyRequest().permitAll())
+//                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
