@@ -10,38 +10,49 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.tourism.instructors.api.bot.keyboards.CalendarKeyboard;
+import org.tourism.instructors.api.bot.keyboards.MonthKeyboard;
+import org.tourism.instructors.api.bot.keyboards.OneLineKeyboard;
+import org.tourism.instructors.api.bot.keyboards.YearKeyboard;
+import org.tourism.instructors.api.catalog.dto.GradeDTO;
+import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
+import org.tourism.instructors.api.tourist.dto.TouristDTO;
+import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.pending.PendingTouristService;
+import org.tourism.instructors.application.tourist.TouristService;
+import org.tourism.instructors.domain.pending.ConversationState;
+import org.tourism.instructors.domain.tourist.model.Gender;
 
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 @Component
 public class TouristRegistrationBot extends TelegramLongPollingBot {
 
-    private enum Step { LAST_NAME, FIRST_NAME, MIDDLE_NAME, DATE_OF_BIRTH, PHONE, EMAIL }
-
-    private static class ConversationState {
-        Step step = Step.LAST_NAME;
-        String lastName, firstName, middleName, dateOfBirth, phone, email;
-        String tgUsername;
-    }
+    public enum Step {NAME, GENDER, DATE_OF_BIRTH, PHONE, EMAIL, CERTIFICATION_ID, KIND_OF_TOURISM, GRADE, CHECK_INPUT}
 
     private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    private final Map<Long, ConversationState> conversations = new ConcurrentHashMap<>();
+    private final TouristService touristService;
+    private final CatalogService catalogService;
     private final PendingTouristService pendingTouristService;
+    private final Map<Long, ConversationState> conversations = new ConcurrentHashMap<>();
 
     @Value("${telegram.bot.username}")
     private String botUsername;
 
     public TouristRegistrationBot(@Value("${telegram.bot.token}") String token,
-                                  PendingTouristService pendingTouristService) {
+                                  PendingTouristService pendingTouristService, TouristService touristService, CatalogService catalogService) {
         super(token);
         this.pendingTouristService = pendingTouristService;
+        this.touristService = touristService;
+        this.catalogService = catalogService;
     }
 
     @Override
@@ -62,68 +73,147 @@ public class TouristRegistrationBot extends TelegramLongPollingBot {
         long chatId = update.getMessage().getChatId();
         String tgUsername = update.getMessage().getFrom().getUserName();
 
+        if (conversations.containsKey(chatId)) {
+            handleStep(chatId, text);
+            return;
+        }
+        Optional<TouristDTO> touristOpt = touristService.findTouristByTelegramId(chatId);
+        if (touristOpt.isPresent()) {
+            TouristDTO tourist = touristOpt.get();
+            send(chatId, tourist.getFullName() + ", с возвращением!");
+            return;
+        }
         if (text.equals("/start") || text.equals("/register")) {
             startRegistration(chatId, tgUsername);
             return;
         }
-
-        if (conversations.containsKey(chatId)) {
-            handleStep(chatId, text);
-        } else {
-            send(chatId, "Используйте /register для регистрации.");
-        }
+        send(chatId, "Используйте /register для регистрации.");
     }
 
     // ── Registration flow ────────────────────────────────────────────────────
 
     private void startRegistration(long chatId, String tgUsername) {
         if (pendingTouristService.existsByChatId(chatId)) {
-            send(chatId, "Вы уже оставляли заявку ранее. Ожидайте решения администратора.");
+            send(chatId, "Вы уже оставляли заявку ранее. Ожидайте решения.");
             return;
         }
-        ConversationState state = new ConversationState();
-        state.tgUsername = tgUsername;
-        conversations.put(chatId, state);
-        send(chatId, "Начнём регистрацию.\n\nВведите вашу фамилию:");
+        conversations.put(chatId, new ConversationState(chatId, tgUsername));
+        send(chatId, "Начнём регистрацию.\n\nВведите ФИО:");
     }
 
     private void handleStep(long chatId, String text) {
         ConversationState state = conversations.get(chatId);
 
-        switch (state.step) {
-            case LAST_NAME -> {
-                state.lastName = text;
-                state.step = Step.FIRST_NAME;
-                send(chatId, "Введите ваше имя:");
+        switch (state.getStep()) {
+            case NAME -> {
+                state.setFullName(text);
+                parseFullName(state, text);
+                state.setStep(Step.GENDER);
+                sendGenderPicker(chatId);
             }
-            case FIRST_NAME -> {
-                state.firstName = text;
-                state.step = Step.MIDDLE_NAME;
-                send(chatId, "Введите ваше отчество (или «-» если нет):");
-            }
-            case MIDDLE_NAME -> {
-                state.middleName = text.equals("-") ? null : text;
-                state.step = Step.DATE_OF_BIRTH;
+            case GENDER -> {
+                state.setStep(Step.DATE_OF_BIRTH);
                 sendYearPicker(chatId);
             }
-            case DATE_OF_BIRTH ->
-                send(chatId, "Пожалуйста, выберите дату на календаре выше.");
+            case DATE_OF_BIRTH -> send(chatId, "Пожалуйста, выберите дату в календаре выше.");
             case PHONE -> {
-                state.phone = text;
-                state.step = Step.EMAIL;
-                send(chatId, "Введите email (или «-» если нет):");
+                state.setPhone(text);
+                send(chatId, "Введите email:");
+                state.setStep(Step.EMAIL);
             }
             case EMAIL -> {
-                state.email = text.equals("-") ? null : text;
-                conversations.remove(chatId);
-                pendingTouristService.register(chatId, state.tgUsername,
-                        state.lastName, state.firstName, state.middleName,
-                        state.dateOfBirth, state.email, state.phone);
-                send(chatId, "Ваша заявка принята ✅\n\n" +
-                        state.lastName + " " + state.firstName +
-                        (state.middleName != null ? " " + state.middleName : "") +
-                        "\n\nАдминистратор рассмотрит её в ближайшее время.");
+                state.setEmail(text.equals("-") ? null : text);
+                send(chatId, "Введите номер удостоверения:");
+                state.setStep(Step.KIND_OF_TOURISM);
             }
+            case KIND_OF_TOURISM -> {
+                sendKindOfTourismPicker(chatId);
+                state.setStep(Step.GRADE);
+            }
+            case GRADE -> {
+                sendGradePicker(chatId);
+                sendCheckInputQuestion(chatId, state);
+//                state.setStep(Step.CERTIFICATION_ID);
+            }
+            case CERTIFICATION_ID -> {
+                state.setCertificationId(text);
+                state.setStep(Step.CHECK_INPUT);
+                sendCheckInputQuestion(chatId, state);
+            }
+        }
+
+    }
+
+    private void sendCheckInputQuestion(long chatId, ConversationState state) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Проверьте введенные данные:").append("\n")
+                .append("Фамилия:  ").append(state.getLastName()).append("\n")
+                .append("Имя:      ").append(state.getFirstName()).append("\n")
+                .append("Отчество: ").append(state.getMiddleName()).append("\n")
+                .append("Пол: ").append(state.getGender()).append("\n")
+                .append("Дата рождения: ").append(state.getDateOfBirth()).append("\n")
+                .append("Email:    ").append(state.getEmail()).append("\n")
+                .append("Телефон:  ").append(state.getPhone()).append("\n")
+                .append("Вид туризма: ").append(state.getKindOfTourism().getTitle()).append("\n")
+                .append("Звание:      ").append(state.getGrade().getTitle());
+        try {
+            Map<String, String> buttons = new LinkedHashMap<>();
+            buttons.put("Все верно", "CONFIRM:OK");
+            buttons.put("Исправить", "CONFIRM:CANCEL");
+            execute(SendMessage.builder().chatId(chatId).text(builder.toString()).replyMarkup(OneLineKeyboard.build(() -> buttons)).build());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void sendKindOfTourismPicker(long chatId) {
+        Map<String, String> buttons = catalogService.findActiveKindsOfTourism().stream()
+                .collect(Collectors.toMap(
+                        KindOfTourismListDTO::title,
+                        k -> "KIND_OF_TOURISM:" + k.id(),
+                        (s1, s2) -> s1,
+                        LinkedHashMap::new));
+        try {
+            execute(SendMessage.builder().chatId(chatId).text("Укажите вид туризма:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void sendGradePicker(long chatId) {
+        Map<String, String> buttons = catalogService.findActiveGrades().stream()
+                .collect(Collectors.toMap(
+                        GradeDTO::getTitle,
+                        gradeDTO -> "GRADE:" + gradeDTO.getId(),
+                        (s1, s2) -> s1,
+                        LinkedHashMap::new));
+        try {
+            execute(SendMessage.builder().chatId(chatId).text("Укажите звание:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void sendGenderPicker(long chatId) {
+        Map<String, String> buttons = new LinkedHashMap<>();
+        buttons.put("Мужской", "GENDER:MALE");
+        buttons.put("Женский", "GENDER:FEMALE");
+        try {
+            execute(SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private static void parseFullName (ConversationState state, String text) {
+        List<String> nameParts = Arrays.stream(text.trim().split(" ")).toList();
+        if (nameParts.size() == 3) {
+            state.setMiddleName(nameParts.get(2));
+        }
+        if (nameParts.size() >= 2) {
+            state.setFirstName(nameParts.get(1));
+        }
+        if (!nameParts.isEmpty()) {
+            state.setLastName(nameParts.getFirst());
         }
     }
 
@@ -140,46 +230,76 @@ public class TouristRegistrationBot extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
 
-        if (data.equals("cal:IGNORE")) return;
-
-        if (data.startsWith("cal:YEAR_PAGE:")) {
-            int startYear = Integer.parseInt(data.substring(14));
-            editKeyboard(chatId, messageId, YearKeyboard.build(startYear));
-
-        } else if (data.startsWith("cal:SELECT_YEAR:")) {
-            int year = Integer.parseInt(data.substring(16));
-            editKeyboard(chatId, messageId, MonthKeyboard.build(year));
-
-        } else if (data.startsWith("cal:SELECT_MONTH:")) {
-            YearMonth yearMonth = YearMonth.parse(data.substring(17));
-            editKeyboard(chatId, messageId, CalendarKeyboard.build(yearMonth));
-
-        } else if (data.startsWith("cal:SELECT:")) {
-            LocalDate date = LocalDate.parse(data.substring(11));
-            ConversationState state = conversations.get(chatId);
-            if (state == null || state.step != Step.DATE_OF_BIRTH) return;
-
-            state.dateOfBirth = date.format(DISPLAY_FORMAT);
-            state.step = Step.PHONE;
-
-            try {
-                execute(EditMessageText.builder()
-                        .chatId(chatId)
-                        .messageId(messageId)
-                        .text("Дата рождения: " + state.dateOfBirth + " ✅")
-                        .build());
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
+        List<String> dataParts = new ArrayList<>(asList(data.split(":")));
+        if (dataParts.size() < 2) {
+            return;
+        }
+        ConversationState state = conversations.get(chatId);
+        if (Objects.isNull(state)) {
+            return;
+        }
+        switch (dataParts.removeFirst()) {
+            case "cal" -> processCalendarActions(dataParts, chatId, messageId);
+            case "CONFIRM" -> processConfirmationActions(dataParts.removeFirst(), state, chatId);
+            case "GENDER" -> {
+                state.setGender(Gender.valueOf(dataParts.getFirst()));
+                handleStep(chatId, null);
             }
+            case "KIND_OF_TOURISM" -> {
+                state.setKindOfTourism(catalogService.getKindOfTourismById(Integer.parseInt(dataParts.getFirst())));
+                handleStep(chatId, null);
+            }
+            case "GRADE" -> {
+                state.setGrade(catalogService.findGradeById(Integer.parseInt(dataParts.getFirst())));
+                handleStep(chatId, null);
+            }
+        }
+    }
 
-            send(chatId, "Введите номер телефона:");
+    private void processConfirmationActions(String action, ConversationState state, long chatId) {
+        switch (action) {
+            case "OK" -> {
+                pendingTouristService.register(state);
+                send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
+            }
+            case "CANCEL" -> {
+                conversations.put(chatId, new ConversationState(chatId, state.getTgUsername()));
+                send(chatId, "Введите ФИО:");
+            }
+        }
+    }
+
+    private void processCalendarActions(List<String> dataParts, long chatId, int messageId) {
+        switch (dataParts.removeFirst()) {
+            case "YEAR_PAGE" -> editKeyboard(chatId, messageId, YearKeyboard.build(Integer.parseInt(dataParts.getFirst())));
+            case "SELECT_YEAR" -> editKeyboard(chatId, messageId, MonthKeyboard.build(Integer.parseInt(dataParts.getFirst())));
+            case "SELECT_MONTH" -> editKeyboard(chatId, messageId, CalendarKeyboard.build(YearMonth.parse(dataParts.getFirst())));
+            case "SELECT" -> {
+                LocalDate date = LocalDate.parse(dataParts.getFirst());
+                ConversationState state = conversations.get(chatId);
+                if (state == null || state.getStep() != Step.DATE_OF_BIRTH) return;
+
+                try {
+                    execute(EditMessageText.builder()
+                            .chatId(chatId)
+                            .messageId(messageId)
+                            .text("Дата рождения: " + date + " ✅")
+                            .build());
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+
+                state.setDateOfBirth(date.format(DISPLAY_FORMAT));
+                state.setStep(Step.PHONE);
+                send(chatId, "Введите номер телефона:");
+            }
         }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void sendYearPicker(long chatId) {
-        int defaultStartYear = YearKeyboard.pageStartFor(Year.now().getValue() - 30);
+        int defaultStartYear = YearKeyboard.pageStartFor(2000);
         try {
             execute(SendMessage.builder()
                     .chatId(chatId)

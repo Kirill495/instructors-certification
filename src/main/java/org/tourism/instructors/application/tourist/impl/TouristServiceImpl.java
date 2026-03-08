@@ -15,13 +15,11 @@ import org.tourism.instructors.application.tourist.exception.TouristNotFoundExce
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
+import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 import org.tourism.instructors.domain.tourist.repository.ContactInfoRepository;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Transactional(readOnly = true)
@@ -83,8 +81,8 @@ public class TouristServiceImpl implements TouristService {
     @Override
     public void save (TouristDTO touristDTO) {
         Tourist tourist = touristMapper.toEntity(touristDTO);
+        tourist.getContactInfo().forEach(item -> item.setTourist(tourist));
         touristRepository.save(tourist);
-        contactInfoRepository.saveAll(tourist.getContactInfo());
     }
 
     @Override
@@ -93,6 +91,13 @@ public class TouristServiceImpl implements TouristService {
         List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
         List<ContactInfoItem> contactInfo = getContactInfo(tourist);
         return touristMapper.toDTO(tourist, assignments, contactInfo);
+    }
+
+    @Override
+    public Optional<TouristDTO> findTouristByTelegramId (long chatId) {
+        return contactInfoRepository.findTouristIdByTypeAndValue(ContactInfoType.TELEGRAM, String.valueOf(chatId))
+                .map(ContactInfoItem::getTourist)
+                .map(touristMapper::toDTO);
     }
 
     private @NonNull List<ContactInfoItem> getContactInfo (Tourist tourist) {

@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.tourism.instructors.domain.catalog.model.Grade;
+import org.tourism.instructors.domain.catalog.model.KindOfTourism;
+import org.tourism.instructors.domain.tourist.model.Gender;
+import org.tourism.instructors.domain.tourist.model.Tourist;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,6 +46,25 @@ public class PendingTourist {
 
     @Column(name = "phone_number")
     private String phoneNumber;
+
+    @Column(name = "gender", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private Gender gender;
+
+    @OneToOne
+    @JoinColumn(name = "kind_of_tourism", nullable = false)
+    private KindOfTourism kindOfTourism;
+
+    @OneToOne(targetEntity = Grade.class)
+    @JoinColumn(name = "grade", nullable = false)
+    private Grade grade;
+
+    @OneToOne
+    @JoinColumn(name = "tourist")
+    private Tourist tourist;
+
+    @Column(name = "certification_id")
+    private String certificationId;
 
     @Column(name = "status", nullable = false)
     private String status = "PENDING";

@@ -1,0 +1,28 @@
+package org.tourism.instructors.domain.pending;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.tourism.instructors.api.bot.TouristRegistrationBot;
+import org.tourism.instructors.api.catalog.dto.GradeDTO;
+import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
+import org.tourism.instructors.domain.tourist.model.Gender;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ConversationState {
+    public ConversationState(Long chatId, String tgUsername) {
+        this.chatId = chatId;
+        this.tgUsername = tgUsername;
+    }
+    private TouristRegistrationBot.Step step = TouristRegistrationBot.Step.NAME;
+    private Long chatId;
+    private String fullName, firstName, lastName, middleName, dateOfBirth, phone, email;
+    private String certificationId;
+    private KindOfTourismDTO kindOfTourism;
+    private GradeDTO grade;
+    private Gender gender;
+    private String tgUsername;
+
+}
