@@ -2,17 +2,16 @@ package org.tourism.instructors.domain.tourist.model.contactinfo;
 
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import tools.jackson.databind.ObjectMapper;
 
 @Entity
 @Table(name = "contact_info", schema = "instructors_grades")
-@NoArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ContactInfoItem {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -49,3 +48,4 @@ public class ContactInfoItem {
         this.detailsJson = details != null ? MAPPER.writeValueAsString(details) : null;
     }
 }
+

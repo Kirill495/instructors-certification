@@ -6,6 +6,7 @@ import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TouristService {
 
@@ -16,4 +17,5 @@ public interface TouristService {
     TouristDTO findTouristById(int id);
     void save(TouristDTO tourist);
     void delete (int touristId);
+    Optional<TouristDTO> findTouristByTelegramId (long chatId);
 }

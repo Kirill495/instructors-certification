@@ -1,4 +1,4 @@
-package org.tourism.instructors.api.bot;
+package org.tourism.instructors.api.bot.keyboards;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;

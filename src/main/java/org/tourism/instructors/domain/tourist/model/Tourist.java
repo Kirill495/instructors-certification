@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -44,7 +45,7 @@ public class Tourist {
     private String certificationId;
 
     @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<ContactInfoItem> contactInfo;
+    private List<ContactInfoItem> contactInfo = new ArrayList<>();
 
     public String getFullName() {
         return lastName + " " + firstName + " " + middleName;
