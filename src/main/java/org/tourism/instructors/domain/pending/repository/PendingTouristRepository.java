@@ -10,5 +10,6 @@ import java.util.List;
 public interface PendingTouristRepository extends JpaRepository<PendingTourist, Integer> {
     List<PendingTourist> findByStatusOrderByCreatedAtDesc(String status);
 
-    boolean existsByChatId (Long chatId);
+    boolean existsByChatId(Long chatId);
+    int countByStatus(String status);
 }

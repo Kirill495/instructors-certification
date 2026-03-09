@@ -55,6 +55,9 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
     @Query("SELECT count(*) FROM Protocol p WHERE p.id < :protocolId")
     int countOfRowsBefore(@Param("protocolId") int protocolId);
 
+    @Query("SELECT p.id as id, p.number as number, p.date as date FROM Protocol p WHERE p.number ILIKE CONCAT(:query, '%') ORDER BY p.number ASC")
+    List<ProtocolProjection> searchByNumber(@Param("query") String query);
+
 
     @Query("SELECT p.id as protocolId, " +
                    "p.date as protocolDate, " +

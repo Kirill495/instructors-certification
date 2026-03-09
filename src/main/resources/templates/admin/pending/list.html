@@ -5,6 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заявки на регистрацию</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        tbody tr { cursor: pointer; }
+        tbody tr:hover { background-color: rgba(0,0,0,.04); }
+
+        @media (max-width: 767px) {
+            table, tbody { display: block; }
+            thead { display: none; }
+            tbody tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                padding: 8px 12px;
+                border-bottom: 1px solid #dee2e6;
+            }
+            tbody td { display: block; padding: 1px 4px; border: none !important; }
+            /* Line 1: icon | name | date */
+            tbody td:nth-child(1) { order: 1; }
+            tbody td:nth-child(2) { order: 2; flex: 1; font-weight: 600; }
+            tbody td:nth-child(5) { order: 3; font-size: 0.8rem; color: #6c757d; margin-left: auto; }
+            /* Line 2: kind of tourism | grade */
+            tbody td:nth-child(3) { order: 4; width: 50%; font-size: 0.8rem; color: #6c757d; }
+            tbody td:nth-child(4) { order: 5; width: 50%; font-size: 0.8rem; color: #6c757d; }
+        }
+
+        #linkModal .modal-dialog {
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            margin: 0;
+        }
+        #linkModal.show .modal-dialog {
+            transform: translateY(0);
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        .panel-block {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .panel-block.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
@@ -24,37 +76,312 @@
             <table class="table table-striped mb-0">
                 <thead class="table-dark">
                 <tr>
+                    <th style="width:1%"></th>
                     <th>ФИО</th>
-                    <th>Дата рождения</th>
-                    <th>Телефон</th>
-                    <th>Email</th>
-                    <th>Telegram</th>
+                    <th>Вид туризма</th>
+                    <th>Звание</th>
                     <th>Дата заявки</th>
-                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="p : ${pending}">
-                    <td th:text="${p.fullName}"></td>
-                    <td th:text="${p.dateOfBirth != null ? #temporals.format(p.dateOfBirth, 'dd.MM.yyyy') : '—'}"></td>
-                    <td th:text="${p.phoneNumber != null ? p.phoneNumber : '—'}"></td>
-                    <td th:text="${p.email != null ? p.email : '—'}"></td>
-                    <td th:text="${p.tgUsername != null ? '@' + p.tgUsername : '—'}"></td>
-                    <td th:text="${#temporals.format(p.createdAt, 'dd.MM.yyyy HH:mm')}"></td>
-                    <td class="text-end">
-                        <form th:action="@{/admin/pending/{id}/approve(id=${p.id})}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-success">Одобрить</button>
-                        </form>
-                        <form th:action="@{/admin/pending/{id}/reject(id=${p.id})}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-danger">Отклонить</button>
-                        </form>
+                <tr th:each="p : ${pending}"
+                    th:data-id="${p.id}"
+                    th:data-name="${p.fullName}"
+                    th:data-kind="${p.kindOfTourism.title}"
+                    th:data-grade="${p.grade.title}"
+                    th:data-linked="${p.tourist != null}"
+                    th:data-tourist-name="${p.tourist != null ? p.tourist.lastName + ' ' + p.tourist.firstName : ''}"
+                    th:data-dob="${p.dateOfBirth != null ? #temporals.format(p.dateOfBirth, 'dd.MM.yyyy') : '—'}"
+                    th:data-phone="${p.phoneNumber != null ? p.phoneNumber : '—'}"
+                    th:data-email="${p.email != null ? p.email : '—'}"
+                    onclick="openPanel(this)">
+                    <td class="text-center">
+                        <span th:if="${p.tourist != null}" title="Турист привязан" style="font-size:1.1rem">🔗</span>
+                        <span th:if="${p.tourist == null}" title="Новый турист" style="font-size:1.1rem">🆕</span>
                     </td>
+                    <td th:text="${p.fullName}"></td>
+                    <td th:text="${p.kindOfTourism.title}"></td>
+                    <td th:text="${p.grade.title}"></td>
+                    <td th:text="${#temporals.format(p.createdAt, 'dd.MM.yyyy')}"></td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<!-- Fullscreen slide-up panel -->
+<div class="modal fade" id="linkModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0" id="modalName"></h5>
+                    <small class="text-muted" id="modalMeta"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" style="max-width: 640px; width: 100%">
+
+                <!-- Pending details -->
+                <div class="panel-block mb-3">
+                    <div class="row g-2 small">
+                        <div class="col-4"><span class="text-muted">Дата рождения:</span><br><strong id="detailDob"></strong></div>
+                        <div class="col-4"><span class="text-muted">Телефон:</span><br><strong id="detailPhone"></strong></div>
+                        <div class="col-4"><span class="text-muted">Email:</span><br><strong id="detailEmail"></strong></div>
+                    </div>
+                </div>
+
+                <!-- Section 1: Tourist -->
+                <div class="section-label">Турист</div>
+                <div class="panel-block" id="touristPanel">
+
+                    <!-- Not linked: search -->
+                    <div id="searchPanel">
+                        <input type="text" id="modalSearch" class="form-control mb-2"
+                               placeholder="Фамилия или номер удостоверения...">
+                        <div id="searchResults" class="list-group mb-3"></div>
+
+                        <div id="selectedTouristBadge" style="display:none" class="mb-3">
+                            <span class="badge bg-success fs-6" id="selectedTouristName"></span>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2"
+                                    onclick="clearTourist()">Изменить</button>
+                        </div>
+
+                        <div id="createNewPanel" class="mt-2">
+                            <div id="createNewBadge" style="display:none" class="mb-2">
+                                <span class="badge bg-secondary fs-6">Будет создан новый профиль</span>
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2"
+                                        onclick="clearCreateNew()">Изменить</button>
+                            </div>
+                            <button id="createNewBtn" type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="enableCreateNew()">Создать нового туриста</button>
+                        </div>
+                    </div>
+
+                    <!-- Already linked: show info -->
+                    <div id="linkedPanel" style="display:none">
+                        <span class="badge bg-primary fs-6">🔗 <span id="linkedTouristName"></span></span>
+                    </div>
+                </div>
+
+                <!-- Section 2: Protocol -->
+                <div class="section-label">Протокол <span class="text-muted fw-normal">(необязательно)</span></div>
+                <div class="panel-block disabled" id="protocolPanel">
+                    <div id="protocolDisabledMsg" class="text-muted small">Сначала выберите или создайте туриста</div>
+                    <div id="protocolSearchPanel" style="display:none">
+                        <input type="text" id="protocolSearch" class="form-control mb-2"
+                               placeholder="Номер протокола...">
+                        <div id="protocolResults" class="list-group mb-2"></div>
+                        <div id="selectedProtocolBadge" style="display:none">
+                            <span class="badge bg-info text-dark fs-6" id="selectedProtocolLabel"></span>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2"
+                                    onclick="clearProtocol()">Убрать</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <form id="approveForm" method="post" onsubmit="prepareApprove()">
+                    <input type="hidden" id="hiddenTouristId" name="touristId" disabled>
+                    <input type="hidden" id="hiddenProtocolId" name="protocolId" disabled>
+                    <button type="submit" class="btn btn-success">Одобрить</button>
+                </form>
+                <form id="rejectForm" method="post" onsubmit="return confirm('Отклонить заявку?')">
+                    <button type="submit" class="btn btn-danger">Отклонить</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let pendingId = null;
+    let selectedTouristId = null;
+    let selectedProtocolId = null;
+    let touristResolved = false;
+
+    function openPanel(row) {
+        pendingId        = row.dataset.id;
+        const linked     = row.dataset.linked === 'true';
+
+        document.getElementById('modalName').textContent = row.dataset.name;
+        document.getElementById('modalMeta').textContent = row.dataset.kind + ' · ' + row.dataset.grade;
+        document.getElementById('detailDob').textContent   = row.dataset.dob;
+        document.getElementById('detailPhone').textContent = row.dataset.phone;
+        document.getElementById('detailEmail').textContent = row.dataset.email;
+        document.getElementById('approveForm').action = '/pending/' + pendingId + '/approve';
+        document.getElementById('rejectForm').action  = '/pending/' + pendingId + '/reject';
+
+        // Reset state
+        selectedTouristId  = null;
+        selectedProtocolId = null;
+        touristResolved    = false;
+        resetProtocolPanel();
+
+        if (linked) {
+            document.getElementById('searchPanel').style.display = 'none';
+            document.getElementById('linkedPanel').style.display = '';
+            document.getElementById('linkedTouristName').textContent = row.dataset.touristName;
+            enableProtocolPanel();
+        } else {
+            document.getElementById('searchPanel').style.display = '';
+            document.getElementById('linkedPanel').style.display = 'none';
+            resetTouristSearch(row.dataset.name);
+            disableProtocolPanel();
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('linkModal')).show();
+    }
+
+    // ── Tourist section ──────────────────────────────────────────────────────
+
+    function resetTouristSearch(name) {
+        document.getElementById('modalSearch').value = name;
+        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('selectedTouristBadge').style.display = 'none';
+        document.getElementById('createNewBadge').style.display = 'none';
+        document.getElementById('createNewBtn').style.display = '';
+        document.getElementById('modalSearch').style.display = '';
+        doTouristSearch(name);
+    }
+
+    document.getElementById('modalSearch').addEventListener('input', function () {
+        doTouristSearch(this.value.trim());
+    });
+
+    function doTouristSearch(query) {
+        if (query.length < 2) { document.getElementById('searchResults').innerHTML = ''; return; }
+        fetch('/api/tourists/search?query=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(list => {
+                const c = document.getElementById('searchResults');
+                if (list.length === 0) {
+                    c.innerHTML = '<div class="list-group-item text-muted">Турист по ФИО не найден</div>';
+                    return;
+                }
+                c.innerHTML = list.map(t =>
+                    `<button type="button" class="list-group-item list-group-item-action"
+                             onclick="selectTourist(${t.id}, '${esc(t.lastName)} ${esc(t.firstName)} ${esc(t.middleName ?? '')}')">
+                        ${t.lastName} ${t.firstName} ${t.middleName ?? ''}
+                        <span class="text-muted small ms-1">${t.certificationId ?? ''}</span>
+                    </button>`
+                ).join('');
+            });
+    }
+
+    function selectTourist(id, name) {
+        selectedTouristId = id;
+        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('modalSearch').style.display = 'none';
+        document.getElementById('createNewBtn').style.display = 'none';
+        document.getElementById('selectedTouristName').textContent = '✓ ' + name;
+        document.getElementById('selectedTouristBadge').style.display = '';
+        enableProtocolPanel();
+    }
+
+    function clearTourist() {
+        selectedTouristId = null;
+        document.getElementById('modalSearch').style.display = '';
+        document.getElementById('selectedTouristBadge').style.display = 'none';
+        document.getElementById('createNewBtn').style.display = '';
+        disableProtocolPanel();
+    }
+
+    function enableCreateNew() {
+        selectedTouristId = null;
+        document.getElementById('modalSearch').style.display = 'none';
+        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('createNewBtn').style.display = 'none';
+        document.getElementById('createNewBadge').style.display = '';
+        enableProtocolPanel();
+    }
+
+    function clearCreateNew() {
+        document.getElementById('modalSearch').style.display = '';
+        document.getElementById('createNewBadge').style.display = 'none';
+        document.getElementById('createNewBtn').style.display = '';
+        disableProtocolPanel();
+    }
+
+    // ── Protocol section ─────────────────────────────────────────────────────
+
+    function enableProtocolPanel() {
+        touristResolved = true;
+        document.getElementById('protocolPanel').classList.remove('disabled');
+        document.getElementById('protocolDisabledMsg').style.display = 'none';
+        document.getElementById('protocolSearchPanel').style.display = '';
+    }
+
+    function disableProtocolPanel() {
+        touristResolved = false;
+        resetProtocolPanel();
+        document.getElementById('protocolPanel').classList.add('disabled');
+        document.getElementById('protocolDisabledMsg').style.display = '';
+        document.getElementById('protocolSearchPanel').style.display = 'none';
+    }
+
+    function resetProtocolPanel() {
+        selectedProtocolId = null;
+        document.getElementById('protocolSearch').value = '';
+        document.getElementById('protocolResults').innerHTML = '';
+        document.getElementById('selectedProtocolBadge').style.display = 'none';
+    }
+
+    document.getElementById('protocolSearch').addEventListener('input', function () {
+        doProtocolSearch(this.value.trim());
+    });
+
+    function doProtocolSearch(query) {
+        if (query.length < 1) { document.getElementById('protocolResults').innerHTML = ''; return; }
+        fetch('/api/protocols/search?query=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(list => {
+                const c = document.getElementById('protocolResults');
+                if (list.length === 0) {
+                    c.innerHTML = '<div class="list-group-item text-muted">Протокол не найден</div>';
+                    return;
+                }
+                c.innerHTML = list.map(p =>
+                    `<button type="button" class="list-group-item list-group-item-action"
+                             onclick="selectProtocol(${p.id}, '${esc(p.number)}', '${p.date}')">
+                        ${p.number}
+                        <span class="text-muted small ms-1">${p.date}</span>
+                    </button>`
+                ).join('');
+            });
+    }
+
+    function selectProtocol(id, number, date) {
+        selectedProtocolId = id;
+        document.getElementById('protocolResults').innerHTML = '';
+        document.getElementById('protocolSearch').value = '';
+        document.getElementById('selectedProtocolLabel').textContent = '📋 ' + number + '  ' + date;
+        document.getElementById('selectedProtocolBadge').style.display = '';
+    }
+
+    function clearProtocol() {
+        selectedProtocolId = null;
+        document.getElementById('selectedProtocolBadge').style.display = 'none';
+    }
+
+    // ── Submit ───────────────────────────────────────────────────────────────
+
+    function prepareApprove() {
+        const tInput = document.getElementById('hiddenTouristId');
+        const pInput = document.getElementById('hiddenProtocolId');
+        if (selectedTouristId) { tInput.value = selectedTouristId; tInput.disabled = false; }
+        if (selectedProtocolId) { pInput.value = selectedProtocolId; pInput.disabled = false; }
+    }
+
+    function esc(s) { return (s ?? '').replace(/'/g, "\\'"); }
+</script>
 </body>
 </html>

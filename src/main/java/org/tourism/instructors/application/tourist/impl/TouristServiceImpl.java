@@ -56,7 +56,12 @@ public class TouristServiceImpl implements TouristService {
 
     @Override
     public List<TouristLightDTO> searchLightTourists (String query) {
-        return searchTouristsInner(query).stream().map(touristMapper::toLightDTO).toList();
+        List<String> queryParts = Arrays.asList(query.split(" "));
+        if (queryParts.size() == 1) {
+            return searchTouristsInner(query).stream().map(touristMapper::toLightDTO).toList();
+        } else {
+            return searchTouristsInnerByFullName(queryParts).stream().map(touristMapper::toLightDTO).toList();
+        }
     }
 
     @Override
@@ -126,6 +131,16 @@ public class TouristServiceImpl implements TouristService {
             return touristRepository.searchByCertificationId(query);
         } else {
             return touristRepository.searchByLastNameStartingWithIgnoreCase(query);
+        }
+    }
+
+    private List<Tourist> searchTouristsInnerByFullName(List<String> fullNameParts) {
+        if (fullNameParts.size() == 3) {
+            return touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(fullNameParts.getFirst(), fullNameParts.get(1), fullNameParts.getLast());
+        } else if (fullNameParts.size() == 2) {
+            return touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(fullNameParts.getFirst(), fullNameParts.getLast());
+        } else {
+            return touristRepository.searchByLastNameStartingWithIgnoreCase(fullNameParts.getFirst());
         }
     }
 
