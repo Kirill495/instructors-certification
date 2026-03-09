@@ -19,6 +19,7 @@ public class SecurityConfig {
 //                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/bot/**").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/", true).permitAll())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
