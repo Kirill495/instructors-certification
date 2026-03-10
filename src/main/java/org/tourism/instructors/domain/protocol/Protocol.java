@@ -31,6 +31,10 @@ public class Protocol {
     @Column(name = "order_number", length = 12)
     private String order;
 
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ProtocolStatus status;
+
     @OneToMany(mappedBy = "protocol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<ProtocolContent> protocolContents = new ArrayList<>();
 

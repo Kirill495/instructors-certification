@@ -107,14 +107,14 @@
                                        value="MALE"
                                        id="genderMale"
                                        required>
-                                <label for="genderMale">Мужской</label>
+                                <label for="genderMale" th:text="#{enum.Gender.MALE}">Мужской</label>
 
                                 <input type="radio"
                                        th:field="*{gender}"
                                        value="FEMALE"
                                        id="genderFemale"
                                        required>
-                                <label for="genderFemale">Женский</label>
+                                <label for="genderFemale" th:text="#{enum.Gender.FEMALE}">Женский</label>
                             </div>
                         </div>
 
@@ -143,9 +143,9 @@
                                     <select th:field="*{contactInfo[__${iter.index}__].type}"
                                             class="form-select"
                                             style="max-width: 160px;">
-                                        <option value="PHONE_NUMBER">Телефон</option>
-                                        <option value="EMAIL">E-mail</option>
-                                        <option value="TELEGRAM">Telegram</option>
+                                        <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефон</option>
+                                        <option value="EMAIL" th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
+                                        <option value="TELEGRAM" th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
                                     </select>
                                     <input th:field="*{contactInfo[__${iter.index}__].value}"
                                            type="text"

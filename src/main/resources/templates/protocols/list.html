@@ -114,7 +114,8 @@
                         <i th:if="${sortField == 'date' && sortOrder == 'desc'}" class="bi bi-sort-up ms-1"></i>
                     </th>
                     <th style="width: 10%">№ приказа</th>
-                    <th style="width: 70%">Туристы</th>
+                    <th style="width: 6%">Статус</th>
+                    <th style="width: 64%">Туристы</th>
                 </tr>
                 </thead>
                 <tbody th:fragment="tableRows">
@@ -125,6 +126,7 @@
                     <td th:text="${protocol.number ?: '-'}">123</td>
                     <td th:text="${#temporals.format(protocol.date, 'dd.MM.yyyy')}">01.01.2024</td>
                     <td th:text="${protocol.order ?: '-'}">123</td>
+                    <td th:text="${protocol.status != null ? #messages.msg('enum.ProtocolStatus.' + protocol.status.name()) : '-'}">Статус</td>
                     <td>
                         <span th:each="tourist, iterStat : ${protocol.getTourists()}">
                             <a th:if="${iterStat.index < 2}"

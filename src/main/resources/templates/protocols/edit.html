@@ -27,7 +27,7 @@
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="number" class="form-label">Номер протокола <span class="text-danger">*</span></label>
                         <input type="text"
                                class="form-control"
@@ -37,7 +37,7 @@
                                placeholder="Например: 01/2024">
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="date" class="form-label">Дата <span class="text-danger">*</span></label>
                         <input type="date"
                                class="form-control"
@@ -46,13 +46,22 @@
                                required>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="orderNumber" class="form-label">Номер приказа</label>
                         <input type="text"
                                class="form-control"
                                id="orderNumber"
                                th:field="*{order}"
                                placeholder="Например: 123">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Статус</label>
+                        <select th:field="*{status}" class="form-select" id = "status">
+                            <option th:each="statusItem : ${availableStatuses}"
+                                    th:value="${statusItem}"
+                                    th:text="${#messages.msg('enum.ProtocolStatus.' + statusItem.name())}">
+                            </option>
+                        </select>
                     </div>
                 </div>
             </div>
