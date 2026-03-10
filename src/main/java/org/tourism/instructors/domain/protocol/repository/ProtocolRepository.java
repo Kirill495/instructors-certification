@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.protocol.Protocol;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -55,8 +56,8 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
     @Query("SELECT count(*) FROM Protocol p WHERE p.id < :protocolId")
     int countOfRowsBefore(@Param("protocolId") int protocolId);
 
-    @Query("SELECT p.id as id, p.number as number, p.date as date FROM Protocol p WHERE p.number ILIKE CONCAT(:query, '%') ORDER BY p.number ASC")
-    List<ProtocolProjection> searchByNumber(@Param("query") String query);
+    @Query("SELECT p.id as id, p.number as number, p.date as date FROM Protocol p WHERE p.number ILIKE CONCAT(:query, '%') AND p.status = :status ORDER BY p.number ASC")
+    List<ProtocolProjection> searchByNumberAndStatus(@Param("query") String query, @Param("status") ProtocolStatus status);
 
 
     @Query("SELECT p.id as protocolId, " +

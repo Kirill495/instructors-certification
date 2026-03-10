@@ -13,6 +13,7 @@ import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 @Controller
 @RequestMapping("/protocols")
@@ -112,6 +113,7 @@ public class ProtocolController {
         model.addAttribute("protocol", protocolService.getProtocolById(id));
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
+        model.addAttribute("availableStatuses", ProtocolStatus.values());
         return "protocols/edit";
     }
 

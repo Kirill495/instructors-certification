@@ -17,6 +17,7 @@ import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.Protocol;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 
 import java.util.Comparator;
@@ -68,9 +69,9 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
-    public List<ProtocolLightDTO> searchByNumber(String query) {
-        return protocolRepository.searchByNumber(query).stream()
-                .map(p -> new ProtocolLightDTO(p.getId(), p.getNumber(), p.getDate()))
+    public List<ProtocolLightDTO> searchDraftsByNumber(String query) {
+        return protocolRepository.searchByNumberAndStatus(query, ProtocolStatus.DRAFT).stream()
+                .map(protocolMapper::toLightDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
 

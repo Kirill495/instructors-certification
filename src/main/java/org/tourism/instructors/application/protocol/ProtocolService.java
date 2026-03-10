@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface ProtocolService {
     Page<ProtocolForListDTO> getProtocolsForList(String searchString, Pageable pageable);
-    List<ProtocolLightDTO> searchByNumber(String query);
+    List<ProtocolLightDTO> searchDraftsByNumber(String query);
     ProtocolDTO getProtocolById(int id);
     void deleteProtocol(int protocolId);
     void saveProtocol(ProtocolDTO protocolDTO);

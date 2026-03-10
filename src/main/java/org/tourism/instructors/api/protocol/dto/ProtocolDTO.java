@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class ProtocolDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
     private String order;
+    private ProtocolStatus status;
     private List<ProtocolContentDTO> contentRows = new ArrayList<>();
     public boolean isNewItem() {
         return id == null;
