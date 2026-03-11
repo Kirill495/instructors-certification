@@ -60,15 +60,16 @@ public class PendingTouristController {
         return "redirect:/pending";
     }
 
+    @PostMapping("/{id}/unlink")
+    public String unlinkTourist(@PathVariable int id) {
+        pendingTouristService.unlinkTourist(id);
+        return "redirect:/pending";
+    }
+
     @PostMapping("/{id}/approve")
     public String approve(@PathVariable int id,
-                          @RequestParam(required = false) Integer touristId,
                           @RequestParam(required = false) Integer protocolId,
                           RedirectAttributes redirectAttributes) {
-        if (touristId != null) {
-            pendingTouristService.linkTourist(id, touristId);
-        }
-
         PendingTourist pending = pendingTouristService.approve(id);
         Integer resolvedTouristId = null;
 
@@ -118,4 +119,5 @@ public class PendingTouristController {
         redirectAttributes.addFlashAttribute("errorMessage", "Заявка " + pending.getFullName() + " отклонена");
         return "redirect:/pending";
     }
+
 }

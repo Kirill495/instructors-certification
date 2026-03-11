@@ -65,6 +65,13 @@ public class PendingTouristServiceImpl implements PendingTouristService {
         return pendingTouristRepository.save(pending);
     }
 
+    @Override
+    public PendingTourist unlinkTourist(int pendingId) {
+        PendingTourist pending = findById(pendingId);
+        pending.setTourist(null);
+        return pendingTouristRepository.save(pending);
+    }
+
     private PendingTourist findById(int id) {
         return pendingTouristRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pending tourist not found: " + id));
