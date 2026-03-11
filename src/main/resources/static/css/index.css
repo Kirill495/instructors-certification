@@ -1,0 +1,51 @@
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 20px;
+}
+
+.nav-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    height: 100%;
+}
+
+.nav-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.nav-card .card-body {
+    padding: 30px;
+    text-align: center;
+}
+
+.nav-card .icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+.nav-card h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 767px) {
+    .nav-card .card-body {
+        padding: 15px 10px;
+    }
+    .nav-card .icon {
+        font-size: 1.8rem;
+        margin-bottom: 8px;
+    }
+    .nav-card h5 {
+        font-size: 0.95rem;
+        margin-bottom: 6px;
+    }
+    .nav-card p {
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+    }
+}
