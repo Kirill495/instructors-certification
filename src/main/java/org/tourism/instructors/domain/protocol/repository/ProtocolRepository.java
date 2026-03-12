@@ -59,6 +59,8 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
     @Query("SELECT p.id as id, p.number as number, p.date as date FROM Protocol p WHERE p.number ILIKE CONCAT(:query, '%') AND p.status = :status ORDER BY p.number ASC")
     List<ProtocolProjection> searchByNumberAndStatus(@Param("query") String query, @Param("status") ProtocolStatus status);
 
+    @Query("SELECT p.id as id, p.number as number, p.date as date FROM Protocol p where p.status = :status")
+    List<ProtocolProjection> getLast(@Param("status") ProtocolStatus status, Pageable pageable);
 
     @Query("SELECT p.id as protocolId, " +
                    "p.date as protocolDate, " +

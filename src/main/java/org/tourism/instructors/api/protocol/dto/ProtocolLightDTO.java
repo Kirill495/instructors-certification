@@ -11,4 +11,5 @@ public class ProtocolLightDTO {
     private int id;
     private String number;
     private LocalDate date;
+
 }

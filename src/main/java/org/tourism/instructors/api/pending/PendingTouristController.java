@@ -45,13 +45,7 @@ public class PendingTouristController {
     @GetMapping
     public String list(Model model) {
         model.addAttribute("pending", pendingTouristService.findAllPending());
-        return "admin/pending/list";
-    }
-
-    @GetMapping("/{id}/link")
-    public String linkForm(@PathVariable int id, Model model) {
-        model.addAttribute("pending", pendingTouristService.getById(id));
-        return "admin/pending/link";
+        return "pending/list";
     }
 
     @PostMapping("/{id}/link")
