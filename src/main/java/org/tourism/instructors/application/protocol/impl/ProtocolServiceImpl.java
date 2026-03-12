@@ -2,9 +2,7 @@ package org.tourism.instructors.application.protocol.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.ProtocolContentDTO;
@@ -22,6 +20,8 @@ import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 
 import java.util.Comparator;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @Transactional(readOnly = true)
@@ -72,7 +72,15 @@ public class ProtocolServiceImpl implements ProtocolService {
     public List<ProtocolLightDTO> searchDraftsByNumber(String query) {
         return protocolRepository.searchByNumberAndStatus(query, ProtocolStatus.DRAFT).stream()
                 .map(protocolMapper::toLightDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(toList());
+    }
+
+    @Override
+    public List<ProtocolLightDTO> getLastDrafts() {
+        PageRequest pageable = PageRequest.of(0, 10, Sort.by("date").descending());
+        return protocolRepository.getLast(ProtocolStatus.DRAFT, pageable).stream()
+                .map(protocolMapper::toLightDTO)
+                .collect(toList());
     }
 
     @Transactional
