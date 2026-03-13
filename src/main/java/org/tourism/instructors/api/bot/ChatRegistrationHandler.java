@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.tourism.instructors.api.bot.exception.BotConversationException;
 import org.tourism.instructors.api.bot.keyboards.CalendarKeyboard;
 import org.tourism.instructors.api.bot.keyboards.MonthKeyboard;
 import org.tourism.instructors.api.bot.keyboards.OneLineKeyboard;
@@ -125,6 +126,7 @@ public class ChatRegistrationHandler {
                     case "GRADE"          -> { state.setStep(TouristRegistrationBot.Step.GRADE);           state.setEditingPromptMessageId(sendGradePicker(bot, chatId)); }
                 }
             }
+            default -> throw new BotConversationException(dataParts.removeFirst());
         }
     }
 
