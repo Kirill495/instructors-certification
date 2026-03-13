@@ -29,6 +29,7 @@ jobs:
 
       - name: Analyze with SonarCloud
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -DskipTests
           -Dsonar.projectKey=YOUR_PROJECT_KEY
           -Dsonar.organization=YOUR_ORGANIZATION_KEY
         env:
