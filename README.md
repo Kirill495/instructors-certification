@@ -1,6 +1,9 @@
-# Instructors Assignments — Инструкторские назначения
+[![Quality gate Status](https://sonarcloud.io/api/project_badges/quality_gate?project=Kirill495_instructors-certification)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
 
-Веб-приложение для учёта инструкторских званий в спортивном туризме. Позволяет вести базу туристов, управлять справочниками (звания, виды туризма) и работать с протоколами присвоения званий.
+# Instructors Assignments — Аттестация инструкторов
+
+Веб-приложение для учёта инструкторских званий в спортивном туризме. Позволяет вести базу инструкторов, управлять справочниками (звания, виды туризма) и работать с протоколами присвоения званий.
 
 ## Стек технологий
 
