@@ -24,7 +24,13 @@ telegram:
     token: ${TELEGRAM_BOT_TOKEN}
     username: ${TELEGRAM_BOT_USERNAME}
     mini-app-url: ${TELEGRAM_MINI_APP_URL}
-
+app:
+  admin:
+    login: ${ADMIN_LOGIN}
+    password: ${ADMIN_PASSWORD}
+  user:
+    login: ${USER_LOGIN}
+    password: ${USER_PASSWORD}
 logging:
   level:
     org:
