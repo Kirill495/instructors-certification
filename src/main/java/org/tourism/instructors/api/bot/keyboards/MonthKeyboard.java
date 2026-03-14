@@ -9,6 +9,8 @@ import java.util.List;
 
 public class MonthKeyboard {
 
+    private MonthKeyboard() {}
+
     private static final String[] MONTHS = {
             "Январь", "Февраль", "Март",
             "Апрель", "Май",     "Июнь",

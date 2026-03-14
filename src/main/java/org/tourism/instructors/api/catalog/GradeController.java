@@ -7,9 +7,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/catalog/grades")
 public class GradeController {
+
+    private static final String GRADES_ATTRIBUTE = "grades";
+    private static final String GRADE_ATTRIBUTE = "grade";
 
     private final CatalogService catalogService;
 
@@ -21,9 +26,9 @@ public class GradeController {
     public String listGrades(@RequestParam(required = false, defaultValue = "false") boolean showInactive,
                              Model model) {
         if (showInactive) {
-            model.addAttribute("grades", catalogService.findAllGrades());
+            model.addAttribute(GRADES_ATTRIBUTE, catalogService.findAllGrades());
         } else {
-            model.addAttribute("grades", catalogService.findActiveGrades());
+            model.addAttribute(GRADES_ATTRIBUTE, catalogService.findActiveGrades());
         }
         model.addAttribute("showInactive", showInactive);
         return "catalog/grades/list";
@@ -31,13 +36,13 @@ public class GradeController {
 
     @GetMapping("/{id}")
     public String viewGrade(@PathVariable int id, Model model) {
-        model.addAttribute("grade", catalogService.findGradeById(id));
+        model.addAttribute(GRADE_ATTRIBUTE, catalogService.findGradeById(id));
         return "catalog/grades/view";
     }
 
     @GetMapping("/{id}/edit")
     public String editGrade(@PathVariable int id, Model model) {
-        model.addAttribute("grade", catalogService.findGradeById(id));
+        model.addAttribute(GRADE_ATTRIBUTE, catalogService.findGradeById(id));
         return "catalog/grades/edit";
     }
 
@@ -47,13 +52,13 @@ public class GradeController {
                               RedirectAttributes redirectAttributes) {
         grade.setId(id);
         catalogService.saveGrade(grade);
-        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно обновлено");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно обновлено");
         return "redirect:/catalog/grades";
     }
 
     @GetMapping("/new")
     public String newGradeForm(Model model) {
-        model.addAttribute("grade", new GradeDTO());
+        model.addAttribute(GRADE_ATTRIBUTE, new GradeDTO());
         return "catalog/grades/edit";
     }
 
@@ -61,7 +66,7 @@ public class GradeController {
     public String createGrade(@ModelAttribute GradeDTO gradeDTO,
                               RedirectAttributes redirectAttributes) {
         catalogService.saveGrade(gradeDTO);
-        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно создано");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно создано");
         return "redirect:/catalog/grades";
     }
 
@@ -69,7 +74,7 @@ public class GradeController {
     public String deleteGrade(@PathVariable int id,
                               RedirectAttributes redirectAttributes) {
         catalogService.deleteGrade(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Звание успешно удалено");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно удалено");
         return "redirect:/catalog/grades";
     }
 }

@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.application.user.UserService;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/profile")
 public class ProfileController {
@@ -30,11 +33,11 @@ public class ProfileController {
                                  Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
         if (!newPassword.equals(confirmPassword)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Пароли не совпадают");
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE_ATTRIBUTE, "Пароли не совпадают");
             return "redirect:/profile/password";
         }
         userService.changePassword(authentication.getName(), newPassword);
-        redirectAttributes.addFlashAttribute("successMessage", "Пароль успешно изменён");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пароль успешно изменён");
         return "redirect:/";
     }
 }

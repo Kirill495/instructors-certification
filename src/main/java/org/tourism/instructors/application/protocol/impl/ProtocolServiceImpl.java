@@ -21,8 +21,6 @@ import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import java.util.Comparator;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 @Service
 @Transactional(readOnly = true)
 public class ProtocolServiceImpl implements ProtocolService {
@@ -70,17 +68,14 @@ public class ProtocolServiceImpl implements ProtocolService {
 
     @Override
     public List<ProtocolLightDTO> searchDraftsByNumber(String query) {
-        return protocolRepository.searchByNumberAndStatus(query, ProtocolStatus.DRAFT).stream()
-                .map(protocolMapper::toLightDTO)
-                .collect(toList());
+        return protocolRepository.searchByNumberAndStatus(query, ProtocolStatus.DRAFT).stream().map(protocolMapper::toLightDTO).toList();
     }
 
     @Override
     public List<ProtocolLightDTO> getLastDrafts() {
         PageRequest pageable = PageRequest.of(0, 10, Sort.by("date").descending());
         return protocolRepository.getLast(ProtocolStatus.DRAFT, pageable).stream()
-                .map(protocolMapper::toLightDTO)
-                .collect(toList());
+                .map(protocolMapper::toLightDTO).toList();
     }
 
     @Transactional
@@ -98,7 +93,7 @@ public class ProtocolServiceImpl implements ProtocolService {
         content.setGradeId(pending.getGrade().getId());
         content.setCertificationId(pending.getCertificationId());
         protocol.getContentRows().add(content);
-        saveProtocol(protocol);
+        saveProtocolInner(protocol);
     }
 
     @Override
@@ -113,13 +108,13 @@ public class ProtocolServiceImpl implements ProtocolService {
 
     @Override
     public ProtocolDTO getProtocolById (int id) {
-        return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new RuntimeException("Протокол с ID:" + id + " не найден"));
+        return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new ProtocolNotFoundException(id));
     }
 
     @Transactional
     @Override
     public void saveProtocol (ProtocolDTO protocolDTO) {
-        protocolRepository.save(protocolMapper.toEntity(protocolDTO));
+        saveProtocolInner(protocolDTO);
     }
 
     @Transactional
@@ -127,5 +122,9 @@ public class ProtocolServiceImpl implements ProtocolService {
     public void deleteProtocol (int protocolId) {
         Protocol protocol = protocolRepository.findById(protocolId).orElseThrow(() -> new ProtocolNotFoundException(protocolId));
         protocolRepository.delete(protocol);
+    }
+
+    private void saveProtocolInner(ProtocolDTO protocolDTO) {
+        protocolRepository.save(protocolMapper.toEntity(protocolDTO));
     }
 }

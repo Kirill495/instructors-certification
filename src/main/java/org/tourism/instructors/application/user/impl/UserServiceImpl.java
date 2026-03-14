@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.tourism.instructors.api.user.dto.UserDTO;
 import org.tourism.instructors.application.user.UserService;
+import org.tourism.instructors.application.user.exception.UserNotFoundException;
 import org.tourism.instructors.domain.user.User;
 import org.tourism.instructors.domain.user.repository.UserRepository;
 
@@ -28,7 +29,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO findById(int id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setName(user.getName());
@@ -48,7 +49,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateUser(int id, UserDTO dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
         user.setRole(dto.getRole());
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -64,7 +65,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void changePassword(String username, String newPassword) {
         User user = userRepository.findByName(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+                .orElseThrow(() -> new UserNotFoundException(username));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }

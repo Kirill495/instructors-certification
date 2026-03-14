@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+
 @ControllerAdvice(assignableTypes = ProtocolController.class)
 public class ProtocolExceptionHandler {
 
@@ -18,7 +20,7 @@ public class ProtocolExceptionHandler {
 
     @ExceptionHandler(ProtocolNotFoundException.class)
     public String handleProtocolNotFound(ProtocolNotFoundException exception, Model model) {
-        model.addAttribute("errorMessage", exception.getMessage());
+        model.addAttribute(ERROR_MESSAGE_ATTRIBUTE, exception.getMessage());
         model.addAttribute("model", protocolService.getProtocolById(exception.getProtocolId()));
         return "protocol/edit";
 

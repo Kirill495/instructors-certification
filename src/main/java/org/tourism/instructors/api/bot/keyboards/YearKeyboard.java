@@ -10,6 +10,8 @@ public class YearKeyboard {
 
     public static final int PAGE_SIZE = 16; // 4 columns × 4 rows
 
+    private YearKeyboard() {}
+
     public static InlineKeyboardMarkup build(int startYear) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 

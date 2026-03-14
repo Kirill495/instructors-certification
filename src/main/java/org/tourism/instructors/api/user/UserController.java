@@ -7,9 +7,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.user.dto.UserDTO;
 import org.tourism.instructors.application.user.UserService;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/admin/users")
 public class UserController {
+
+    private static final String REDIRECT_URL = "redirect:/admin/users";
 
     private final UserService userService;
 
@@ -32,8 +36,8 @@ public class UserController {
     @PostMapping("/new")
     public String createUser(@ModelAttribute UserDTO dto, RedirectAttributes redirectAttributes) {
         userService.createUser(dto);
-        redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно создан");
-        return "redirect:/admin/users";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно создан");
+        return REDIRECT_URL;
     }
 
     @GetMapping("/{id}/edit")
@@ -47,14 +51,14 @@ public class UserController {
                              @ModelAttribute UserDTO dto,
                              RedirectAttributes redirectAttributes) {
         userService.updateUser(id, dto);
-        redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно обновлён");
-        return "redirect:/admin/users";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно обновлён");
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
     public String deleteUser(@PathVariable int id, RedirectAttributes redirectAttributes) {
         userService.deleteUser(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно удалён");
-        return "redirect:/admin/users";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно удалён");
+        return REDIRECT_URL;
     }
 }

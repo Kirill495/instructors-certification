@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.tourism.instructors.api.bot.exception.TelegramDispatchException;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.application.tourist.TouristService;
@@ -36,8 +37,12 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
 
 
     @Override
-    public <T extends Serializable> T dispatch(BotApiMethod<T> method) throws TelegramApiException {
-        return execute(method);
+    public <T extends Serializable> T dispatch(BotApiMethod<T> method) {
+        try {
+            return execute(method);
+        } catch (TelegramApiException exception) {
+            throw new TelegramDispatchException(exception);
+        }
     }
 
     @Value("${telegram.bot.username}")
@@ -102,13 +107,11 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
         send(chatId, "Используйте /start для регистрации.");
     }
 
+    @Override
     public int send(long chatId, String text) {
-        try {
-            return execute(SendMessage.builder().chatId(chatId).text(text).build()).getMessageId();
-        } catch (TelegramApiException e) {
-            throw new RuntimeException("Failed to send Telegram message", e);
-        }
+        return dispatch(SendMessage.builder().chatId(chatId).text(text).build()).getMessageId();
     }
+
     // ── Registration flow ────────────────────────────────────────────────────
 
     private void startRegistration(long chatId) {
@@ -125,15 +128,7 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
                 .resizeKeyboard(true)
                 .oneTimeKeyboard(true)
                 .build();
-        try {
-            execute(SendMessage.builder()
-                    .chatId(chatId)
-                    .text("Для регистрации заполните анкету:")
-                    .replyMarkup(keyboard)
-                    .build());
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        dispatch(SendMessage.builder().chatId(chatId).text("Для регистрации заполните анкету:").replyMarkup(keyboard).build());
     }
 
     // ── Callback handling ────────────────────────────────────────────────────
@@ -143,11 +138,7 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
         long chatId = callback.getMessage().getChatId();
         int messageId = callback.getMessage().getMessageId();
 
-        try {
-            execute(AnswerCallbackQuery.builder().callbackQueryId(callback.getId()).build());
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        dispatch(AnswerCallbackQuery.builder().callbackQueryId(callback.getId()).build());
         chatRegistrationHandler.handleCommand(this, chatId, messageId, data);
     }
 

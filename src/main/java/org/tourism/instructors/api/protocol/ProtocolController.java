@@ -15,13 +15,16 @@ import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/protocols")
 public class ProtocolController {
 
+    private static final String PROTOCOL_ATTRIBUTE = "protocol";
+
     private final ProtocolService protocolService;
     private final CatalogService catalogService;
-
 
     public ProtocolController (ProtocolService protocolService, CatalogService catalogService) {
         this.protocolService = protocolService;
@@ -104,13 +107,13 @@ public class ProtocolController {
 
     @GetMapping("/{id}")
     public String viewProtocol(@PathVariable int id, Model model) {
-        model.addAttribute("protocol", protocolService.getProtocolById(id));
+        model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolById(id));
         return "protocols/view";
     }
 
     @GetMapping("/{id}/edit")
     public String editProtocol(@PathVariable int id, Model model) {
-        model.addAttribute("protocol", protocolService.getProtocolById(id));
+        model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolById(id));
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         model.addAttribute("availableStatuses", ProtocolStatus.values());
@@ -119,7 +122,7 @@ public class ProtocolController {
 
     @GetMapping("/new")
     public String newProtocol(Model model) {
-        model.addAttribute("protocol", new ProtocolDTO());
+        model.addAttribute(PROTOCOL_ATTRIBUTE, new ProtocolDTO());
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         return "protocols/edit";
@@ -130,13 +133,13 @@ public class ProtocolController {
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
         protocolService.saveProtocol(protocol);
-        redirectAttributes.addFlashAttribute("successMessage", "Протокол записан");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Протокол записан");
         return "redirect:/protocols";
     }
     @PostMapping("/{id}/delete")
     public String deleteProtocol(@PathVariable int id, RedirectAttributes redirectAttributes) {
         protocolService.deleteProtocol(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Протокол удален");
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Протокол удален");
         return "redirect:/protocols";
     }
 

@@ -20,10 +20,14 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/pending")
 public class PendingTouristController {
 
+    private static final String REDIRECT_URL = "redirect:/pending";
     private final PendingTouristService pendingTouristService;
     private final TouristRegistrationBot bot;
     private final TouristService touristService;
@@ -51,13 +55,13 @@ public class PendingTouristController {
     @PostMapping("/{id}/link")
     public String linkTourist(@PathVariable int id, @RequestParam int touristId) {
         pendingTouristService.linkTourist(id, touristId);
-        return "redirect:/pending";
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/unlink")
     public String unlinkTourist(@PathVariable int id) {
         pendingTouristService.unlinkTourist(id);
-        return "redirect:/pending";
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/approve")
@@ -65,7 +69,7 @@ public class PendingTouristController {
                           @RequestParam(required = false) Integer protocolId,
                           RedirectAttributes redirectAttributes) {
         PendingTourist pending = pendingTouristService.approve(id);
-        Integer resolvedTouristId = null;
+        Integer resolvedTouristId;
 
         if (pending.getTourist() == null) {
             TouristDTO dto = touristMapper.toDTO(pending);
@@ -102,16 +106,16 @@ public class PendingTouristController {
         }
 
         bot.send(pending.getChatId(), "Ваша заявка одобрена ✅.");
-        redirectAttributes.addFlashAttribute("successMessage", "Турист " + pending.getFullName() + " одобрен");
-        return "redirect:/pending";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Турист " + pending.getFullName() + " одобрен");
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/reject")
     public String reject(@PathVariable int id, RedirectAttributes redirectAttributes) {
         PendingTourist pending = pendingTouristService.reject(id);
         bot.send(pending.getChatId(), "Ваша заявка отклонена ❌ Обратитесь к администратору.");
-        redirectAttributes.addFlashAttribute("errorMessage", "Заявка " + pending.getFullName() + " отклонена");
-        return "redirect:/pending";
+        redirectAttributes.addFlashAttribute(ERROR_MESSAGE_ATTRIBUTE, "Заявка " + pending.getFullName() + " отклонена");
+        return REDIRECT_URL;
     }
 
 }
