@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController

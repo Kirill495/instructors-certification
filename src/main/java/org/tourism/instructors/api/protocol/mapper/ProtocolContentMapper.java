@@ -5,7 +5,6 @@ import org.mapstruct.Mapping;
 import org.tourism.instructors.api.protocol.dto.ProtocolContentDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
-import org.tourism.instructors.domain.tourist.model.Tourist;
 
 @Mapper(componentModel = "spring")
 public interface ProtocolContentMapper {

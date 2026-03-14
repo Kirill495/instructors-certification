@@ -7,10 +7,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/catalog/kinds-of-tourism")
 public class KindOfTourismController {
 
+    private static final String REDIRECT_URL = "redirect:/catalog/kinds-of-tourism";
     private final CatalogService catalogService;
 
     public KindOfTourismController (CatalogService catalogService) {
@@ -47,8 +50,8 @@ public class KindOfTourismController {
                                       RedirectAttributes redirectAttributes) {
         kindOfTourism.setId(id);
         catalogService.saveKindOfTourism(kindOfTourism);
-        redirectAttributes.addFlashAttribute("successMessage", "Вид туризма успешно обновлен");
-        return "redirect:/catalog/kinds-of-tourism";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно обновлен");
+        return REDIRECT_URL;
     }
 
     @GetMapping("/new")
@@ -61,15 +64,15 @@ public class KindOfTourismController {
     public String createKindOfTourism(@ModelAttribute KindOfTourismDTO kindOfTourism,
                                       RedirectAttributes redirectAttributes) {
         catalogService.saveKindOfTourism(kindOfTourism);
-        redirectAttributes.addFlashAttribute("successMessage", "Вид туризма успешно создан");
-        return "redirect:/catalog/kinds-of-tourism";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно создан");
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
     public String deleteKindOfTourism(@PathVariable int id,
                                       RedirectAttributes redirectAttributes) {
         catalogService.deleteKindOfTourism(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Вид туризма успешно удален");
-        return "redirect:/catalog/kinds-of-tourism";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно удален");
+        return REDIRECT_URL;
     }
 }

@@ -11,9 +11,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.tourist.TouristService;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 @Controller
 @RequestMapping("/tourists")
 public class TouristController {
+
+    private static final String TOURIST_ATTRIBUTE = "tourist";
+    private static final String REDIRECT_URL = "redirect:/tourists";
 
     private final TouristService touristService;
 
@@ -60,19 +65,19 @@ public class TouristController {
 
     @GetMapping("/{id}")
     public String viewTourist(@PathVariable int id,  Model model) {
-        model.addAttribute("tourist", touristService.findTouristById(id));
+        model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
         return "tourists/view";
     }
 
     @GetMapping("/{id}/edit")
     public String editTourist(@PathVariable int id, Model model) {
-        model.addAttribute("tourist", touristService.findTouristById(id));
+        model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
         return "tourists/edit";
     }
 
     @GetMapping("/new")
     public String newTourist(Model model) {
-        model.addAttribute("tourist", new TouristDTO());
+        model.addAttribute(TOURIST_ATTRIBUTE, new TouristDTO());
         return "tourists/edit";
     }
 
@@ -80,8 +85,8 @@ public class TouristController {
     public String createTourist(@ModelAttribute TouristDTO touristDTO,
                                 RedirectAttributes redirectAttributes) {
         touristService.save(touristDTO);
-        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста сохранены");
-        return "redirect:/tourists";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Данные туриста сохранены");
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/edit")
@@ -90,16 +95,16 @@ public class TouristController {
                                 RedirectAttributes redirectAttributes) {
         tourist.setId(id);
         touristService.save(tourist);
-        redirectAttributes.addFlashAttribute("successMessage", "Данные туриста успешно обновлены");
-        return "redirect:/tourists";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Данные туриста успешно обновлены");
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
     public String deleteTourist(@PathVariable int id,
                                 RedirectAttributes redirectAttributes) {
         touristService.delete(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Сведения о туристе удалены");
-        return "redirect:/tourists";
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Сведения о туристе удалены");
+        return REDIRECT_URL;
     }
 
     private static Sort createSort(String sort, String order) {

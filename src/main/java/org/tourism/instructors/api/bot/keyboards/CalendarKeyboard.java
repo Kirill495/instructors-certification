@@ -13,7 +13,10 @@ import java.util.Locale;
 public class CalendarKeyboard {
 
     private static final DateTimeFormatter HEADER_FORMAT =
-            DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru"));
+            DateTimeFormatter.ofPattern("LLLL yyyy", Locale.of("ru"));
+    private static final String IGNORE_CALLBACK_DATA = "cal:IGNORE";
+
+    private CalendarKeyboard() {}
 
     public static InlineKeyboardMarkup build(YearMonth yearMonth) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -21,14 +24,14 @@ public class CalendarKeyboard {
         // Header: month + year (no navigation — already chosen)
         String header = yearMonth.format(HEADER_FORMAT);
         header = Character.toUpperCase(header.charAt(0)) + header.substring(1);
-        rows.add(List.of(button(header, "cal:IGNORE")));
+        rows.add(List.of(button(header, IGNORE_CALLBACK_DATA)));
 
         // Day-of-week headers
         rows.add(List.of(
-                button("Пн", "cal:IGNORE"), button("Вт", "cal:IGNORE"),
-                button("Ср", "cal:IGNORE"), button("Чт", "cal:IGNORE"),
-                button("Пт", "cal:IGNORE"), button("Сб", "cal:IGNORE"),
-                button("Вс", "cal:IGNORE")
+                button("Пн", IGNORE_CALLBACK_DATA), button("Вт", IGNORE_CALLBACK_DATA),
+                button("Ср", IGNORE_CALLBACK_DATA), button("Чт", IGNORE_CALLBACK_DATA),
+                button("Пт", IGNORE_CALLBACK_DATA), button("Сб", IGNORE_CALLBACK_DATA),
+                button("Вс", IGNORE_CALLBACK_DATA)
         ));
 
         // Day grid
@@ -37,7 +40,7 @@ public class CalendarKeyboard {
 
         List<InlineKeyboardButton> week = new ArrayList<>();
         for (int i = 1; i < startDayOfWeek; i++) {
-            week.add(button(" ", "cal:IGNORE"));
+            week.add(button(" ", IGNORE_CALLBACK_DATA));
         }
 
         for (int day = 1; day <= yearMonth.lengthOfMonth(); day++) {
@@ -50,7 +53,7 @@ public class CalendarKeyboard {
         }
 
         if (!week.isEmpty()) {
-            while (week.size() < 7) week.add(button(" ", "cal:IGNORE"));
+            while (week.size() < 7) week.add(button(" ", IGNORE_CALLBACK_DATA));
             rows.add(week);
         }
 

@@ -6,8 +6,9 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageRe
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.tourism.instructors.api.bot.exception.BotConversationException;
+import org.tourism.instructors.api.bot.exception.UnknownButtonConversationException;
+import org.tourism.instructors.api.bot.exception.UnknownQuestionnaireFieldException;
+import org.tourism.instructors.api.bot.exception.UnknownTelegramOptionException;
 import org.tourism.instructors.api.bot.keyboards.CalendarKeyboard;
 import org.tourism.instructors.api.bot.keyboards.MonthKeyboard;
 import org.tourism.instructors.api.bot.keyboards.OneLineKeyboard;
@@ -82,6 +83,7 @@ public class ChatRegistrationHandler {
                 sendGradePicker(bot, chatId);
                 sendCheckInputQuestion(bot, chatId, state);
             }
+            default -> throw new UnknownQuestionnaireFieldException(state.getStep().name());
         }
     }
 
@@ -95,7 +97,8 @@ public class ChatRegistrationHandler {
         if (Objects.isNull(state)) {
             return;
         }
-        switch (dataParts.removeFirst()) {
+        String step = dataParts.removeFirst();
+        switch (step) {
             case "cal" -> processCalendarActions(bot, dataParts, chatId, messageId);
             case "CONFIRM" -> processConfirmationActions(bot, dataParts.removeFirst(), state, chatId);
             case "GENDER" -> {
@@ -124,27 +127,27 @@ public class ChatRegistrationHandler {
                     case "EMAIL"          -> { state.setStep(TouristRegistrationBot.Step.EMAIL);           state.setEditingPromptMessageId(bot.send(chatId, "Введите email (или «-» если нет):")); }
                     case "KIND_OF_TOURISM"-> { state.setStep(TouristRegistrationBot.Step.KIND_OF_TOURISM); state.setEditingPromptMessageId(sendKindOfTourismPicker(bot, chatId)); }
                     case "GRADE"          -> { state.setStep(TouristRegistrationBot.Step.GRADE);           state.setEditingPromptMessageId(sendGradePicker(bot, chatId)); }
+                    default -> throw new UnknownQuestionnaireFieldException(dataParts.getFirst());
                 }
             }
-            default -> throw new BotConversationException(dataParts.removeFirst());
+            default -> throw new UnknownButtonConversationException(step);
         }
     }
 
     private void processConfirmationActions(BotExecutor bot, String action, ConversationState state, long chatId) {
-        switch (action) {
-            case "OK" -> {
-                pendingTouristService.register(state);
-                bot.send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
-            }
-            case "CANCEL" -> {
-                activeConversations.put(chatId, new ConversationState(chatId, state.getTgUsername()));
-                bot.send(chatId, "Введите ФИО:");
-            }
+        if ("OK".equals(action)) {
+            pendingTouristService.register(state);
+            bot.send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
+        } else if ("CANCEL".equals(action)) {
+            activeConversations.put(chatId, new ConversationState(chatId, state.getTgUsername()));
+            bot.send(chatId, "Введите ФИО:");
         }
     }
 
     private void processCalendarActions(BotExecutor bot, List<String> dataParts, long chatId, int messageId) {
-        switch (dataParts.removeFirst()) {
+
+        String option = dataParts.removeFirst();
+        switch (option) {
             case "YEAR_PAGE" -> editKeyboard(bot, chatId, messageId, YearKeyboard.build(Integer.parseInt(dataParts.getFirst())));
             case "SELECT_YEAR" -> editKeyboard(bot, chatId, messageId, MonthKeyboard.build(Integer.parseInt(dataParts.getFirst())));
             case "SELECT_MONTH" -> editKeyboard(bot, chatId, messageId, CalendarKeyboard.build(YearMonth.parse(dataParts.getFirst())));
@@ -153,21 +156,18 @@ public class ChatRegistrationHandler {
                 ConversationState state = activeConversations.get(chatId);
                 if (state == null || state.getStep() != TouristRegistrationBot.Step.DATE_OF_BIRTH) return;
 
-                try {
-                    bot.dispatch(EditMessageText.builder()
-                            .chatId(chatId)
-                            .messageId(messageId)
-                            .text("Дата рождения: " + date + " ✅")
-                            .build());
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
-                }
+                bot.dispatch(EditMessageText.builder()
+                        .chatId(chatId)
+                        .messageId(messageId)
+                        .text("Дата рождения: " + date + " ✅")
+                        .build());
 
                 state.setDateOfBirth(date.format(DISPLAY_FORMAT));
                 if (state.isEditing()) { bot.deleteMessage(chatId, messageId); refreshSummary(bot, chatId, state, null); return; }
                 state.setStep(TouristRegistrationBot.Step.PHONE);
                 bot.send(chatId, "Введите номер телефона:");
             }
+            default -> throw new UnknownTelegramOptionException(option);
         }
     }
 
@@ -191,30 +191,23 @@ public class ChatRegistrationHandler {
         }
         state.setEditing(false);
         state.setStep(TouristRegistrationBot.Step.CHECK_INPUT);
-        try {
-            bot.dispatch(EditMessageText.builder()
-                    .chatId(chatId)
-                    .messageId(state.getSummaryMessageId())
-                    .text("Проверьте данные:")
-                    .replyMarkup(buildSummaryKeyboard(state))
-                    .build());
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        EditMessageText message = EditMessageText.builder()
+                .chatId(chatId)
+                .messageId(state.getSummaryMessageId())
+                .text("Проверьте данные:")
+                .replyMarkup(buildSummaryKeyboard(state))
+                .build();
+        bot.dispatch(message);
     }
 
     private void sendCheckInputQuestion(BotExecutor bot, long chatId, ConversationState state) {
-        try {
-            var message = bot.dispatch(SendMessage.builder()
-                    .chatId(chatId)
-                    .text("Проверьте данные:")
-                    .replyMarkup(buildSummaryKeyboard(state))
-                    .build());
-            state.setSummaryMessageId(message.getMessageId());
-            state.setStep(TouristRegistrationBot.Step.CHECK_INPUT);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        var message = bot.dispatch(SendMessage.builder()
+                .chatId(chatId)
+                .text("Проверьте данные:")
+                .replyMarkup(buildSummaryKeyboard(state))
+                .build());
+        state.setSummaryMessageId(message.getMessageId());
+        state.setStep(TouristRegistrationBot.Step.CHECK_INPUT);
     }
 
     private InlineKeyboardMarkup buildSummaryKeyboard(ConversationState state) {
@@ -244,11 +237,8 @@ public class ChatRegistrationHandler {
                         k -> "KIND_OF_TOURISM:" + k.id(),
                         (s1, s2) -> s1,
                         LinkedHashMap::new));
-        try {
-            return bot.dispatch(SendMessage.builder().chatId(chatId).text("Укажите вид туризма:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build()).getMessageId();
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        var message = SendMessage.builder().chatId(chatId).text("Укажите вид туризма:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build();
+        return bot.dispatch(message).getMessageId();
     }
 
     private int sendGradePicker(BotExecutor bot, long chatId) {
@@ -258,11 +248,13 @@ public class ChatRegistrationHandler {
                         gradeDTO -> "GRADE:" + gradeDTO.getId(),
                         (s1, s2) -> s1,
                         LinkedHashMap::new));
-        try {
-            return bot.dispatch(SendMessage.builder().chatId(chatId).text("Укажите звание:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build()).getMessageId();
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        return bot
+                .dispatch(SendMessage.builder()
+                        .chatId(chatId)
+                        .text("Укажите звание:")
+                        .replyMarkup(OneLineKeyboard.build(() -> buttons))
+                        .build())
+                .getMessageId();
     }
 
     private int sendGenderPicker(BotExecutor bot,
@@ -270,37 +262,26 @@ public class ChatRegistrationHandler {
         Map<String, String> buttons = new LinkedHashMap<>();
         buttons.put("Мужской", "GENDER:MALE");
         buttons.put("Женский", "GENDER:FEMALE");
-        try {
-            return bot.dispatch(SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build()).getMessageId();
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        return bot.dispatch(SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build()).getMessageId();
+
     }
 
     private int sendYearPicker(BotExecutor bot, long chatId) {
         int defaultStartYear = YearKeyboard.pageStartFor(2000);
-        try {
-            return bot.dispatch(SendMessage.builder()
-                    .chatId(chatId)
-                    .text("Выберите год рождения:")
-                    .replyMarkup(YearKeyboard.build(defaultStartYear))
-                    .build()).getMessageId();
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        return bot.dispatch(SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите год рождения:")
+                .replyMarkup(YearKeyboard.build(defaultStartYear))
+                .build()).getMessageId();
     }
 
     private void editKeyboard(BotExecutor bot, long chatId, int messageId,
                               InlineKeyboardMarkup markup) {
-        try {
-            bot.dispatch(EditMessageReplyMarkup.builder()
-                    .chatId(chatId)
-                    .messageId(messageId)
-                    .replyMarkup(markup)
-                    .build());
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        bot.dispatch(EditMessageReplyMarkup.builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .replyMarkup(markup)
+                .build());
     }
 
 }

@@ -8,6 +8,8 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import org.tourism.instructors.api.catalog.mapper.GradeMapper;
 import org.tourism.instructors.api.catalog.mapper.KindOfTourismMapper;
 import org.tourism.instructors.application.catalog.CatalogService;
+import org.tourism.instructors.application.catalog.exception.GradeNotFoundException;
+import org.tourism.instructors.application.catalog.exception.KindOfTourismNotFoundException;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
 
@@ -56,7 +58,7 @@ public class CatalogServiceImpl implements CatalogService {
     public KindOfTourismDTO getKindOfTourismById (int id) {
         return kindOfTourismRepository.findById(id)
                        .map(kindOfTourismMapper::toDTO)
-                       .orElseThrow(() -> new RuntimeException("Вид туризма c ID:" + id + " не найден"));
+                       .orElseThrow(() -> new KindOfTourismNotFoundException(id));
     }
 
     @Override
@@ -94,7 +96,7 @@ public class CatalogServiceImpl implements CatalogService {
     public GradeDTO findGradeById (int id) {
         return gradeRepository.findById(id)
                        .map(gradeMapper::toDTO)
-                       .orElseThrow(() -> new RuntimeException("Звание с ID:" + id + " не найдено"));
+                       .orElseThrow(() -> new GradeNotFoundException(id));
     }
 
     @Override
