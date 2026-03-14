@@ -14,6 +14,8 @@ import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_
 public class KindOfTourismController {
 
     private static final String REDIRECT_URL = "redirect:/catalog/kinds-of-tourism";
+    private static final String KINDS_ATTRIBUTE = "kindsOfTourism";
+    private static final String KIND_ATTRIBUTE = "kindOfTourism";
     private final CatalogService catalogService;
 
     public KindOfTourismController (CatalogService catalogService) {
@@ -24,9 +26,9 @@ public class KindOfTourismController {
     public String listKindsOfTourism(@RequestParam(required = false, defaultValue = "false") boolean showInactive,
                                      Model model) {
         if (showInactive) {
-            model.addAttribute("kindsOfTourism", catalogService.findAllKindsOfTourism());
+            model.addAttribute(KINDS_ATTRIBUTE, catalogService.findAllKindsOfTourism());
         } else {
-            model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
+            model.addAttribute(KINDS_ATTRIBUTE, catalogService.findActiveKindsOfTourism());
         }
         model.addAttribute("showInactive", showInactive);
         return "catalog/kinds-of-tourism/list";
@@ -34,13 +36,13 @@ public class KindOfTourismController {
 
     @GetMapping("/{id}")
     public String viewKindOfTourism(@PathVariable int id, Model model) {
-        model.addAttribute("kindOfTourism", catalogService.getKindOfTourismById(id));
+        model.addAttribute(KIND_ATTRIBUTE, catalogService.getKindOfTourismById(id));
         return "catalog/kinds-of-tourism/view";
     }
 
     @GetMapping("/{id}/edit")
     public String editKindOfTourism(@PathVariable int id, Model model) {
-        model.addAttribute("kindOfTourism", catalogService.getKindOfTourismById(id));
+        model.addAttribute(KIND_ATTRIBUTE, catalogService.getKindOfTourismById(id));
         return "catalog/kinds-of-tourism/edit";
     }
 
@@ -56,7 +58,7 @@ public class KindOfTourismController {
 
     @GetMapping("/new")
     public String newKindOfTourismForm(Model model) {
-        model.addAttribute("kindOfTourism", new KindOfTourismDTO());
+        model.addAttribute(KIND_ATTRIBUTE, new KindOfTourismDTO());
         return "catalog/kinds-of-tourism/edit";
     }
 
