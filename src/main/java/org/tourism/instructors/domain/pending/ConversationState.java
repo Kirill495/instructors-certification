@@ -18,7 +18,13 @@ public class ConversationState {
     }
     private TouristRegistrationBot.Step step = TouristRegistrationBot.Step.NAME;
     private Long chatId;
-    private String fullName, firstName, lastName, middleName, dateOfBirth, phoneNumber, email;
+    private String fullName;
+    private String firstName;
+    private String lastName;
+    private String middleName;
+    private String dateOfBirth;
+    private String phoneNumber;
+    private String email;
     private String certificationId;
     private KindOfTourismDTO kindOfTourism;
     private GradeDTO grade;

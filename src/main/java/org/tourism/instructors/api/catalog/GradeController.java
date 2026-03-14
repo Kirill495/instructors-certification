@@ -13,6 +13,7 @@ import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_
 @RequestMapping("/catalog/grades")
 public class GradeController {
 
+    private static final String REDIRECT_URL = "redirect:/catalog/grades";
     private static final String GRADES_ATTRIBUTE = "grades";
     private static final String GRADE_ATTRIBUTE = "grade";
 
@@ -53,7 +54,7 @@ public class GradeController {
         grade.setId(id);
         catalogService.saveGrade(grade);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно обновлено");
-        return "redirect:/catalog/grades";
+        return REDIRECT_URL;
     }
 
     @GetMapping("/new")
@@ -67,7 +68,7 @@ public class GradeController {
                               RedirectAttributes redirectAttributes) {
         catalogService.saveGrade(gradeDTO);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно создано");
-        return "redirect:/catalog/grades";
+        return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
@@ -75,6 +76,6 @@ public class GradeController {
                               RedirectAttributes redirectAttributes) {
         catalogService.deleteGrade(id);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно удалено");
-        return "redirect:/catalog/grades";
+        return REDIRECT_URL;
     }
 }

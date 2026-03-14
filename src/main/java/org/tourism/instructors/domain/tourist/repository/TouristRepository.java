@@ -15,7 +15,4 @@ public interface TouristRepository extends JpaRepository<Tourist, Integer> {
     List<Tourist> searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(String lastName, String firstName, String middleName);
 
     List<Tourist> searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(String lastName, String firstName);
-//    Page<Tourist> findAllTourists (Pageable pageable);
-
-
 }

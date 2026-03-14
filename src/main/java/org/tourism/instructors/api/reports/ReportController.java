@@ -48,11 +48,11 @@ public class ReportController {
         return ResponseEntity.ok().headers(headers).body(reportData);
     }
 
-    String createFileName(String name_pattern, String extension, LocalDate from, LocalDate till) {
+    String createFileName(String namePattern, String extension, LocalDate from, LocalDate till) {
         if ((from == null) && till == null) {
-            return String.format("%s.%s", name_pattern, extension);
+            return String.format("%s.%s", namePattern, extension);
         } else {
-            return String.format("%s [%s - %s].%s", name_pattern,
+            return String.format("%s [%s - %s].%s", namePattern,
                     from == null ? "" : from,
                     till == null ? "" : till,
                     extension);
