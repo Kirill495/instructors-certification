@@ -33,6 +33,7 @@ jobs:
           -Dsonar.qualitygate.wait=false
           -Dsonar.projectKey="$PROJECT_KEY"
           -Dsonar.organization="$ORGANIZATION_KEY"
+          -Dsonar.coverage.exclusions=**/*
           -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
         env:
           PROJECT_KEY: ${{secrets.PROJECT_KEY}}
