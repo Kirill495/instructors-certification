@@ -14,14 +14,18 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {GradeAssignmentMapper.class})
 public interface TouristMapper {
-    TouristLightDTO toLightDTO (Tourist model);
-    Tourist toEntity (TouristDTO dto);
-    TouristDTO toDTO (Tourist model);
-    TouristDTO toDTO (Tourist model, List<ProtocolRepository.GradeAssignmentProjection> assignments);
+    TouristLightDTO toLightDTO(Tourist model);
+
+    Tourist toEntity(TouristDTO dto);
+
+    TouristDTO toDTO(Tourist model);
+
+    TouristDTO toDTO(Tourist model, List<ProtocolRepository.GradeAssignmentProjection> assignments);
+
     @Mapping(target = "id", ignore = true)
     TouristDTO toDTO(PendingTourist pending);
 
-    TouristDTO toDTO (Tourist model,
-                      List<ProtocolRepository.GradeAssignmentProjection> assignments,
-                      List<ContactInfoItem> contactInfo);
+    TouristDTO toDTO(Tourist model,
+                     List<ProtocolRepository.GradeAssignmentProjection> assignments,
+                     List<ContactInfoItem> contactInfo);
 }

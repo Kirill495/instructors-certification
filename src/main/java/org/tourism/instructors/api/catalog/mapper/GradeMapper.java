@@ -7,5 +7,6 @@ import org.tourism.instructors.domain.catalog.model.Grade;
 @Mapper(componentModel = "spring")
 public interface GradeMapper {
     GradeDTO toDTO(Grade entity);
-    Grade toEntity (GradeDTO dto);
+
+    Grade toEntity(GradeDTO dto);
 }

@@ -155,6 +155,15 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.3.0</version>
+				<configuration>
+					<configLocation>checkstyle.xml</configLocation>
+					<outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<repositories>

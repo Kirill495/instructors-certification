@@ -11,11 +11,18 @@ import java.util.Optional;
 public interface TouristService {
 
     int countTourists();
-    Page<TouristDTO> getAllTourists (Pageable pageable);
-    List<TouristLightDTO> searchLightTourists (String query);
-    Page<TouristDTO> searchTourists (String query, Pageable pageable);
+
+    Page<TouristDTO> getAllTourists(Pageable pageable);
+
+    List<TouristLightDTO> searchLightTourists(String query);
+
+    Page<TouristDTO> searchTourists(String query, Pageable pageable);
+
     TouristDTO findTouristById(int id);
+
     void save(TouristDTO tourist);
-    void delete (int touristId);
-    Optional<TouristDTO> findTouristByTelegramId (long chatId);
+
+    void delete(int touristId);
+
+    Optional<TouristDTO> findTouristByTelegramId(long chatId);
 }

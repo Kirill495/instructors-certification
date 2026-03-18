@@ -11,12 +11,20 @@ import java.util.List;
 
 public interface ProtocolService {
     Page<ProtocolForListDTO> getProtocolsForList(String searchString, Pageable pageable);
+
     List<ProtocolLightDTO> searchDraftsByNumber(String query);
+
     List<ProtocolLightDTO> getLastDrafts();
+
     ProtocolDTO getProtocolById(int id);
+
     void deleteProtocol(int protocolId);
+
     void saveProtocol(ProtocolDTO protocolDTO);
+
     void addTouristToProtocol(int protocolId, PendingTourist pending, int touristId);
+
     int countProtocols();
+
     int getProtocolIndex(int highLightedId);
 }

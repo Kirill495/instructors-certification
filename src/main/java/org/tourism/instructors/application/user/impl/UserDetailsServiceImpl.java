@@ -11,19 +11,19 @@ import org.tourism.instructors.domain.user.repository.UserRepository;
 public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
-    public UserDetailsServiceImpl (UserRepository userRepository) {
+    public UserDetailsServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
-    public UserDetails loadUserByUsername (String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByName(username)
-                          .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         return org.springframework.security.core.userdetails.User
-                       .withUsername(user.getName())
-                       .password(user.getPassword())
-                       .authorities(user.getRole())
-                       .build();
+                .withUsername(user.getName())
+                .password(user.getPassword())
+                .authorities(user.getRole())
+                .build();
     }
 }

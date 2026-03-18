@@ -10,7 +10,7 @@ public enum ContactInfoType {
 
     private final Class<? extends ContactInfoDetails> detailsClass;
 
-    ContactInfoType (Class<? extends ContactInfoDetails> detailsClass) {
+    ContactInfoType(Class<? extends ContactInfoDetails> detailsClass) {
         this.detailsClass = detailsClass;
     }
 

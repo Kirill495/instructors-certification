@@ -26,7 +26,7 @@ public class ProtocolController {
     private final ProtocolService protocolService;
     private final CatalogService catalogService;
 
-    public ProtocolController (ProtocolService protocolService, CatalogService catalogService) {
+    public ProtocolController(ProtocolService protocolService, CatalogService catalogService) {
         this.protocolService = protocolService;
         this.catalogService = catalogService;
     }
@@ -94,7 +94,7 @@ public class ProtocolController {
 
     }
 
-    private static Sort createSort (String sort, String order) {
+    private static Sort createSort(String sort, String order) {
         Sort sortObj;
         if (sort != null) {
             Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
@@ -136,6 +136,7 @@ public class ProtocolController {
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Протокол записан");
         return "redirect:/protocols";
     }
+
     @PostMapping("/{id}/delete")
     public String deleteProtocol(@PathVariable int id, RedirectAttributes redirectAttributes) {
         protocolService.deleteProtocol(id);

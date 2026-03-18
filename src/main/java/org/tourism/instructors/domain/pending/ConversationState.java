@@ -16,6 +16,7 @@ public class ConversationState {
         this.chatId = chatId;
         this.tgUsername = tgUsername;
     }
+
     private TouristRegistrationBot.Step step = TouristRegistrationBot.Step.NAME;
     private Long chatId;
     private String fullName;

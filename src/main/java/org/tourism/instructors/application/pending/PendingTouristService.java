@@ -7,12 +7,20 @@ import java.util.List;
 
 public interface PendingTouristService {
     void register(ConversationState conversation);
+
     PendingTourist getById(int id);
+
     List<PendingTourist> findAllPending();
+
     PendingTourist linkTourist(int pendingId, int touristId);
+
     PendingTourist approve(int id);
+
     PendingTourist reject(int id);
+
     PendingTourist unlinkTourist(int pendingId);
+
     boolean existsByChatId(long chatId);
+
     int countPending();
 }

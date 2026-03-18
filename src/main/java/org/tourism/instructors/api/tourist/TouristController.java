@@ -22,7 +22,7 @@ public class TouristController {
 
     private final TouristService touristService;
 
-    public TouristController (TouristService touristService) {
+    public TouristController(TouristService touristService) {
         this.touristService = touristService;
     }
 
@@ -50,7 +50,7 @@ public class TouristController {
         return "tourists/list";
     }
 
-    private static void addPaginationAttributes (Model model, Page<TouristDTO> touristsPage, String search, int currentPage, int size, String sort, String order) {
+    private static void addPaginationAttributes(Model model, Page<TouristDTO> touristsPage, String search, int currentPage, int size, String sort, String order) {
         model.addAttribute("tourists", touristsPage.getContent());
 
         model.addAttribute("search", search);
@@ -64,7 +64,7 @@ public class TouristController {
     }
 
     @GetMapping("/{id}")
-    public String viewTourist(@PathVariable int id,  Model model) {
+    public String viewTourist(@PathVariable int id, Model model) {
         model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
         return "tourists/view";
     }

@@ -19,7 +19,7 @@ public class GradeController {
 
     private final CatalogService catalogService;
 
-    public GradeController (CatalogService catalogService) {
+    public GradeController(CatalogService catalogService) {
         this.catalogService = catalogService;
     }
 

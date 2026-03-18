@@ -11,5 +11,6 @@ public interface PendingTouristRepository extends JpaRepository<PendingTourist, 
     List<PendingTourist> findByStatusOrderByCreatedAtDesc(String status);
 
     boolean existsByChatId(Long chatId);
+
     int countByStatus(String status);
 }

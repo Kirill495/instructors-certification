@@ -20,7 +20,7 @@ import java.util.List;
 public class TouristRestController {
     private final TouristService touristService;
 
-    public TouristRestController (TouristService touristService) {
+    public TouristRestController(TouristService touristService) {
         this.touristService = touristService;
     }
 
@@ -44,7 +44,7 @@ public class TouristRestController {
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
         return search != null && !search.trim().isEmpty()
-                       ? touristService.searchTourists(search, pageable)
-                       : touristService.getAllTourists(pageable);
+                ? touristService.searchTourists(search, pageable)
+                : touristService.getAllTourists(pageable);
     }
 }

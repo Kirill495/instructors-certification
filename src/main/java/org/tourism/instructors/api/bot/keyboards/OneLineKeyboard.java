@@ -10,7 +10,8 @@ import java.util.function.Supplier;
 
 public class OneLineKeyboard {
 
-    private OneLineKeyboard() {}
+    private OneLineKeyboard() {
+    }
 
     public static InlineKeyboardMarkup build(Supplier<Map<String, String>> buttonSupplier) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();

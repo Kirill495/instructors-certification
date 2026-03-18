@@ -28,13 +28,13 @@ public class ProtocolServiceImpl implements ProtocolService {
     private final ProtocolRepository protocolRepository;
     private final ProtocolMapper protocolMapper;
 
-    public ProtocolServiceImpl (ProtocolRepository protocolRepository, ProtocolMapper protocolMapper) {
+    public ProtocolServiceImpl(ProtocolRepository protocolRepository, ProtocolMapper protocolMapper) {
         this.protocolRepository = protocolRepository;
         this.protocolMapper = protocolMapper;
     }
 
     @Override
-    public Page<ProtocolForListDTO> getProtocolsForList (String searchString, Pageable pageable) {
+    public Page<ProtocolForListDTO> getProtocolsForList(String searchString, Pageable pageable) {
         Page<ProtocolRepository.ProtocolProjection> protocolProjectionPage;
         if (hasSearchParameter(searchString)) {
             protocolProjectionPage = protocolRepository.searchByTouristLastNameStartingWithIgnoreCase(searchString, pageable);
@@ -46,15 +46,15 @@ public class ProtocolServiceImpl implements ProtocolService {
         }
         List<Integer> ids = protocolProjectionPage.getContent().stream().map(ProtocolRepository.ProtocolProjection::getId).toList();
         List<ProtocolForListDTO> protocols = protocolRepository.getProtocolWithContentByIDs(ids, pageable.getSort()).stream()
-                                                     .map(protocolMapper::toProtocolForListDTO)
-                                                     .toList();
+                .map(protocolMapper::toProtocolForListDTO)
+                .toList();
         if (hasSearchParameter(searchString)) {
             sortTouristsInProtocol(searchString, protocols);
         }
         return new PageImpl<>(protocols, pageable, protocolProjectionPage.getTotalElements());
     }
 
-    private static void sortTouristsInProtocol (String searchString, List<ProtocolForListDTO> protocols) {
+    private static void sortTouristsInProtocol(String searchString, List<ProtocolForListDTO> protocols) {
         protocols.forEach(dto -> {
             Comparator<TouristLightDTO> comparator = Comparator.<TouristLightDTO, Boolean>comparing(
                     t -> Strings.CI.contains(t.getFullName(), searchString)).reversed();
@@ -62,7 +62,7 @@ public class ProtocolServiceImpl implements ProtocolService {
         });
     }
 
-    private boolean hasSearchParameter (String searchString) {
+    private boolean hasSearchParameter(String searchString) {
         return StringUtils.isNoneBlank(searchString) && searchString.trim().length() > 2;
     }
 
@@ -97,29 +97,29 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
-    public int countProtocols () {
+    public int countProtocols() {
         return (int) protocolRepository.count();
     }
 
     @Override
-    public int getProtocolIndex (int highLightedId) {
+    public int getProtocolIndex(int highLightedId) {
         return protocolRepository.countOfRowsBefore(highLightedId);
     }
 
     @Override
-    public ProtocolDTO getProtocolById (int id) {
+    public ProtocolDTO getProtocolById(int id) {
         return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new ProtocolNotFoundException(id));
     }
 
     @Transactional
     @Override
-    public void saveProtocol (ProtocolDTO protocolDTO) {
+    public void saveProtocol(ProtocolDTO protocolDTO) {
         saveProtocolInner(protocolDTO);
     }
 
     @Transactional
     @Override
-    public void deleteProtocol (int protocolId) {
+    public void deleteProtocol(int protocolId) {
         Protocol protocol = protocolRepository.findById(protocolId).orElseThrow(() -> new ProtocolNotFoundException(protocolId));
         protocolRepository.delete(protocol);
     }

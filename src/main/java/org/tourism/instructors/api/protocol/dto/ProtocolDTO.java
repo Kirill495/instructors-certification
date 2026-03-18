@@ -23,6 +23,7 @@ public class ProtocolDTO {
     private String order;
     private ProtocolStatus status;
     private List<ProtocolContentDTO> contentRows = new ArrayList<>();
+
     public boolean isNewItem() {
         return id == null;
     }

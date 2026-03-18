@@ -20,14 +20,14 @@ public class ReportService {
 
     private final ProtocolRepository protocolRepository;
 
-    public ReportService (ProtocolRepository protocolRepository) {
+    public ReportService(ProtocolRepository protocolRepository) {
         this.protocolRepository = protocolRepository;
     }
 
     public byte[] exportProtocols(Optional<LocalDate> dateFrom, Optional<LocalDate> dateTill) throws IOException {
 
         try (Workbook workbook = new XSSFWorkbook();
-            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Протоколы");
 
             // Header row
@@ -64,7 +64,7 @@ public class ReportService {
         }
     }
 
-    private static void createHeader (Sheet sheet) {
+    private static void createHeader(Sheet sheet) {
         CellStyle headerStyle = createHeaderStyle(sheet.getWorkbook());
 
         Row header = sheet.createRow(0);
@@ -78,7 +78,7 @@ public class ReportService {
         sheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, columns.length - 1));
     }
 
-    private static @NonNull CellStyle createHeaderStyle (Workbook workbook) {
+    private static @NonNull CellStyle createHeaderStyle(Workbook workbook) {
         CellStyle headerStyle = workbook.createCellStyle();
         Font font = workbook.createFont();
         font.setBold(true);

@@ -43,7 +43,9 @@ public class ContactInfoItem {
             this.details = MAPPER.readValue(detailsJson, type.getDetailsClass());
         }
     }
-    @PrePersist @PreUpdate
+
+    @PrePersist
+    @PreUpdate
     private void serializeDetails() {
         this.detailsJson = details != null ? MAPPER.writeValueAsString(details) : null;
     }

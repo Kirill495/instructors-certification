@@ -29,6 +29,7 @@ public class TouristDTO {
     private String email;
     private List<AssignmentDTO> assignments;
     private List<ContactInfoItem> contactInfo;
+
     public String getFullName() {
         return lastName + " " + firstName + " " + middleName;
     }

@@ -15,19 +15,19 @@ public class TouristExceptionHandler {
 
     private final TouristService touristService;
 
-    public TouristExceptionHandler (TouristService touristService) {
+    public TouristExceptionHandler(TouristService touristService) {
         this.touristService = touristService;
     }
 
     @ExceptionHandler(TouristCannotBeDeletedException.class)
-    public String handleDeletionNotAllowed (TouristCannotBeDeletedException exception, Model model) {
+    public String handleDeletionNotAllowed(TouristCannotBeDeletedException exception, Model model) {
         model.addAttribute(ERROR_MESSAGE_ATTRIBUTE, exception.getMessage());
         model.addAttribute("tourist", touristService.findTouristById(exception.getTouristId()));
         return "tourists/view";
     }
 
     @ExceptionHandler(TouristNotFoundException.class)
-    public String handleNotFoundException (TouristNotFoundException exception, RedirectAttributes redirectAttributes) {
+    public String handleNotFoundException(TouristNotFoundException exception, RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute(ERROR_MESSAGE_ATTRIBUTE, exception.getMessage());
         return "redirect:/tourists";
     }

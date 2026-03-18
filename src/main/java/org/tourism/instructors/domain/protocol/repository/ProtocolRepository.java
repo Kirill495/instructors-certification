@@ -45,7 +45,7 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
                    "FROM Protocol p LEFT JOIN p.protocolContents c LEFT JOIN c.tourist " +
                    "WHERE c.tourist.lastName ILIKE CONCAT(:search, '%')" +
                    "OR c.tourist.firstName ILIKE CONCAT(:search, '%')")
-    Page<ProtocolProjection> searchByTouristLastNameStartingWithIgnoreCase (@Param("search") String search, Pageable pageable);
+    Page<ProtocolProjection> searchByTouristLastNameStartingWithIgnoreCase(@Param("search") String search, Pageable pageable);
 
     @Query("SELECT p FROM Protocol p " +
            "LEFT JOIN FETCH p.protocolContents c " +
@@ -77,27 +77,40 @@ public interface ProtocolRepository extends JpaRepository<Protocol, Integer> {
 
     interface GradeAssignmentProjection {
         Integer getProtocolId();
+
         LocalDate getProtocolDate();
+
         Integer getTouristId();
-        Grade getGrade ();
+
+        Grade getGrade();
+
         KindOfTourism getKindOfTourism();
     }
 
     @SuppressWarnings("unused")
     interface ProtocolProjection {
         Integer getId();
+
         String getNumber();
+
         LocalDate getDate();
     }
 
     interface ReportAssignmentProjection {
         String getFirstName();
+
         String getLastName();
+
         String getMiddleName();
+
         String getClub();
+
         String getGradeTitle();
+
         int getExpiresInYears();
+
         String getKindOfTourismTitle();
+
         LocalDate getAssignmentDate();
 
     }

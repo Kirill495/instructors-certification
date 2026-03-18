@@ -28,10 +28,12 @@ jobs:
           cache: maven
 
       - name: Analyze with SonarCloud
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+        run: mvn -B checkstyle:checkstyle verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
           -DskipTests
+          -Dsonar.qualitygate.wait=false
           -Dsonar.projectKey="$PROJECT_KEY"
           -Dsonar.organization="$ORGANIZATION_KEY"
+          -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
         env:
           PROJECT_KEY: ${{secrets.PROJECT_KEY}}
           ORGANIZATION_KEY: ${{secrets.ORGANIZATION_KEY}}

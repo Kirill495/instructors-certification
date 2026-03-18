@@ -16,7 +16,8 @@ public class CalendarKeyboard {
             DateTimeFormatter.ofPattern("LLLL yyyy", Locale.of("ru"));
     private static final String IGNORE_CALLBACK_DATA = "cal:IGNORE";
 
-    private CalendarKeyboard() {}
+    private CalendarKeyboard() {
+    }
 
     public static InlineKeyboardMarkup build(YearMonth yearMonth) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
