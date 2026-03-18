@@ -14,7 +14,7 @@ public class ProtocolExceptionHandler {
 
     private final ProtocolService protocolService;
 
-    public ProtocolExceptionHandler (ProtocolService protocolService) {
+    public ProtocolExceptionHandler(ProtocolService protocolService) {
         this.protocolService = protocolService;
     }
 

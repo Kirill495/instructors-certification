@@ -31,10 +31,10 @@ public class TouristServiceImpl implements TouristService {
     private final TouristMapper touristMapper;
     private final ContactInfoRepository contactInfoRepository;
 
-    public TouristServiceImpl (TouristRepository touristRepository,
-                               ProtocolRepository protocolRepository,
-                               TouristMapper touristMapper,
-                               ContactInfoRepository contactInfoRepository) {
+    public TouristServiceImpl(TouristRepository touristRepository,
+                              ProtocolRepository protocolRepository,
+                              TouristMapper touristMapper,
+                              ContactInfoRepository contactInfoRepository) {
         this.touristRepository = touristRepository;
         this.protocolRepository = protocolRepository;
         this.touristMapper = touristMapper;
@@ -42,20 +42,22 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public int countTourists () {
+    public int countTourists() {
         return (int) touristRepository.count();
     }
 
     @Override
-    public Page<TouristDTO> getAllTourists (Pageable pageable) {
+    public Page<TouristDTO> getAllTourists(Pageable pageable) {
         Page<Tourist> touristsPage = touristRepository.findAll(pageable);
         Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(touristsPage.getContent());
-        List<TouristDTO> touristDTOs = touristsPage.stream().map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments))).toList();
+        List<TouristDTO> touristDTOs = touristsPage.stream()
+                .map(tourist -> touristMapper.toDTO(tourist, getTouristAssignments(tourist, assignments)))
+                .toList();
         return new PageImpl<>(touristDTOs, pageable, touristsPage.getTotalElements());
     }
 
     @Override
-    public List<TouristLightDTO> searchLightTourists (String query) {
+    public List<TouristLightDTO> searchLightTourists(String query) {
         List<String> queryParts = Arrays.asList(query.split(" "));
         if (queryParts.size() == 1) {
             return searchTouristsInner(query).stream().map(touristMapper::toLightDTO).toList();
@@ -65,7 +67,7 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public Page<TouristDTO> searchTourists (String query, Pageable pageable) {
+    public Page<TouristDTO> searchTourists(String query, Pageable pageable) {
 
         List<Tourist> tourists = searchTouristsInner(query);
         Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments = getAssignments(tourists);
@@ -75,7 +77,7 @@ public class TouristServiceImpl implements TouristService {
 
     @Transactional
     @Override
-    public void delete (int touristId) {
+    public void delete(int touristId) {
         if (!protocolRepository.getAssignments(List.of(touristId)).isEmpty()) {
             throw new TouristCannotBeDeletedException("У туриста есть присвоения званий. Невозможно удалить.", touristId);
         }
@@ -84,14 +86,14 @@ public class TouristServiceImpl implements TouristService {
 
     @Transactional
     @Override
-    public void save (TouristDTO touristDTO) {
+    public void save(TouristDTO touristDTO) {
         Tourist tourist = touristMapper.toEntity(touristDTO);
         tourist.getContactInfo().forEach(item -> item.setTourist(tourist));
         touristRepository.save(tourist);
     }
 
     @Override
-    public TouristDTO findTouristById (int id) {
+    public TouristDTO findTouristById(int id) {
         Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new TouristNotFoundException(id));
         List<ProtocolRepository.GradeAssignmentProjection> assignments = protocolRepository.getAssignments(List.of(id));
         List<ContactInfoItem> contactInfo = getContactInfo(tourist);
@@ -99,34 +101,34 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public Optional<TouristDTO> findTouristByTelegramId (long chatId) {
+    public Optional<TouristDTO> findTouristByTelegramId(long chatId) {
         return contactInfoRepository.findTouristIdByTypeAndValue(ContactInfoType.TELEGRAM, String.valueOf(chatId))
                 .map(ContactInfoItem::getTourist)
                 .map(touristMapper::toDTO);
     }
 
-    private @NonNull List<ContactInfoItem> getContactInfo (Tourist tourist) {
+    private @NonNull List<ContactInfoItem> getContactInfo(Tourist tourist) {
         return contactInfoRepository.findAllByTouristId(tourist.getId())
-                       .stream()
-                       .sorted(Comparator.comparing(ContactInfoItem::getType).thenComparing(ContactInfoItem::getValue))
-                       .toList();
+                .stream()
+                .sorted(Comparator.comparing(ContactInfoItem::getType).thenComparing(ContactInfoItem::getValue))
+                .toList();
     }
 
-    private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments (Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
+    private static @NonNull List<ProtocolRepository.GradeAssignmentProjection> getTouristAssignments(Tourist tourist, Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> assignments) {
         return assignments.getOrDefault(tourist.getId(), Collections.emptyList())
-                       .stream()
-                       .sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate))
-                       .toList();
+                .stream()
+                .sorted(Comparator.comparing(ProtocolRepository.GradeAssignmentProjection::getProtocolDate))
+                .toList();
     }
 
-    private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments (List<Tourist> tourists) {
+    private @NonNull Map<Integer, List<ProtocolRepository.GradeAssignmentProjection>> getAssignments(List<Tourist> tourists) {
         return protocolRepository
-            .getAssignments(tourists.stream().map(Tourist::getId).toList())
-            .stream()
-            .collect(Collectors.groupingBy(ProtocolRepository.GradeAssignmentProjection::getTouristId));
+                .getAssignments(tourists.stream().map(Tourist::getId).toList())
+                .stream()
+                .collect(Collectors.groupingBy(ProtocolRepository.GradeAssignmentProjection::getTouristId));
     }
 
-    private List<Tourist> searchTouristsInner (String query) {
+    private List<Tourist> searchTouristsInner(String query) {
         if (containsOnlyDigits(query)) {
             return touristRepository.searchByCertificationId(query);
         } else {
@@ -144,7 +146,7 @@ public class TouristServiceImpl implements TouristService {
         }
     }
 
-    private boolean containsOnlyDigits (String str) {
+    private boolean containsOnlyDigits(String str) {
         return str.matches("^\\d+$");
     }
 

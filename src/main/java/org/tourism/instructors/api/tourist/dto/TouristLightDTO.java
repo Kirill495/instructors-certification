@@ -17,7 +17,7 @@ public class TouristLightDTO {
     private String certificationId;
 
     public String getView() {
-        return lastName + " " + firstName + " " + middleName + " ("+certificationId+")";
+        return lastName + " " + firstName + " " + middleName + " (" + certificationId + ")";
     }
 
     public String getFullName() {

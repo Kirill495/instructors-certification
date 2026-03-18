@@ -10,7 +10,8 @@ public class YearKeyboard {
 
     public static final int PAGE_SIZE = 16; // 4 columns × 4 rows
 
-    private YearKeyboard() {}
+    private YearKeyboard() {
+    }
 
     public static InlineKeyboardMarkup build(int startYear) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -35,7 +36,9 @@ public class YearKeyboard {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
-    /** Returns the page start year for a given year (aligns to PAGE_SIZE boundary). */
+    /**
+     * Returns the page start year for a given year (aligns to PAGE_SIZE boundary).
+     */
     public static int pageStartFor(int year) {
         return (year / PAGE_SIZE) * PAGE_SIZE;
     }

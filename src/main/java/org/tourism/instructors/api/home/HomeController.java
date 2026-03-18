@@ -54,6 +54,7 @@ public class HomeController {
         private String name;
         private boolean isAdmin;
     }
+
     /**
      * Simple DTO for dashboard statistics
      */

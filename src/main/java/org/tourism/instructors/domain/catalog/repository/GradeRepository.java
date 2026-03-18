@@ -10,7 +10,7 @@ import java.util.List;
 public interface GradeRepository extends JpaRepository<Grade, Integer> {
     List<Grade> findAllByOrderById();
 
-    List<Grade> findByInactiveFalseOrderById ();
+    List<Grade> findByInactiveFalseOrderById();
 
-    int countGradesByInactive (boolean isInactive);
+    int countGradesByInactive(boolean isInactive);
 }

@@ -18,7 +18,7 @@ public class KindOfTourismController {
     private static final String KIND_ATTRIBUTE = "kindOfTourism";
     private final CatalogService catalogService;
 
-    public KindOfTourismController (CatalogService catalogService) {
+    public KindOfTourismController(CatalogService catalogService) {
         this.catalogService = catalogService;
     }
 

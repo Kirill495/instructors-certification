@@ -7,7 +7,7 @@ public class ProtocolNotFoundException extends RuntimeException {
 
     private final int protocolId;
 
-    public ProtocolNotFoundException (int protocolId) {
+    public ProtocolNotFoundException(int protocolId) {
         super();
         this.protocolId = protocolId;
     }

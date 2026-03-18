@@ -25,7 +25,7 @@ public class CatalogServiceImpl implements CatalogService {
     private final GradeMapper gradeMapper;
 
 
-    public CatalogServiceImpl (KindOfTourismRepository kindOfTourismRepository, GradeRepository gradeRepository, KindOfTourismMapper kindOfTourismMapper, GradeMapper gradeMapper) {
+    public CatalogServiceImpl(KindOfTourismRepository kindOfTourismRepository, GradeRepository gradeRepository, KindOfTourismMapper kindOfTourismMapper, GradeMapper gradeMapper) {
         this.kindOfTourismRepository = kindOfTourismRepository;
         this.gradeRepository = gradeRepository;
         this.kindOfTourismMapper = kindOfTourismMapper;
@@ -33,81 +33,81 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public int countActiveKindsOfTourism () {
+    public int countActiveKindsOfTourism() {
         return (int) kindOfTourismRepository.countKindOfTourismByInactive(false);
     }
 
     @Override
-    public List<KindOfTourismListDTO> findAllKindsOfTourism () {
+    public List<KindOfTourismListDTO> findAllKindsOfTourism() {
         return kindOfTourismRepository.findAllByOrderByIdAsc()
-                       .stream()
-                       .map(kindOfTourismMapper::toListDTO)
-                       .toList();
+                .stream()
+                .map(kindOfTourismMapper::toListDTO)
+                .toList();
 
     }
 
     @Override
-    public List<KindOfTourismListDTO> findActiveKindsOfTourism () {
+    public List<KindOfTourismListDTO> findActiveKindsOfTourism() {
         return kindOfTourismRepository.findByInactiveFalseOrderByIdAsc()
-                       .stream()
-                       .map(kindOfTourismMapper::toListDTO)
-                       .toList();
+                .stream()
+                .map(kindOfTourismMapper::toListDTO)
+                .toList();
     }
 
     @Override
-    public KindOfTourismDTO getKindOfTourismById (int id) {
+    public KindOfTourismDTO getKindOfTourismById(int id) {
         return kindOfTourismRepository.findById(id)
-                       .map(kindOfTourismMapper::toDTO)
-                       .orElseThrow(() -> new KindOfTourismNotFoundException(id));
+                .map(kindOfTourismMapper::toDTO)
+                .orElseThrow(() -> new KindOfTourismNotFoundException(id));
     }
 
     @Override
     @Transactional
-    public void saveKindOfTourism (KindOfTourismDTO inputDTO) {
+    public void saveKindOfTourism(KindOfTourismDTO inputDTO) {
         kindOfTourismRepository.save(kindOfTourismMapper.toEntity(inputDTO));
     }
 
     @Override
     @Transactional
-    public void deleteKindOfTourism (int id) {
+    public void deleteKindOfTourism(int id) {
         kindOfTourismRepository.deleteById(id);
     }
 
     @Override
-    public int countActiveGrades () {
+    public int countActiveGrades() {
         return gradeRepository.countGradesByInactive(false);
     }
 
     @Override
-    public List<GradeDTO> findAllGrades () {
+    public List<GradeDTO> findAllGrades() {
         return gradeRepository.findAllByOrderById().stream()
-                       .map(gradeMapper::toDTO)
-                       .toList();
+                .map(gradeMapper::toDTO)
+                .toList();
     }
 
     @Override
-    public List<GradeDTO> findActiveGrades () {
+    public List<GradeDTO> findActiveGrades() {
         return gradeRepository.findByInactiveFalseOrderById().stream()
-                       .map(gradeMapper::toDTO)
-                       .toList();
+                .map(gradeMapper::toDTO)
+                .toList();
     }
 
     @Override
-    public GradeDTO findGradeById (int id) {
+    public GradeDTO findGradeById(int id) {
         return gradeRepository.findById(id)
-                       .map(gradeMapper::toDTO)
-                       .orElseThrow(() -> new GradeNotFoundException(id));
+                .map(gradeMapper::toDTO)
+                .orElseThrow(() -> new GradeNotFoundException(id));
     }
 
     @Override
     @Transactional
-    public void saveGrade (GradeDTO gradeDTO) {
+    public void saveGrade(GradeDTO gradeDTO) {
         gradeRepository.save(gradeMapper.toEntity(gradeDTO));
     }
 
     @Override
     @Transactional
-    public void deleteGrade (int id) {
+    public void deleteGrade(int id) {
         gradeRepository.deleteById(id);
     }
 }

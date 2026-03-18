@@ -28,7 +28,7 @@ public class PendingTouristServiceImpl implements PendingTouristService {
 
 
     @Override
-    public void register(ConversationState state)  {
+    public void register(ConversationState state) {
         pendingTouristRepository.save(mapper.toEntity(state));
     }
 
@@ -78,7 +78,7 @@ public class PendingTouristServiceImpl implements PendingTouristService {
     }
 
     @Override
-    public boolean existsByChatId (long chatId) {
+    public boolean existsByChatId(long chatId) {
         return pendingTouristRepository.existsByChatId(chatId);
     }
 

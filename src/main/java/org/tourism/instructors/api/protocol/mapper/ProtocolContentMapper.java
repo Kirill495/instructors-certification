@@ -27,7 +27,7 @@ public interface ProtocolContentMapper {
     @Mapping(target = "grade.id", source = "gradeId")
     @Mapping(target = "certificationID", source = "certificationId")
     @Mapping(target = "protocol", ignore = true)
-    ProtocolContent toEntity (ProtocolContentDTO dto);
+    ProtocolContent toEntity(ProtocolContentDTO dto);
 
 
     @Mapping(target = "id", source = "model.tourist.id")

@@ -13,9 +13,9 @@ import java.util.Optional;
 @Repository
 public interface ContactInfoRepository extends JpaRepository<ContactInfoItem, Integer> {
 
-    List<ContactInfoItem> findAllByTouristId (Integer touristId);
+    List<ContactInfoItem> findAllByTouristId(Integer touristId);
 
     @Query("Select ci FROM ContactInfoItem as ci join fetch ci.tourist where ci.type = :type and ci.value = :value")
-    Optional<ContactInfoItem> findTouristIdByTypeAndValue (@Param("type") ContactInfoType type, @Param("value") String value);
+    Optional<ContactInfoItem> findTouristIdByTypeAndValue(@Param("type") ContactInfoType type, @Param("value") String value);
 
 }

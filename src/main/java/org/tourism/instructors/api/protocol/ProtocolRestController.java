@@ -21,7 +21,7 @@ public class ProtocolRestController {
 
     @GetMapping("/search")
     public List<ProtocolLightDTO> search(@RequestParam(defaultValue = "") String query) {
-        if (query.trim().isEmpty()){
+        if (query.trim().isEmpty()) {
             return protocolService.getLastDrafts();
         } else {
             return protocolService.searchDraftsByNumber(query);

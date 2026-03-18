@@ -18,7 +18,7 @@ public interface ProtocolMapper {
     ProtocolDTO toDTO(Protocol protocol);
 
     @Mapping(target = "protocolContents", source = "contentRows")
-    Protocol toEntity (ProtocolDTO protocolDTO);
+    Protocol toEntity(ProtocolDTO protocolDTO);
 
     @AfterMapping
     default void setProtocolRef(@MappingTarget Protocol protocol) {
@@ -29,7 +29,7 @@ public interface ProtocolMapper {
         }
     }
 
-    @Mapping(target = "tourists", source="protocolContents")
+    @Mapping(target = "tourists", source = "protocolContents")
     ProtocolForListDTO toProtocolForListDTO(Protocol protocol);
 
     ProtocolLightDTO toLightDTO(ProtocolRepository.ProtocolProjection projection);

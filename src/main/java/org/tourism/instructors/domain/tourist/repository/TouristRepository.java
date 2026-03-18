@@ -8,9 +8,9 @@ import java.util.List;
 
 @Repository
 public interface TouristRepository extends JpaRepository<Tourist, Integer> {
-    List<Tourist> searchByLastNameStartingWithIgnoreCase (String lastName);
+    List<Tourist> searchByLastNameStartingWithIgnoreCase(String lastName);
 
-    List<Tourist> searchByCertificationId (String certificationId);
+    List<Tourist> searchByCertificationId(String certificationId);
 
     List<Tourist> searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(String lastName, String firstName, String middleName);
 
