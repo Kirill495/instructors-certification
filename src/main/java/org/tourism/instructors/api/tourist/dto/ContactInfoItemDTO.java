@@ -10,6 +10,7 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 @Setter
 @NoArgsConstructor
 public class ContactInfoItemDTO {
+    private Integer id;
     private Integer touristId;
     private ContactInfoType type;
     private String value;

@@ -142,7 +142,8 @@
                                            th:value="${contact.id}">
                                     <select th:field="*{contactInfo[__${iter.index}__].type}"
                                             class="form-select"
-                                            style="max-width: 160px;">
+                                            style="max-width: 160px;"
+                                            onchange="applyContactType(this)">
                                         <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефон</option>
                                         <option value="EMAIL" th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
                                         <option value="TELEGRAM" th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
@@ -159,6 +160,11 @@
                             <button type="button"
                                     class="btn btn-outline-secondary btn-sm mt-1"
                                     onclick="addContact()">+ Добавить контакт</button>
+                            <select id="contact-type-template" style="display:none;" aria-hidden="true">
+                                <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефончик</option>
+                                <option value="EMAIL"        th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
+                                <option value="TELEGRAM"     th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
+                            </select>
                         </div>
 
                         <!-- Certification ID -->

@@ -80,7 +80,7 @@
                 th:onclick="'window.location.href=\'/tourists/' + ${tourist.getId()} + '\''">
                 <td th:text="${tourist.getCertificationId()}" class="cert-id"></td>
                 <td class="tourist-name" th:text="${tourist.getFullName()}"></td>
-                <td th:text="${tourist.getGender()}"></td>
+                <td th:text="#{enum.Gender.__${tourist.getGender().name()}__}"></td>
                 <td th:text="${tourist.getDateOfBirth()}"></td>
                 <td>
                     <a th:if="${tourist.getAssignments() != null && !tourist.getAssignments().isEmpty()}"
