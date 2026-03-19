@@ -1,71 +1,38 @@
 /*
- * The key technique: make the TABLE itself a CSS grid container.
- * thead and tbody become grid items that share the same column template.
- * tbody gets overflow-y: auto so only the rows scroll — the header stays fixed.
- *
- * Column widths are defined once via --col-* variables and applied to both
- * thead tr and tbody tr via grid-template-columns, so they always align.
+ * .table-wrapper is the scroll container (overflow-y: auto).
+ * thead uses position: sticky within it — works correctly because the
+ * scrolling ancestor is now the wrapper, not a sibling tbody.
+ * Standard table layout handles column-width alignment automatically.
  */
-:root {
-    --col-cert:   18%;
-    --col-name:   24%;
-    --col-gender: 10%;
-    --col-dob:    15%;
-    --col-grade:  33%;
-    --grid-cols: var(--col-cert) var(--col-name) var(--col-gender) var(--col-dob) var(--col-grade);
-}
 
 .table-wrapper {
-    /* The outer box — controls total height and clips overflow */
     max-height: calc(100vh - 180px);
-    overflow: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
     border: 1px solid #dee2e6;
     border-radius: 0.375rem;
 }
 
 table.grid-table {
-    /* Turn the whole table into a grid so thead/tbody share column sizes */
-    display: grid;
-    grid-template-columns: 1fr;   /* single column: each row spans full width */
-    grid-template-rows: auto 1fr;  /* header: natural height; body: fills rest  */
-    height: 100%;
     width: 100%;
     border-collapse: collapse;
 }
 
 table.grid-table thead {
-    display: grid;
     position: sticky;
     top: 0;
     z-index: 2;
-    width: 100%;
-}
-
-table.grid-table thead tr,
-table.grid-table tbody tr {
-    display: grid;
-    grid-template-columns: var(--grid-cols);
-    width: 100%;
-}
-
-table.grid-table tbody {
-    display: block;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-    /* subtract thead height — 45px covers most cases; tweak if needed */
-    max-height: calc(100vh - 180px - 45px);
+    background-color: #fff;
 }
 
 table.grid-table th,
 table.grid-table td {
-    /* Reset table-cell display since we're using grid */
-    display: flex;
-    align-items: center;
     padding: 0.5rem 0.75rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
 }
 
 table.grid-table th {
@@ -77,7 +44,7 @@ table.grid-table tbody tr:hover td {
     background-color: rgba(0, 0, 0, 0.04);
 }
 
-/* Bootstrap's table-striped via nth-child since we can't rely on CSS table display */
+/* Bootstrap's table-striped via nth-child */
 table.grid-table tbody tr:nth-child(even) td {
     background-color: rgba(0, 0, 0, 0.025);
 }

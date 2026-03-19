@@ -12,7 +12,7 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {GradeAssignmentMapper.class})
+@Mapper(componentModel = "spring", uses = {GradeAssignmentMapper.class, ContactInfoMapper.class})
 public interface TouristMapper {
     TouristLightDTO toLightDTO(Tourist model);
 
