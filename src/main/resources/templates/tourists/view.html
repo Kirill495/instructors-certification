@@ -36,8 +36,8 @@
     <div class="d-flex justify-content-between align-items-baseline mb-2">
         <h3 class="mb-0">
             <span th:text="${tourist.getFullName()}">Просмотр туриста</span>
-            <i th:if="${tourist.gender?.name() == 'MALE'}"   class="bi bi-gender-male  text-primary"></i>
-            <i th:if="${tourist.gender?.name() == 'FEMALE'}" class="bi bi-gender-female text-danger"></i>
+            <i th:if="${tourist.gender?.name() == 'MALE'}"   class="bi bi-gender-male  text-primary" data-bs-toggle="tooltip" th:title="#{enum.Gender.__${tourist.getGender().name()}__}"></i>
+            <i th:if="${tourist.gender?.name() == 'FEMALE'}" class="bi bi-gender-female text-danger"  data-bs-toggle="tooltip" th:title="#{enum.Gender.__${tourist.getGender().name()}__}"></i>
         </h3>
         <span th:if="${tourist.certificationId != null}"
               class="badge bg-warning text-dark fs-6"
@@ -72,7 +72,8 @@
             </div>
 
             <!-- Collapsed Content -->
-            <div class="collapse" id="contactInfo">
+<!--            <div class="collapse" id="contactInfo">-->
+            <div id="contactInfo">
                 <div class="card card-body bg-light">
 
                     <div th:if="${tourist.getContactInfo == null or tourist.getContactInfo.isEmpty()}"
