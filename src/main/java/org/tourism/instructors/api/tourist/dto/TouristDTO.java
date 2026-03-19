@@ -6,7 +6,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.domain.tourist.model.Gender;
-import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,7 +27,7 @@ public class TouristDTO {
     private String phoneNumber;
     private String email;
     private List<AssignmentDTO> assignments;
-    private List<ContactInfoItem> contactInfo;
+    private List<ContactInfoItemDTO> contactInfo;
 
     public String getFullName() {
         return lastName + " " + firstName + " " + middleName;

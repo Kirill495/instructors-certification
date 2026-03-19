@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.bot.TouristRegistrationBot;
+import org.tourism.instructors.api.tourist.dto.ContactInfoItemDTO;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.pending.PendingTouristService;
@@ -13,7 +14,6 @@ import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.tourist.TouristService;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoDetails;
-import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
@@ -73,22 +73,22 @@ public class PendingTouristController {
 
         if (pending.getTourist() == null) {
             TouristDTO dto = touristMapper.toDTO(pending);
-            List<ContactInfoItem> contactInfo = new ArrayList<>();
+            List<ContactInfoItemDTO> contactInfo = new ArrayList<>();
             ContactInfoDetails details = new TelegramDetails(pending.getChatId(), pending.getTgUsername());
 
-            ContactInfoItem tgItem = new ContactInfoItem();
+            ContactInfoItemDTO tgItem = new ContactInfoItemDTO();
             tgItem.setType(ContactInfoType.TELEGRAM);
             tgItem.setValue(pending.getChatId().toString());
             tgItem.setDetails(details);
             contactInfo.add(tgItem);
             if (Strings.isNotBlank(pending.getEmail())) {
-                ContactInfoItem emailItem = new ContactInfoItem();
+                ContactInfoItemDTO emailItem = new ContactInfoItemDTO();
                 emailItem.setType(ContactInfoType.EMAIL);
                 emailItem.setValue(pending.getEmail());
                 contactInfo.add(emailItem);
             }
             if (Strings.isNotBlank(pending.getPhoneNumber())) {
-                ContactInfoItem phoneItem = new ContactInfoItem();
+                ContactInfoItemDTO phoneItem = new ContactInfoItemDTO();
                 phoneItem.setType(ContactInfoType.PHONE_NUMBER);
                 phoneItem.setValue(pending.getPhoneNumber());
                 contactInfo.add(phoneItem);

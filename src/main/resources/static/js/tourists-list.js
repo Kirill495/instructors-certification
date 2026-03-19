@@ -73,8 +73,9 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
     const loader         = document.getElementById('loading-indicator');
     const endMsg         = document.getElementById('end-of-list');
     const tbody          = document.getElementById('tourists-tbody');
+    const tableWrapper   = document.querySelector('.table-wrapper');
 
-    if (!tbody || !sentinel) return;
+    if (!tbody || !sentinel || !tableWrapper) return;
 
     if (currentPage >= totalPages - 1) endMsg.style.display = 'block';
 
@@ -145,20 +146,20 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
         return tr;
     }
 
-    // Observe the sentinel relative to tbody (the real scroll container)
+    // Observe the sentinel relative to tableWrapper (the real scroll container)
     const observer = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting) loadNextPage();
     }, {
-        root: tbody,
+        root: tableWrapper,
         rootMargin: '100px',
         threshold: 0
     });
 
     if (currentPage < totalPages - 1) observer.observe(sentinel);
 
-    // Belt-and-suspenders: also fire on tbody scroll
-    tbody.addEventListener('scroll', () => {
-        const { scrollTop, scrollHeight, clientHeight } = tbody;
+    // Belt-and-suspenders: also fire on tableWrapper scroll
+    tableWrapper.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = tableWrapper;
         if (scrollHeight - scrollTop - clientHeight < 100) loadNextPage();
     });
 })();
