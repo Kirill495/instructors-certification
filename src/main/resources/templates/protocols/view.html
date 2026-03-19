@@ -20,12 +20,11 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h1 class="mb-4">Протокол №<span th:text="${protocol.number}">01/2024</span></h1>
 
     <!-- Protocol Header -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Данные протокола</h5>
+            <h5 class="mb-0">Протокол №<span th:text="${protocol.number}">01/2024</span></h5>
         </div>
         <div class="card-body">
             <div class="row">
@@ -50,67 +49,62 @@
     </div>
 
     <!-- Protocol Content with Clickable Links -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Табличная часть: Туристы</h5>
+    <div class="card-body">
+        <div th:if="${protocol.contentRows.isEmpty()}" class="alert alert-info">
+            В протоколе нет туристов
         </div>
-        <div class="card-body">
-            <div th:if="${protocol.contentRows.isEmpty()}" class="alert alert-info">
-                В протоколе нет туристов
-            </div>
 
-            <div th:unless="${protocol.contentRows.isEmpty()}" class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                    <tr>
-                        <th style="width: 5%">№</th>
-                        <th style="width: 20%">Турист</th>
-                        <th style="width: 18%">Вид туризма</th>
-                        <th style="width: 18%">Звание</th>
-                        <th style="width: 10%">№ удост.</th>
-                        <th style="width: 15%">Клуб</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="row : ${protocol.contentRows}">
-                        <td th:text="${row.rowNum}">1</td>
+        <div th:unless="${protocol.contentRows.isEmpty()}" class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                <tr>
+                    <th style="width: 5%">№</th>
+                    <th style="width: 20%">Турист</th>
+                    <th style="width: 18%">Вид туризма</th>
+                    <th style="width: 18%">Звание</th>
+                    <th style="width: 10%">№ удост.</th>
+                    <th style="width: 15%">Клуб</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${protocol.contentRows}">
+                    <td th:text="${row.rowNum}">1</td>
 
-                        <!-- Clickable Tourist Name -->
-                        <td>
-                            <a th:href="@{/tourists/{id}(id=${row.touristId})}"
-                               th:text="${row.touristFullName}"
-                               class="entity-link"
-                               title="Открыть карточку туриста">
-                                Иванов Иван Иванович
-                            </a>
-                        </td>
+                    <!-- Clickable Tourist Name -->
+                    <td>
+                        <a th:href="@{/tourists/{id}(id=${row.touristId})}"
+                           th:text="${row.touristFullName}"
+                           class="entity-link"
+                           title="Открыть карточку туриста">
+                            Иванов Иван Иванович
+                        </a>
+                    </td>
 
-                        <!-- Clickable Kind of Tourism -->
-                        <td>
-                            <a th:href="@{/catalog/kinds-of-tourism/{id}(id=${row.kindOfTourismId})}"
-                               th:text="${row.kindOfTourismTitle}"
-                               class="entity-link"
-                               title="Открыть вид туризма">
-                                Пешеходный туризм
-                            </a>
-                        </td>
+                    <!-- Clickable Kind of Tourism -->
+                    <td>
+                        <a th:href="@{/catalog/kinds-of-tourism/{id}(id=${row.kindOfTourismId})}"
+                           th:text="${row.kindOfTourismTitle}"
+                           class="entity-link"
+                           title="Открыть вид туризма">
+                            Пешеходный туризм
+                        </a>
+                    </td>
 
-                        <!-- Clickable Grade -->
-                        <td>
-                            <a th:href="@{/catalog/grades/{id}(id=${row.gradeId})}"
-                               th:text="${row.gradeTitle}"
-                               class="entity-link"
-                               title="Открыть звание">
-                                Инструктор туризма
-                            </a>
-                        </td>
+                    <!-- Clickable Grade -->
+                    <td>
+                        <a th:href="@{/catalog/grades/{id}(id=${row.gradeId})}"
+                           th:text="${row.gradeTitle}"
+                           class="entity-link"
+                           title="Открыть звание">
+                            Инструктор туризма
+                        </a>
+                    </td>
 
-                        <td th:text="${row.certificationId ?: '-'}">12345</td>
-                        <td th:text="${row.club ?: '-'}">Турклуб "Вершина"</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                    <td th:text="${row.certificationId ?: '-'}">12345</td>
+                    <td th:text="${row.club ?: '-'}">Турклуб "Вершина"</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
