@@ -56,8 +56,9 @@ function initializeSelect2(element) {
                 footer.querySelector('button').addEventListener('mousedown', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    const searchTerm = (dropdown.querySelector('.select2-search__field')?.value || '').trim();
                     $(selectEl).select2('close');
-                    openCreateTouristModal($(selectEl));
+                    openCreateTouristModal($(selectEl), searchTerm);
                 });
                 dropdown.appendChild(footer);
             }
@@ -174,13 +175,24 @@ function deleteRow(index) {
     }
 }
 
-function openCreateTouristModal(selectEl) {
+function openCreateTouristModal(selectEl, prefillName) {
     currentTouristSelect = selectEl;
 
     const form = document.getElementById('modalTouristForm');
     form.reset();
     document.getElementById('contactInfoList').innerHTML = '';
     document.getElementById('ct-error').classList.add('d-none');
+
+    if (prefillName) {
+        const parts = prefillName.split(/\s+/);
+        document.getElementById('lastName').value = parts[0];
+        if (parts[1]) {
+            document.getElementById('firstName').value = parts[1];
+        }
+        if (parts[2]) {
+            document.getElementById('middleName').value = parts[2];
+        }
+    }
 
     new bootstrap.Modal(document.getElementById('createTouristModal')).show();
 }
