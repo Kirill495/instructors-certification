@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
@@ -116,6 +117,7 @@ public class ProtocolController {
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         model.addAttribute("availableStatuses", ProtocolStatus.values());
+        model.addAttribute("tourist", new TouristDTO());
         return "protocols/edit";
     }
 
@@ -124,6 +126,7 @@ public class ProtocolController {
         model.addAttribute(PROTOCOL_ATTRIBUTE, new ProtocolDTO());
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
+        model.addAttribute("tourist", new TouristDTO());
         return "protocols/edit";
     }
 

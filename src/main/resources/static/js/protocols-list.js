@@ -95,12 +95,45 @@ function escapeRegex(string) {
 // Show clear button if there's initial value
 toggleClearButton();
 
-// Prevent row click when clicking tourist badges
-document.querySelectorAll('a.tourist-name').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.stopPropagation(); // Stop the click from bubbling to the row
+// Attach tourist badge click handlers (open in modal)
+function attachTouristBadgeHandlers(scope) {
+    scope.querySelectorAll('a.tourist-name').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            openTouristModal(this.dataset.touristId);
+        });
     });
-});
+}
+
+async function openTouristModal(touristId) {
+    const contentEl = document.getElementById('touristModalContent');
+    contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('touristViewModal'));
+    modal.show();
+
+    try {
+        const resp = await fetch(`/tourists/${touristId}/fragment`);
+        if (!resp.ok) throw new Error();
+
+        contentEl.innerHTML = await resp.text();
+
+        // Hide the card-footer (Edit/Delete/Back buttons) — modal footer has its own actions
+        contentEl.querySelectorAll('.card-footer').forEach(el => el.style.display = 'none');
+
+        // Update modal footer links
+        document.getElementById('touristEditLink').href = `/tourists/${touristId}/edit`;
+        document.getElementById('touristOpenLink').href = `/tourists/${touristId}`;
+
+        // Re-initialize tooltips inside the injected content
+        contentEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    } catch (_) {
+        contentEl.innerHTML = '<div class="alert alert-danger m-2">Ошибка загрузки данных туриста</div>';
+    }
+}
+
+attachTouristBadgeHandlers(document);
 
 // Run highlighting when page loads (if there's a search term)
 if (searchInput.value.trim().length >= 3) {
@@ -173,10 +206,8 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
                     tbody.appendChild(document.adoptNode(row));
                 });
 
-                // Re-attach click-stop for newly added tourist badge links
-                tbody.querySelectorAll('a.tourist-name').forEach(link => {
-                    link.addEventListener('click', e => e.stopPropagation());
-                });
+                // Re-attach tourist badge modal handlers for newly added rows
+                attachTouristBadgeHandlers(tbody);
 
                 // Re-initialize tooltips for newly added badges
                 tbody.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {

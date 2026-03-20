@@ -58,7 +58,7 @@
                     <input type="text"
                            class="form-control"
                            id="searchString"
-                           th:value="${param.search}"
+                           th:value="${param.searchQuery}"
                            placeholder="Введите минимум 3 символа для поиска...">
                     <button type="button"
                             class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-secondary"
@@ -131,6 +131,7 @@
                         <span th:each="tourist, iterStat : ${protocol.getTourists()}">
                             <a th:if="${iterStat.index < 2}"
                                th:href="@{/tourists/{id}(id=${tourist.id})}"
+                               th:attr="data-tourist-id=${tourist.id}"
                                th:text="${tourist.getFullName()}"
                                class="badge bg-secondary me-1 tourist-name">tourist_name</a>
                         </span>
@@ -208,6 +209,32 @@
                 <button type="button" class="btn btn-success" id="exportConfirmBtn">
                     <i class="bi bi-file-earmark-excel"></i> Сформировать
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tourist View Modal -->
+<div class="modal fade" id="touristViewModal" tabindex="-1" aria-labelledby="touristViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="touristViewModalLabel">Турист</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body p-2" id="touristModalContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status"></div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <a id="touristEditLink" href="#" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Изменить
+                </a>
+                <a id="touristOpenLink" href="#" class="btn btn-outline-primary" target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> Открыть
+                </a>
             </div>
         </div>
     </div>

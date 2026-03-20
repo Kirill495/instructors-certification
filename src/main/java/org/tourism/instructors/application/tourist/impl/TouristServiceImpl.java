@@ -92,6 +92,17 @@ public class TouristServiceImpl implements TouristService {
         touristRepository.save(tourist);
     }
 
+    @Transactional
+    @Override
+    public TouristLightDTO saveAndReturn(TouristDTO touristDTO) {
+        Tourist tourist = touristMapper.toEntity(touristDTO);
+        if (tourist.getContactInfo() != null) {
+            tourist.getContactInfo().forEach(item -> item.setTourist(tourist));
+        }
+        Tourist saved = touristRepository.save(tourist);
+        return touristMapper.toLightDTO(saved);
+    }
+
     @Override
     public TouristDTO findTouristById(int id) {
         Tourist tourist = touristRepository.findById(id).orElseThrow(() -> new TouristNotFoundException(id));

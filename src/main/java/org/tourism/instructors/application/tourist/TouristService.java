@@ -22,6 +22,8 @@ public interface TouristService {
 
     void save(TouristDTO tourist);
 
+    TouristLightDTO saveAndReturn(TouristDTO tourist);
+
     void delete(int touristId);
 
     Optional<TouristDTO> findTouristByTelegramId(long chatId);
