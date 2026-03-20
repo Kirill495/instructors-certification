@@ -133,7 +133,7 @@
                                th:href="@{/tourists/{id}(id=${tourist.id})}"
                                th:attr="data-tourist-id=${tourist.id}"
                                th:text="${tourist.getFullName()}"
-                               class="badge bg-secondary me-1 tourist-name">tourist_name</a>
+                               class="badge bg-secondary me-1 tourist-link">tourist_name</a>
                         </span>
                         <span th:if="${protocol.getTourists().size() > 2}"
                               class="badge bg-info me-1"
@@ -214,33 +214,12 @@
     </div>
 </div>
 
-<!-- Tourist View Modal -->
-<div class="modal fade" id="touristViewModal" tabindex="-1" aria-labelledby="touristViewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header py-2">
-                <h5 class="modal-title" id="touristViewModalLabel">Турист</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body p-2" id="touristModalContent">
-                <div class="text-center py-4">
-                    <div class="spinner-border" role="status"></div>
-                </div>
-            </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                <a id="touristEditLink" href="#" class="btn btn-warning">
-                    <i class="bi bi-pencil"></i> Изменить
-                </a>
-                <a id="touristOpenLink" href="#" class="btn btn-outline-primary" target="_blank">
-                    <i class="bi bi-box-arrow-up-right"></i> Открыть
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+<div th:replace="~{fragments/tourist-view-modal :: touristViewModal}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/tourists-common.js"></script>
+<script src="/js/tourists-edit.js"></script>
 <script th:src="@{/js/protocols-list.js}"></script>
+
 </body>
 </html>

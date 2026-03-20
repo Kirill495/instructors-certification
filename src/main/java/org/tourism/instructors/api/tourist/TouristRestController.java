@@ -28,6 +28,12 @@ public class TouristRestController {
         return touristService.saveAndReturn(touristDTO);
     }
 
+    @PutMapping("/{id}")
+    public TouristLightDTO updateTourist(@PathVariable int id, @RequestBody TouristDTO touristDTO) {
+        touristDTO.setId(id);
+        return touristService.saveAndReturn(touristDTO);
+    }
+
     @GetMapping("/search")
     public List<TouristLightDTO> searchTourists(@RequestParam(required = false, defaultValue = "") String query) {
         if (query.trim().isEmpty()) {

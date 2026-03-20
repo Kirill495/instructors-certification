@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!--
+    Reusable Tourist View Modal Fragment
+
+    Usage in your pages:
+
+    1. Include the fragment at the bottom of your page (before closing </body>):
+       <div th:replace="~{fragments/tourist-view-modal :: touristViewModal}"></div>
+
+    2. The modal is opened via JS — call openTouristViewModal(btn) or openTouristViewModal(touristId)
+       depending on the page's JS. Both functions expect these element IDs:
+         #touristViewModal   — the modal root
+         #tvModalContent     — where the fetched fragment is injected
+         #tvEditLink         — "Изменить" link in the footer
+         #tvOpenLink         — "Открыть" link in the footer
+-->
+
+<div th:fragment="touristViewModal"
+     class="modal fade"
+     id="touristViewModal"
+     tabindex="-1"
+     aria-labelledby="touristViewModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="touristViewModalLabel">Инструктор</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body p-2" id="tvModalContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status"></div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" id="tvEditBtn" class="btn btn-warning" data-tourist-id=""
+                        onclick="openTouristEditModal(this.dataset.touristId)">
+                    <i class="bi bi-pencil"></i> Изменить
+                </button>
+                <a id="tvOpenLink" href="#" class="btn btn-outline-primary" target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/tourist-edit-modal :: touristEditModal}"></div>
+</body>
+</html>

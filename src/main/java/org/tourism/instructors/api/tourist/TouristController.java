@@ -47,6 +47,7 @@ public class TouristController {
         if ("XMLHttpRequest".equals(requestedWith)) {
             return "tourists/list :: tableRows";
         }
+        model.addAttribute("tourist", new TouristDTO());
         return "tourists/list";
     }
 
@@ -72,6 +73,12 @@ public class TouristController {
     public String touristFragment(@PathVariable int id, Model model) {
         model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
         return "tourists/view :: touristCard";
+    }
+
+    @GetMapping("/{id}/edit-fragment")
+    public String touristEditFragment(@PathVariable int id, Model model) {
+        model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
+        return "tourists/edit :: touristFormFields";
     }
 
     @GetMapping("/{id}/edit")

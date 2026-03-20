@@ -74,6 +74,18 @@
     width: 100% !important;
 }
 
+/* Select2 inside flex wrapper (tourist cell with action buttons) */
+.tourist-select-wrapper {
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+}
+.tourist-select-wrapper .select2-container {
+    width: auto !important;
+    flex: 1;
+    min-width: 0;
+}
+
 .select2-container--bootstrap-5 .select2-selection {
     min-height: 31px;
     padding: 2px 8px;
