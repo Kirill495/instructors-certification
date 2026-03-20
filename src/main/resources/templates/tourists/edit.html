@@ -54,130 +54,132 @@
                           th:object="${tourist}"
                           method="post">
 
-                        <!-- Hidden ID field for edit mode -->
-                        <input type="hidden" th:field="*{id}" th:if="${tourist.id != null}">
+                        <div th:fragment="touristFormFields">
+                            <!-- Hidden ID field for edit mode -->
+                            <input type="hidden" th:field="*{id}" th:if="${tourist.id != null}">
 
-                        <!-- Last Name -->
-                        <div class="mb-3">
-                            <label class="form-label" for="lastName">
-                                Фамилия <span class="text-danger">*</span>
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="lastName"
-                                   th:field="*{lastName}"
-                                   required
-                                   placeholder="Иванов">
-                        </div>
-
-                        <!-- First Name -->
-                        <div class="mb-3">
-                            <label class="form-label" for="firstName">
-                                Имя <span class="text-danger">*</span>
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="firstName"
-                                   th:field="*{firstName}"
-                                   required
-                                   placeholder="Иван">
-                        </div>
-
-                        <!-- Middle Name -->
-                        <div class="mb-3">
-                            <label class="form-label" for="middleName">
-                                Отчество
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="middleName"
-                                   th:field="*{middleName}"
-                                   placeholder="Иванович">
-                            <div class="form-text">Можно оставить пустым</div>
-                        </div>
-
-                        <!-- Gender Toggle -->
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Пол <span class="text-danger">*</span>
-                            </label>
-                            <div class="gender-toggle">
-                                <input type="radio"
-                                       th:field="*{gender}"
-                                       value="MALE"
-                                       id="genderMale"
-                                       required>
-                                <label for="genderMale" th:text="#{enum.Gender.MALE}">Мужской</label>
-
-                                <input type="radio"
-                                       th:field="*{gender}"
-                                       value="FEMALE"
-                                       id="genderFemale"
-                                       required>
-                                <label for="genderFemale" th:text="#{enum.Gender.FEMALE}">Женский</label>
+                            <!-- Last Name -->
+                            <div class="mb-3">
+                                <label class="form-label" for="lastName">
+                                    Фамилия <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="lastName"
+                                       th:field="*{lastName}"
+                                       required
+                                       placeholder="Иванов">
                             </div>
-                        </div>
 
-                        <!-- Date of Birth -->
-                        <div class="mb-3">
-                            <label class="form-label" for="dateOfBirth">
-                                Дата рождения <span class="text-danger">*</span>
-                            </label>
-                            <input type="date"
-                                   class="form-control"
-                                   id="dateOfBirth"
-                                   th:field="*{dateOfBirth}"
-                                   required>
-                            <div class="form-text">Формат: ДД.ММ.ГГГГ</div>
-                        </div>
+                            <!-- First Name -->
+                            <div class="mb-3">
+                                <label class="form-label" for="firstName">
+                                    Имя <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="firstName"
+                                       th:field="*{firstName}"
+                                       required
+                                       placeholder="Иван">
+                            </div>
 
-                        <!-- Contact Info -->
-                        <div class="mb-3">
-                            <label class="form-label">Контактная информация</label>
-                            <div id="contactInfoList">
-                                <div th:each="contact, iter : *{contactInfo}"
-                                     class="contact-row input-group mb-2">
-                                    <input type="hidden"
-                                           th:name="'contactInfo[' + ${iter.index} + '].id'"
-                                           th:value="${contact.id}">
-                                    <select th:field="*{contactInfo[__${iter.index}__].type}"
-                                            class="form-select"
-                                            style="max-width: 160px;"
-                                            onchange="applyContactType(this)">
-                                        <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефон</option>
-                                        <option value="EMAIL" th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
-                                        <option value="TELEGRAM" th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
-                                    </select>
-                                    <input th:field="*{contactInfo[__${iter.index}__].value}"
-                                           type="text"
-                                           class="form-control"
-                                           placeholder="Значение">
-                                    <button type="button"
-                                            class="btn btn-outline-danger"
-                                            onclick="removeContact(this)">✕</button>
+                            <!-- Middle Name -->
+                            <div class="mb-3">
+                                <label class="form-label" for="middleName">
+                                    Отчество
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="middleName"
+                                       th:field="*{middleName}"
+                                       placeholder="Иванович">
+                                <div class="form-text">Можно оставить пустым</div>
+                            </div>
+
+                            <!-- Gender Toggle -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Пол <span class="text-danger">*</span>
+                                </label>
+                                <div class="gender-toggle">
+                                    <input type="radio"
+                                           th:field="*{gender}"
+                                           value="MALE"
+                                           id="genderMale"
+                                           required>
+                                    <label for="genderMale" th:text="#{enum.Gender.MALE}">Мужской</label>
+
+                                    <input type="radio"
+                                           th:field="*{gender}"
+                                           value="FEMALE"
+                                           id="genderFemale"
+                                           required>
+                                    <label for="genderFemale" th:text="#{enum.Gender.FEMALE}">Женский</label>
                                 </div>
                             </div>
-                            <button type="button"
-                                    class="btn btn-outline-secondary btn-sm mt-1"
-                                    onclick="addContact()">+ Добавить контакт</button>
-                            <select id="contact-type-template" style="display:none;" aria-hidden="true">
-                                <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефончик</option>
-                                <option value="EMAIL"        th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
-                                <option value="TELEGRAM"     th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
-                            </select>
-                        </div>
 
-                        <!-- Certification ID -->
-                        <div class="mb-3">
-                            <label class="form-label" for="certificationId">
-                                Удостоверение
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="certificationId"
-                                   th:field="*{certificationId}"
-                                   maxlength="10"
-                                   placeholder="12345">
+                            <!-- Date of Birth -->
+                            <div class="mb-3">
+                                <label class="form-label" for="dateOfBirth">
+                                    Дата рождения <span class="text-danger">*</span>
+                                </label>
+                                <input type="date"
+                                       class="form-control"
+                                       id="dateOfBirth"
+                                       th:field="*{dateOfBirth}"
+                                       required>
+                                <div class="form-text">Формат: ДД.ММ.ГГГГ</div>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div class="mb-3">
+                                <label class="form-label">Контактная информация</label>
+                                <div id="contactInfoList">
+                                    <div th:each="contact, iter : *{contactInfo}"
+                                         class="contact-row input-group mb-2">
+                                        <input type="hidden"
+                                               th:name="'contactInfo[' + ${iter.index} + '].id'"
+                                               th:value="${contact.id}">
+                                        <select th:field="*{contactInfo[__${iter.index}__].type}"
+                                                class="form-select"
+                                                style="max-width: 160px;"
+                                                onchange="applyContactType(this)">
+                                            <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефон</option>
+                                            <option value="EMAIL" th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
+                                            <option value="TELEGRAM" th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
+                                        </select>
+                                        <input th:field="*{contactInfo[__${iter.index}__].value}"
+                                               type="text"
+                                               class="form-control"
+                                               placeholder="Значение">
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                onclick="removeContact(this)">✕</button>
+                                    </div>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm mt-1"
+                                        onclick="addContact()">+ Добавить контакт</button>
+                                <select id="contact-type-template" style="display:none;" aria-hidden="true">
+                                    <option value="PHONE_NUMBER" th:text="#{enum.ContactInfoType.PHONE_NUMBER}">Телефончик</option>
+                                    <option value="EMAIL"        th:text="#{enum.ContactInfoType.EMAIL}">E-mail</option>
+                                    <option value="TELEGRAM"     th:text="#{enum.ContactInfoType.TELEGRAM}">Telegram</option>
+                                </select>
+                            </div>
+
+                            <!-- Certification ID -->
+                            <div class="mb-3">
+                                <label class="form-label" for="certificationId">
+                                    Удостоверение
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="certificationId"
+                                       th:field="*{certificationId}"
+                                       maxlength="10"
+                                       placeholder="12345">
+                            </div>
                         </div>
 
                         <!-- Buttons -->

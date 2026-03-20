@@ -4,10 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
 import org.tourism.instructors.application.tourist.TouristService;
@@ -22,6 +20,12 @@ public class TouristRestController {
 
     public TouristRestController(TouristService touristService) {
         this.touristService = touristService;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public TouristLightDTO createTourist(@RequestBody TouristDTO touristDTO) {
+        return touristService.saveAndReturn(touristDTO);
     }
 
     @GetMapping("/search")

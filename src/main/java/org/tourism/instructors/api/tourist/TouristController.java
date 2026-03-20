@@ -50,13 +50,12 @@ public class TouristController {
         return "tourists/list";
     }
 
-    private static void addPaginationAttributes(Model model, Page<TouristDTO> touristsPage, String search, int currentPage, int size, String sort, String order) {
-        model.addAttribute("tourists", touristsPage.getContent());
+    private static void addPaginationAttributes(Model model, Page<TouristDTO> page, String search, int currentPage, int size, String sort, String order) {
+        model.addAttribute("tourists", page.getContent());
 
-        model.addAttribute("search", search);
         model.addAttribute("currentPage", currentPage);
-        model.addAttribute("totalPages", touristsPage.getTotalPages());
-        model.addAttribute("totalElements", touristsPage.getTotalElements());
+        model.addAttribute("totalPages", page.getTotalPages());
+        model.addAttribute("totalElements", page.getTotalElements());
         model.addAttribute("pageSize", size);
         model.addAttribute("sortField", sort);
         model.addAttribute("sortOrder", order);
@@ -67,6 +66,12 @@ public class TouristController {
     public String viewTourist(@PathVariable int id, Model model) {
         model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
         return "tourists/view";
+    }
+
+    @GetMapping("/{id}/fragment")
+    public String touristFragment(@PathVariable int id, Model model) {
+        model.addAttribute(TOURIST_ATTRIBUTE, touristService.findTouristById(id));
+        return "tourists/view :: touristCard";
     }
 
     @GetMapping("/{id}/edit")

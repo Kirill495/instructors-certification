@@ -32,7 +32,7 @@
     <span th:text="${errorMessage}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<div class="container mt-2">
+<div class="container mt-2" th:fragment="touristCard" th:attr="data-tourist-id=${tourist.id}">
     <div class="d-flex justify-content-between align-items-baseline mb-2">
         <h3 class="mb-0">
             <span th:text="${tourist.getFullName()}">Просмотр туриста</span>
