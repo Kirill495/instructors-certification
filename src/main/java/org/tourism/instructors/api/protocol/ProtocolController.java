@@ -56,8 +56,7 @@ public class ProtocolController {
         } else {
             pageable = PageRequest.of(page, size, sortObj);
         }
-        Page<ProtocolForListDTO> pageProtocol;
-        pageProtocol = protocolService.getProtocolsForList(search, pageable);
+        Page<ProtocolForListDTO> pageProtocol = protocolService.getProtocolsForList(search, pageable);
 
         addPaginationAttributes(model, pageProtocol, search, page, size, sort, order);
         if ("XMLHttpRequest".equals(requestedWith)) {

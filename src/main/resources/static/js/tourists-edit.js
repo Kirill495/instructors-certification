@@ -17,7 +17,7 @@ function applyContactType(select) {
         input.placeholder = '+7 999 123-45-67';
         input.title       = 'Формат: +7 999 123-45-67';
         if (!input.value || phonePattern.test(input.value)) {
-            input.pattern = phonePattern //phonePattern.source.slice(1, -1); // strip ^ and $
+            input.pattern = phonePattern.source.slice(1, -1); // strip ^ and $
             input._phoneMask  = () => phoneMaskInput(input);
             input.addEventListener('input', input._phoneMask);
             if (input.value) phoneMaskInput(input);
