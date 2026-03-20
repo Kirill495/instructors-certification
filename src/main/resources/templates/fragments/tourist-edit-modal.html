@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!--
+    Reusable Create Tourist Modal Fragment
+
+    Usage in your pages:
+      Included automatically via tourist-view-modal fragment.
+      Requires "tourist" attribute in model (new TouristDTO()).
+
+    JS functions:
+      openCreateTouristModal(selectEl, prefillName) — open in create mode
+      openTouristEditModal(touristId)               — open in edit mode (loads data via AJAX)
+      submitCreateTourist()                         — submit (create or update)
+-->
+
+<div th:fragment="touristEditModal"
+     class="modal fade"
+     id="touristEditModal"
+     tabindex="-1"
+     aria-labelledby="touristEditModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="touristEditModalLabel">Новый турист</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="modalTouristForm" th:object="${tourist}">
+                    <div id="modal-form-fields">
+                        <div th:insert="~{tourists/edit :: touristFormFields}"></div>
+                    </div>
+                    <div id="ct-error" class="alert alert-danger d-none mt-2"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateTourist()">
+                    <i class="bi bi-person-plus"></i> Создать
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

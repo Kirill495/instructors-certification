@@ -1,5 +1,5 @@
 let rowIndex = parseInt(document.getElementById('protocol-meta').dataset.rowCount, 10);
-let currentTouristSelect = null;
+window.currentTouristSelect = null;
 
 // Initialize Select2 for existing rows on page load
 $(document).ready(function() {
@@ -64,17 +64,20 @@ function initializeSelect2(element) {
             }
         }, 0);
     }).on('select2:select', function (e) {
-        // When a tourist is selected, auto-fill the certification ID
         const selectedData = e.params.data;
-        const certificationId = selectedData.certificationId;
-
-        // Find the certification ID input in the same row
         const row = $(this).closest('tr');
-        const certInput = row.find('input[name$=".certificationId"]');
 
-        // Auto-fill only if the field is empty
+        // Auto-fill certification ID if empty
+        const certInput = row.find('input[name$=".certificationId"]');
         if (certInput.length && !certInput.val()) {
-            certInput.val(certificationId || '');
+            certInput.val(selectedData.certificationId || '');
+        }
+
+        // Show view button and set tourist ID
+        const viewBtn = row.find('.tourist-view-btn')[0];
+        if (viewBtn) {
+            viewBtn.dataset.touristId = selectedData.id;
+            viewBtn.classList.remove('d-none');
         }
     });
 }
@@ -176,12 +179,17 @@ function deleteRow(index) {
 }
 
 function openCreateTouristModal(selectEl, prefillName) {
-    currentTouristSelect = selectEl;
+    window.currentTouristSelect = selectEl;
 
     const form = document.getElementById('modalTouristForm');
     form.reset();
+    delete form.dataset.editTouristId;
     document.getElementById('contactInfoList').innerHTML = '';
     document.getElementById('ct-error').classList.add('d-none');
+
+    document.getElementById('touristEditModalLabel').textContent = 'Новый турист';
+    const submitBtn = document.querySelector('#touristEditModal .modal-footer .btn-primary');
+    if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-person-plus"></i> Создать';
 
     if (prefillName) {
         const parts = prefillName.split(/\s+/);
@@ -194,76 +202,7 @@ function openCreateTouristModal(selectEl, prefillName) {
         }
     }
 
-    new bootstrap.Modal(document.getElementById('createTouristModal')).show();
-}
-
-async function submitCreateTourist() {
-    const form = document.getElementById('modalTouristForm');
-    const formData = new FormData(form);
-    const errorEl = document.getElementById('ct-error');
-
-    const lastName = (formData.get('lastName') || '').trim();
-    const firstName = (formData.get('firstName') || '').trim();
-    const gender = formData.get('gender');
-    const dateOfBirth = formData.get('dateOfBirth');
-
-    if (!lastName || !firstName || !gender || !dateOfBirth) {
-        errorEl.textContent = 'Заполните обязательные поля: Фамилия, Имя, Пол, Дата рождения';
-        errorEl.classList.remove('d-none');
-        return;
-    }
-
-    const contactInfo = [];
-    let i = 0;
-    while (formData.has(`contactInfo[${i}].type`)) {
-        contactInfo.push({
-            type: formData.get(`contactInfo[${i}].type`),
-            value: formData.get(`contactInfo[${i}].value`)
-        });
-        i++;
-    }
-
-    const data = {
-        lastName,
-        firstName,
-        middleName: (formData.get('middleName') || '').trim() || null,
-        gender,
-        dateOfBirth,
-        certificationId: (formData.get('certificationId') || '').trim() || null,
-        contactInfo
-    };
-
-    try {
-        const resp = await fetch('/api/tourists', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-
-        if (!resp.ok) {
-            errorEl.textContent = 'Ошибка при создании туриста';
-            errorEl.classList.remove('d-none');
-            return;
-        }
-
-        const tourist = await resp.json();
-        const fullName = [tourist.lastName, tourist.firstName, tourist.middleName]
-            .filter(Boolean).join(' ');
-
-        const option = new Option(fullName, tourist.id, true, true);
-        currentTouristSelect.append(option).trigger('change');
-
-        const row = currentTouristSelect.closest('tr');
-        const certInput = row.find('input[name$=".certificationId"]');
-        if (certInput.length && !certInput.val() && tourist.certificationId) {
-            certInput.val(tourist.certificationId);
-        }
-
-        bootstrap.Modal.getInstance(document.getElementById('createTouristModal')).hide();
-    } catch (e) {
-        errorEl.textContent = 'Ошибка соединения';
-        errorEl.classList.remove('d-none');
-    }
+    new bootstrap.Modal(document.getElementById('touristEditModal')).show();
 }
 
 function renumberRows() {

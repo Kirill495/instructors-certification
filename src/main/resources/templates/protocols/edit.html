@@ -121,15 +121,25 @@
 
                             <!-- Tourist -->
                             <td>
-                                <select class="tourist-select"
-                                        th:field="*{contentRows[__${iterStat.index}__].touristId}"
-                                        required>
-                                    <option th:if="${row.touristId != null}"
-                                            th:value="${row.touristId}"
-                                            th:text="${row.touristFullName}"
-                                            selected>
-                                    </option>
-                                </select>
+                                <div class="tourist-select-wrapper">
+                                    <select class="tourist-select"
+                                            th:field="*{contentRows[__${iterStat.index}__].touristId}"
+                                            required>
+                                        <option th:if="${row.touristId != null}"
+                                                th:value="${row.touristId}"
+                                                th:text="${row.touristFullName}"
+                                                selected>
+                                        </option>
+                                    </select>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm flex-shrink-0 tourist-view-btn"
+                                            th:classappend="${row.touristId == null} ? ' d-none'"
+                                            th:attr="data-tourist-id=${row.touristId}"
+                                            onclick="openTouristViewModal(this.dataset.touristId)"
+                                            title="Просмотр туриста">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </td>
 
                             <!-- Kind of Tourism -->
@@ -225,11 +235,20 @@
 
         <!-- Tourist -->
         <td>
-            <select class="tourist-select"
-                    name="contentRows[{INDEX}].touristId"
-                    id="tourist-{INDEX}"
-                    required>
-            </select>
+            <div class="tourist-select-wrapper">
+                <select class="tourist-select"
+                        name="contentRows[{INDEX}].touristId"
+                        id="tourist-{INDEX}"
+                        required>
+                </select>
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm flex-shrink-0 tourist-view-btn d-none"
+                        data-tourist-id=""
+                        onclick="openTouristViewModal(this.dataset.touristId)"
+                        title="Просмотр туриста">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
         </td>
 
         <!-- Kind of Tourism -->
@@ -271,31 +290,10 @@
     </tr>
 </template>
 
+<script src="/js/tourists-common.js"></script>
 <script src="/js/protocols-edit.js"></script>
 <script src="/js/tourists-edit.js"></script>
 
-<!-- Create Tourist Modal -->
-<div class="modal fade" id="createTouristModal" tabindex="-1" aria-labelledby="createTouristModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createTouristModalLabel">Новый турист</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <form id="modalTouristForm" th:object="${tourist}">
-                    <div th:insert="~{tourists/edit :: touristFormFields}"></div>
-                    <div id="ct-error" class="alert alert-danger d-none mt-2"></div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="submitCreateTourist()">
-                    <i class="bi bi-person-plus"></i> Создать
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<div th:replace="~{fragments/tourist-view-modal :: touristViewModal}"></div>
 </body>
 </html>

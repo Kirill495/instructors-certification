@@ -63,6 +63,7 @@ public class ProtocolController {
         if ("XMLHttpRequest".equals(requestedWith)) {
             return "protocols/list :: tableRows";
         }
+        model.addAttribute("tourist", new TouristDTO());
         return "protocols/list";
     }
 
@@ -108,6 +109,7 @@ public class ProtocolController {
     @GetMapping("/{id}")
     public String viewProtocol(@PathVariable int id, Model model) {
         model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolById(id));
+        model.addAttribute("tourist", new TouristDTO());
         return "protocols/view";
     }
 

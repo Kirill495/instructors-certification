@@ -3,6 +3,8 @@ const searchInput = document.getElementById('searchString');
 const clearButton = document.getElementById('clearSearch');
 let searchTimeout;
 
+attachTouristClickHandlers(document)
+
 function toggleClearButton() {
     clearButton.style.display = searchInput.value.trim().length > 0 ? 'block' : 'none';
 }
