@@ -1,6 +1,5 @@
 package org.tourism.instructors.application.tourist;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
