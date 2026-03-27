@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -36,19 +35,20 @@ public class ChatRegistrationHandler {
 
     private final CatalogService catalogService;
     private final PendingTouristService pendingTouristService;
-    private final Map<Long, ConversationState> activeConversations = new ConcurrentHashMap<>();
+    private final ConversationStateRegistry conversationsRegistry;
 
-    public ChatRegistrationHandler(CatalogService catalogService, PendingTouristService pendingTouristService) {
+    public ChatRegistrationHandler(CatalogService catalogService, PendingTouristService pendingTouristService, ConversationStateRegistry registry) {
         this.catalogService = catalogService;
         this.pendingTouristService = pendingTouristService;
+        this.conversationsRegistry = registry;
     }
 
     public boolean hasActiveConversation(Long chatId) {
-        return activeConversations.containsKey(chatId);
+        return conversationsRegistry.hasActive(chatId);
     }
 
     public void handleStep(BotExecutor bot, long chatId, String text, Integer userMessageId) {
-        ConversationState state = activeConversations.get(chatId);
+        ConversationState state = conversationsRegistry.get(chatId);
 
         switch (state.getStep()) {
             case NAME -> {
@@ -102,10 +102,10 @@ public class ChatRegistrationHandler {
         if (dataParts.size() < 2) {
             return;
         }
-        ConversationState state = activeConversations.get(chatId);
-        if (Objects.isNull(state)) {
+        if (!conversationsRegistry.hasActive(chatId)) {
             return;
         }
+        ConversationState state = conversationsRegistry.get(chatId);
         String step = dataParts.removeFirst();
         switch (step) {
             case "cal" -> processCalendarActions(bot, dataParts, chatId, messageId);
@@ -181,7 +181,8 @@ public class ChatRegistrationHandler {
             pendingTouristService.register(state);
             bot.send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
         } else if ("CANCEL".equals(action)) {
-            activeConversations.put(chatId, new ConversationState(chatId, state.getTgUsername()));
+            conversationsRegistry.put(chatId, new ConversationState(chatId, state.getTgUsername()));
+
             bot.send(chatId, "Введите ФИО:");
         }
     }
@@ -195,7 +196,7 @@ public class ChatRegistrationHandler {
             case "SELECT_MONTH" -> editKeyboard(bot, chatId, messageId, CalendarKeyboard.build(YearMonth.parse(dataParts.getFirst())));
             case "SELECT" -> {
                 LocalDate date = LocalDate.parse(dataParts.getFirst());
-                ConversationState state = activeConversations.get(chatId);
+                ConversationState state = conversationsRegistry.get(chatId);
                 if (state == null || state.getStep() != TouristRegistrationBot.Step.DATE_OF_BIRTH) return;
 
                 bot.dispatch(EditMessageText.builder()
