@@ -49,6 +49,8 @@ class TouristServiceTest {
     @InjectMocks
     TouristServiceImpl touristService;
 
+    TouristLightDTO outDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
+
     @Nested
     class GetAllTourists {
         @Test
@@ -157,8 +159,7 @@ class TouristServiceTest {
             String testQuery = "query";
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO();
-            touristDTO.setId(1);
+            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCase(testQuery)).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
@@ -173,8 +174,7 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO();
-            touristDTO.setId(1);
+            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(parts.getFirst(),
                     parts.getLast())).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
@@ -190,8 +190,7 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO();
-            touristDTO.setId(1);
+            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(
                     parts.getFirst(), parts.get(1), parts.getLast())).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
@@ -209,9 +208,8 @@ class TouristServiceTest {
             Tourist tourist = new Tourist();
             when(touristMapper.toEntity(dto)).thenReturn(tourist);
             when(touristRepository.save(tourist)).thenReturn(tourist);
-            TouristLightDTO outDTO = new TouristLightDTO();
-            when(touristMapper.toLightDTO(tourist)).thenReturn(outDTO);
 
+            when(touristMapper.toLightDTO(tourist)).thenReturn(outDTO);
             TouristLightDTO lightDTO = touristService.saveAndReturn(dto);
             assertEquals(outDTO, lightDTO);
             verify(touristMapper).toEntity(any(TouristDTO.class));
@@ -227,7 +225,6 @@ class TouristServiceTest {
             tourist.setContactInfo(new ArrayList<>(List.of(new ContactInfoItem())));
             when(touristMapper.toEntity(dto)).thenReturn(tourist);
             when(touristRepository.save(eq(tourist))).thenReturn(tourist);
-            TouristLightDTO outDTO = new TouristLightDTO();
             when(touristMapper.toLightDTO(tourist)).thenReturn(outDTO);
 
             TouristLightDTO lightDTO = touristService.saveAndReturn(dto);
@@ -303,7 +300,7 @@ class TouristServiceTest {
         when(touristMapper.toDTO(tourist)).thenReturn(touristDTO);
 
         Optional<TouristDTO> result = touristService.findTouristByTelegramId(1L);
-
+        assertTrue(result.isPresent());
         assertEquals(touristDTO, result.get());
         ArgumentCaptor<Tourist> argTourist = ArgumentCaptor.forClass(Tourist.class);
         verify(touristMapper).toDTO(argTourist.capture());
