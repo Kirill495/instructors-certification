@@ -18,6 +18,7 @@ public class ConversationStateRegistry {
     public void put(long chatId, ConversationState state) {
         activeConversations.put(chatId, state);
     }
+
     public boolean hasActive(Long chatId) {
         return activeConversations.containsKey(chatId);
     }
