@@ -12,7 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.tourism.instructors.api.tourist.dto.ContactInfoItemDTO;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.exception.TouristCannotBeDeletedException;
 import org.tourism.instructors.application.tourist.exception.TouristNotFoundException;
@@ -49,7 +49,7 @@ class TouristServiceTest {
     @InjectMocks
     TouristServiceImpl touristService;
 
-    TouristLightDTO outDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
+    TouristSummaryDTO outDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
 
     @Nested
     class GetAllTourists {
@@ -159,11 +159,11 @@ class TouristServiceTest {
             String testQuery = "query";
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
+            TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCase(testQuery)).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
-            List<TouristLightDTO> result = touristService.searchLightTourists(testQuery);
+            List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
             assertEquals(touristDTO, result.getFirst());
         }
 
@@ -174,12 +174,12 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
+            TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(parts.getFirst(),
                     parts.getLast())).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
-            List<TouristLightDTO> result = touristService.searchLightTourists(testQuery);
+            List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
             assertEquals(touristDTO, result.getFirst());
         }
 
@@ -190,12 +190,12 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            TouristLightDTO touristDTO = new TouristLightDTO(1, "f", "l", "m", "c_id");
+            TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
             when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(
                     parts.getFirst(), parts.get(1), parts.getLast())).thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
-            List<TouristLightDTO> result = touristService.searchLightTourists(testQuery);
+            List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
             assertEquals(touristDTO, result.getFirst());
         }
     }
@@ -210,7 +210,7 @@ class TouristServiceTest {
             when(touristRepository.save(tourist)).thenReturn(tourist);
 
             when(touristMapper.toLightDTO(tourist)).thenReturn(outDTO);
-            TouristLightDTO lightDTO = touristService.saveAndReturn(dto);
+            TouristSummaryDTO lightDTO = touristService.saveAndReturn(dto);
             assertEquals(outDTO, lightDTO);
             verify(touristMapper).toEntity(any(TouristDTO.class));
             verify(touristRepository).save(tourist);
@@ -220,14 +220,14 @@ class TouristServiceTest {
         @Test
         void shouldSaveAndReturnWithContactInfo() {
             TouristDTO dto = new TouristDTO();
-            dto.setContactInfo(new ArrayList<>(List.of(new ContactInfoItemDTO())));
+            dto.setContactInfo(new ArrayList<>(List.of(new ContactInfoItemDTO(ContactInfoType.TELEGRAM, "tg_id"))));
             Tourist tourist = new Tourist();
             tourist.setContactInfo(new ArrayList<>(List.of(new ContactInfoItem())));
             when(touristMapper.toEntity(dto)).thenReturn(tourist);
             when(touristRepository.save(eq(tourist))).thenReturn(tourist);
             when(touristMapper.toLightDTO(tourist)).thenReturn(outDTO);
 
-            TouristLightDTO lightDTO = touristService.saveAndReturn(dto);
+            TouristSummaryDTO lightDTO = touristService.saveAndReturn(dto);
 
             ArgumentCaptor<Tourist> argTourist = ArgumentCaptor.forClass(Tourist.class);
             assertEquals(outDTO, lightDTO);
@@ -259,7 +259,7 @@ class TouristServiceTest {
     @Test
     void testSave() {
         TouristDTO touristDTO = new TouristDTO();
-        touristDTO.setContactInfo(List.of(new ContactInfoItemDTO()));
+        touristDTO.setContactInfo(List.of(new ContactInfoItemDTO(ContactInfoType.TELEGRAM, "tg_id")));
         Tourist tourist = new Tourist();
         when(touristMapper.toEntity(touristDTO)).thenReturn(tourist);
 

@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.api.tourist.mapper.TouristMapper;
 import org.tourism.instructors.application.tourist.TouristService;
 import org.tourism.instructors.application.tourist.exception.TouristCannotBeDeletedException;
@@ -57,7 +57,7 @@ public class TouristServiceImpl implements TouristService {
     }
 
     @Override
-    public List<TouristLightDTO> searchLightTourists(String query) {
+    public List<TouristSummaryDTO> searchLightTourists(String query) {
         List<String> queryParts = Arrays.asList(query.split(" "));
         return searchTouristsInnerByFullName(queryParts).stream().map(touristMapper::toLightDTO).toList();
     }
@@ -90,7 +90,7 @@ public class TouristServiceImpl implements TouristService {
 
     @Transactional
     @Override
-    public TouristLightDTO saveAndReturn(TouristDTO touristDTO) {
+    public TouristSummaryDTO saveAndReturn(TouristDTO touristDTO) {
         Tourist tourist = touristMapper.toEntity(touristDTO);
         if (tourist.getContactInfo() != null) {
             tourist.getContactInfo().forEach(item -> item.setTourist(tourist));

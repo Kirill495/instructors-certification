@@ -264,7 +264,7 @@ public class ChatRegistrationHandler {
         rows.add(summaryRow(state.getPhoneNumber() != null ? state.getPhoneNumber() : "-", "EDIT:PHONE"));
         rows.add(summaryRow(state.getEmail() != null ? state.getEmail() : "-", "EDIT:EMAIL"));
         rows.add(summaryRow(state.getKindOfTourism().getTitle(), "EDIT:KIND_OF_TOURISM"));
-        rows.add(summaryRow(state.getGrade().getTitle(), "EDIT:GRADE"));
+        rows.add(summaryRow(state.getGrade().title(), "EDIT:GRADE"));
         rows.add(List.of(InlineKeyboardButton.builder()
                 .text("✅ Всё верно").callbackData("CONFIRM:OK").build()));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
@@ -289,8 +289,8 @@ public class ChatRegistrationHandler {
     private int sendGradePicker(BotExecutor bot, long chatId) {
         Map<String, String> buttons = catalogService.findActiveGrades().stream()
                 .collect(Collectors.toMap(
-                        GradeDTO::getTitle,
-                        gradeDTO -> "GRADE:" + gradeDTO.getId(),
+                        GradeDTO::title,
+                        gradeDTO -> "GRADE:" + gradeDTO.id(),
                         (s1, s2) -> s1,
                         LinkedHashMap::new));
         return bot
@@ -307,7 +307,8 @@ public class ChatRegistrationHandler {
         Map<String, String> buttons = new LinkedHashMap<>();
         buttons.put("Мужской", "GENDER:MALE");
         buttons.put("Женский", "GENDER:FEMALE");
-        return bot.dispatch(SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build()).getMessageId();
+        SendMessage message = SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build();
+        return bot.dispatch(message).getMessageId();
 
     }
 

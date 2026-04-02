@@ -1,6 +1,6 @@
 package org.tourism.instructors.api.tourist.dto;
 
-public record TouristLightDTO(
+public record TouristSummaryDTO(
         int id,
         String firstName,
         String lastName,
