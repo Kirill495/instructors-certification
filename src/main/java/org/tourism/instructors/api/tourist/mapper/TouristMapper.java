@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.tourism.instructors.api.protocol.mapper.GradeAssignmentMapper;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
@@ -14,7 +14,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {GradeAssignmentMapper.class, ContactInfoMapper.class})
 public interface TouristMapper {
-    TouristLightDTO toLightDTO(Tourist model);
+    TouristSummaryDTO toLightDTO(Tourist model);
 
     Tourist toEntity(TouristDTO dto);
 

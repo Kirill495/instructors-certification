@@ -57,7 +57,7 @@ class ChatRegistrationHandlerTest {
     void handleNameStep() {
 
         state.setStep(TouristRegistrationBot.Step.NAME);
-        when(botExecutor.dispatch(any())).thenReturn(any(SendMessage.class));
+        when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
         when(message.getMessageId()).thenReturn(messageId);
         chatRegistrationHandler.handleStep(botExecutor, chatId, "Andrew Fedorov", 1);
 
@@ -68,7 +68,7 @@ class ChatRegistrationHandlerTest {
     void handleNameStepEditing() {
         KindOfTourismDTO kindOfTourism = new KindOfTourismDTO();
         state.setStep(TouristRegistrationBot.Step.NAME);
-        GradeDTO grade = new GradeDTO();
+        GradeDTO grade = new GradeDTO(1, "grade", false, 10);
         state.setGrade(grade);
         state.setEditing(true);
         state.setKindOfTourism(kindOfTourism);

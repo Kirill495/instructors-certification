@@ -51,15 +51,14 @@ public class GradeController {
     public String updateGrade(@PathVariable int id,
                               @ModelAttribute GradeDTO grade,
                               RedirectAttributes redirectAttributes) {
-        grade.setId(id);
-        catalogService.saveGrade(grade);
+        catalogService.saveGrade(new GradeDTO(id, grade.title(), grade.inactive(), grade.expiresInYears()));
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно обновлено");
         return REDIRECT_URL;
     }
 
     @GetMapping("/new")
     public String newGradeForm(Model model) {
-        model.addAttribute(GRADE_ATTRIBUTE, new GradeDTO());
+        model.addAttribute(GRADE_ATTRIBUTE, new GradeDTO(null, null, false, 0));
         return "catalog/grades/edit";
     }
 

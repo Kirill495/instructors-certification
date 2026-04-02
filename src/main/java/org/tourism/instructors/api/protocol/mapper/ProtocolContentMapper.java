@@ -3,7 +3,7 @@ package org.tourism.instructors.api.protocol.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.tourism.instructors.api.protocol.dto.ProtocolContentDTO;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
 
 @Mapper(componentModel = "spring")
@@ -34,5 +34,5 @@ public interface ProtocolContentMapper {
     @Mapping(target = "lastName", source = "model.tourist.lastName")
     @Mapping(target = "firstName", source = "model.tourist.firstName")
     @Mapping(target = "middleName", source = "model.tourist.middleName")
-    TouristLightDTO toTouristDTO(ProtocolContent model);
+    TouristSummaryDTO toTouristDTO(ProtocolContent model);
 }

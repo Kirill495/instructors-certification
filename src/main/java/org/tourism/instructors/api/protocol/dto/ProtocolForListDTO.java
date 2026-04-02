@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 import java.time.LocalDate;
@@ -22,7 +22,7 @@ public class ProtocolForListDTO {
     private LocalDate date;
     private String order;
     private ProtocolStatus status;
-    private List<TouristLightDTO> tourists = new ArrayList<>();
+    private List<TouristSummaryDTO> tourists = new ArrayList<>();
 
     // In ProtocolForListDTO.java
     public String getTooltipHtml() {
