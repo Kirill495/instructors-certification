@@ -7,7 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.application.tourist.TouristService;
 
 import java.util.Collections;
@@ -24,18 +24,18 @@ public class TouristRestController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TouristLightDTO createTourist(@RequestBody TouristDTO touristDTO) {
+    public TouristSummaryDTO createTourist(@RequestBody TouristDTO touristDTO) {
         return touristService.saveAndReturn(touristDTO);
     }
 
     @PutMapping("/{id}")
-    public TouristLightDTO updateTourist(@PathVariable int id, @RequestBody TouristDTO touristDTO) {
+    public TouristSummaryDTO updateTourist(@PathVariable int id, @RequestBody TouristDTO touristDTO) {
         touristDTO.setId(id);
         return touristService.saveAndReturn(touristDTO);
     }
 
     @GetMapping("/search")
-    public List<TouristLightDTO> searchTourists(@RequestParam(required = false, defaultValue = "") String query) {
+    public List<TouristSummaryDTO> searchTourists(@RequestParam(required = false, defaultValue = "") String query) {
         if (query.trim().isEmpty()) {
             return Collections.emptyList();
         }

@@ -10,7 +10,7 @@ import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
-import org.tourism.instructors.api.tourist.dto.TouristLightDTO;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 import org.tourism.instructors.domain.pending.PendingTourist;
@@ -56,7 +56,7 @@ public class ProtocolServiceImpl implements ProtocolService {
 
     private static void sortTouristsInProtocol(String searchString, List<ProtocolForListDTO> protocols) {
         protocols.forEach(dto -> {
-            Comparator<TouristLightDTO> comparator = Comparator.<TouristLightDTO, Boolean>comparing(
+            Comparator<TouristSummaryDTO> comparator = Comparator.<TouristSummaryDTO, Boolean>comparing(
                     t -> Strings.CI.contains(t.getFullName(), searchString)).reversed();
             dto.getTourists().sort(comparator);
         });
