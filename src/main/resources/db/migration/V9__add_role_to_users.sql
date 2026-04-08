@@ -1,1 +1,0 @@
-ALTER TABLE instructors_grades.users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER';

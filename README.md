@@ -121,7 +121,7 @@ src/main/resources/
 | Файл | Описание |
 |------|----------|
 | `V1__initial_schema.sql` | Начальная схема БД |
-| `V2__insert_grades.sql` | Начальные данные: звания |
+| `V2__insert_catalog_data.sql` | Начальные данные: звания |
 | `V3__insert_kinds_of_tourism.sql` | Начальные данные: виды туризма |
 | `V4__add_inactive_field_to_kinds_of_tourism.sql` | Мягкое удаление для видов туризма |
 | `V5__add_inactive_to_grades.sql` | Мягкое удаление для званий |

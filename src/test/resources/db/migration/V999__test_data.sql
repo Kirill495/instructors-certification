@@ -1,11 +1,3 @@
--- insert into instructors_grades.grades(id, title, expires_in, inactive) values
---                                                                            (1, 'Организатор СТ', 5, false),
---                                                                            (2, 'Инструктор СТ', 5, false),
---                                                                            (3, 'Старший инструктор СТ', 5, false);
--- insert into instructors_grades.kinds_of_tourism(id, title, inactive) values
---                                                                          (1, 'Пеший', false),
---                                                                          (2, 'Горный', false),
---                                                                          (3, 'Водный', false);
 
 insert into instructors_grades.tourists(id, first_name, last_name, middle_name, gender, date_of_birth, certification_id) values
 (1, 'Алексей', 'Толстой', 'Николаевич', 'MALE', '1883-01-10', '1000'),
