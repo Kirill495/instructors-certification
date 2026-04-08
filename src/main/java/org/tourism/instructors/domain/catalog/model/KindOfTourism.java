@@ -21,6 +21,6 @@ public class KindOfTourism {
     @Column(name = "title")
     private String title;
 
-    @Column(name = "inactive")
+    @Column(name = "is_inactive")
     private boolean inactive;
 }
