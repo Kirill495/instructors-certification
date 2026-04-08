@@ -17,16 +17,19 @@ import org.tourism.instructors.api.bot.BotInitializer;
 import org.tourism.instructors.api.bot.TouristRegistrationBot;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
 import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
 import org.tourism.instructors.domain.pending.PendingTourist;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -87,6 +90,12 @@ class ProtocolServiceIT {
     }
 
     @Test
+    void getProtocolForListWithTooShortSearchString() {
+        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList("_", PageRequest.of(0, 10));
+        assertEquals(2, result.getContent().size());
+    }
+
+    @Test
     @Transactional
     void addTouristToProtocolTest() {
         PendingTourist pt = new PendingTourist();
@@ -100,5 +109,71 @@ class ProtocolServiceIT {
 
         ProtocolDTO dto = protocolService.getProtocolById(1);
         assertEquals(3, dto.getContentRows().getLast().getTouristId());
+    }
+
+    @Test
+    @Transactional
+    void testSearchDraftsByNumberShouldReturnEmptyResult() {
+        String protocolNumber = "100";
+        List<ProtocolLightDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @Transactional
+    void testSearchDraftsByNumberShouldReturnOneProtocol() {
+        String protocolNumber = "100";
+        ProtocolDTO protocolDTO = protocolService.getProtocolById(1);
+        protocolDTO.setStatus(ProtocolStatus.DRAFT);
+        protocolService.saveProtocol(protocolDTO);
+
+        List<ProtocolLightDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.getFirst().getId());
+    }
+
+    @Test
+    @Transactional
+    void testGetLastDraftsWhenAllProtocolsAreFinalized() {
+        List<ProtocolLightDTO> result =  protocolService.getLastDrafts();
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @Transactional
+    void testGetLastDrafts() {
+        ProtocolDTO protocolDTO1 = protocolService.getProtocolById(1);
+        protocolDTO1.setStatus(ProtocolStatus.DRAFT);
+        protocolService.saveProtocol(protocolDTO1);
+
+        ProtocolDTO protocolDTO2 = protocolService.getProtocolById(2);
+        protocolDTO2.setStatus(ProtocolStatus.DRAFT);
+        protocolService.saveProtocol(protocolDTO2);
+
+        List<ProtocolLightDTO> result =  protocolService.getLastDrafts();
+        assertEquals(2, result.size());
+        assertEquals(2, result.getFirst().getId());
+        assertEquals(1, result.getLast().getId());
+    }
+
+    @Test
+    @Transactional
+    void testCountProtocols() {
+        assertEquals(2, protocolService.countProtocols());
+    }
+
+    @Test
+    @Transactional
+    void testCountProtocolsAfterDeleteOneProtocol() {
+        protocolService.deleteProtocol(1);
+        assertEquals(1, protocolService.countProtocols());
+    }
+
+    @Test
+    @Transactional
+    void testCountProtocolsAfterDeleteAllProtocols() {
+        protocolService.deleteProtocol(1);
+        protocolService.deleteProtocol(2);
+        assertEquals(0, protocolService.countProtocols());
     }
 }
