@@ -35,6 +35,7 @@
 		<org.apache.poi.version>5.4.1</org.apache.poi.version>
 		<javoco.version>0.8.12</javoco.version>
 		<argLine></argLine>
+		<failsafe.argLine></failsafe.argLine>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -149,7 +150,7 @@
 					<target>${java.version}</target>
 					<annotationProcessorPaths>
 						<!-- MapStruct processor -->
-						<path>
+					<path>
 							<groupId>org.mapstruct</groupId>
 							<artifactId>mapstruct-processor</artifactId>
 							<version>${org.mapstruct.version}</version>
@@ -208,11 +209,62 @@
 						</goals>
 					</execution>
 					<execution>
+						<id>prepare-agent-integration</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+						<configuration>
+							<destFile>${project.build.directory}/jacoco-it.exec</destFile>
+							<propertyName>failsafe.argLine</propertyName>
+						</configuration>
+					</execution>
+					<execution>
 						<id>report</id>
 						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
+					</execution>
+					<execution>
+						<id>report-integration</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-integration</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>merge-results</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>merge</goal>
+						</goals>
+						<configuration>
+							<fileSets>
+								<fileSet>
+									<directory>${project.build.directory}</directory>
+									<includes>
+										<include>jacoco.exec</include>
+										<include>jacoco-it.exec</include>
+									</includes>
+								</fileSet>
+							</fileSets>
+							<destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>report-merged</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+							<outputDirectory>${project.reporting.outputDirectory}/jacoco-merged</outputDirectory>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -223,6 +275,21 @@
 					<!--suppress UnresolvedMavenProperty -->
 					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<configuration>
+					<argLine>@{failsafe.argLine}</argLine>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
