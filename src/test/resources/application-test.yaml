@@ -1,0 +1,12 @@
+app:
+  admin:
+    login: admin
+    password: admin
+  user:
+    login: user
+    password: user
+telegram:
+  bot:
+    token: test
+    username: test_bot
+    mini-app-url: http://localhost
