@@ -9,8 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
@@ -115,7 +115,7 @@ public class ProtocolController {
 
     @GetMapping("/{id}/edit")
     public String editProtocol(@PathVariable int id, Model model) {
-        model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolById(id));
+        model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolFormById(id));
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         model.addAttribute("availableStatuses", ProtocolStatus.values());
@@ -125,7 +125,7 @@ public class ProtocolController {
 
     @GetMapping("/new")
     public String newProtocol(Model model) {
-        model.addAttribute(PROTOCOL_ATTRIBUTE, new ProtocolDTO());
+        model.addAttribute(PROTOCOL_ATTRIBUTE, new ProtocolFormDTO());
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         model.addAttribute("tourist", new TouristDTO());
@@ -133,7 +133,7 @@ public class ProtocolController {
     }
 
     @PostMapping("/save")
-    public String saveProtocol(@ModelAttribute ProtocolDTO protocol,
+    public String saveProtocol(@ModelAttribute ProtocolFormDTO protocol,
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
         protocolService.saveProtocol(protocol);

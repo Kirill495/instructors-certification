@@ -37,17 +37,12 @@ public class TouristDTO {
         return id == null;
     }
 
-    @NoArgsConstructor
-    @Getter
-    @Setter
-    public static class AssignmentDTO {
-        private int protocolId;
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
-        private LocalDate date;
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
-        private LocalDate validThrough;
-        private GradeDTO grade;
-        private KindOfTourismDTO kindOfTourism;
-        private boolean valid;
-    }
+    public record AssignmentDTO (
+        int protocolId,
+        LocalDate date,
+        LocalDate validThrough,
+        GradeDTO grade,
+        KindOfTourismDTO kindOfTourism,
+        boolean valid)
+    {}
 }

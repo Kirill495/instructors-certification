@@ -5,16 +5,17 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tourism.instructors.api.protocol.dto.ProtocolContentDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolContentFormRow;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
-import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.Protocol;
+import org.tourism.instructors.domain.protocol.ProtocolContent;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 
@@ -45,21 +46,20 @@ public class ProtocolServiceImpl implements ProtocolService {
             return Page.empty();
         }
         List<Integer> ids = protocolProjectionPage.getContent().stream().map(ProtocolRepository.ProtocolProjection::getId).toList();
-        List<ProtocolForListDTO> protocols = protocolRepository.getProtocolWithContentByIDs(ids, pageable.getSort()).stream()
-                .map(protocolMapper::toProtocolForListDTO)
-                .toList();
+        List<Protocol> protocols = protocolRepository.getProtocolWithContentByIDs(ids, pageable.getSort());
         if (hasSearchParameter(searchString)) {
             sortTouristsInProtocol(searchString, protocols);
         }
-        return new PageImpl<>(protocols, pageable, protocolProjectionPage.getTotalElements());
+        List<ProtocolForListDTO> protocolDTOs = protocols.stream()
+                .map(protocolMapper::toProtocolForListDTO)
+                .toList();
+        return new PageImpl<>(protocolDTOs, pageable, protocolProjectionPage.getTotalElements());
     }
 
-    private static void sortTouristsInProtocol(String searchString, List<ProtocolForListDTO> protocols) {
-        protocols.forEach(dto -> {
-            Comparator<TouristSummaryDTO> comparator = Comparator.<TouristSummaryDTO, Boolean>comparing(
-                    t -> Strings.CI.contains(t.getFullName(), searchString)).reversed();
-            dto.getTourists().sort(comparator);
-        });
+    private static void sortTouristsInProtocol(String searchString, List<Protocol> protocols) {
+        Comparator<ProtocolContent> comparator = Comparator.<ProtocolContent, Boolean>comparing(
+                c -> Strings.CI.contains(c.getTourist().getTitle(), searchString)).reversed();
+        protocols.forEach(p -> p.getProtocolContents().sort(comparator));
     }
 
     private boolean hasSearchParameter(String searchString) {
@@ -67,12 +67,12 @@ public class ProtocolServiceImpl implements ProtocolService {
     }
 
     @Override
-    public List<ProtocolLightDTO> searchDraftsByNumber(String query) {
+    public List<ProtocolLiteDTO> searchDraftsByNumber(String query) {
         return protocolRepository.searchByNumberAndStatus(query, ProtocolStatus.DRAFT).stream().map(protocolMapper::toLightDTO).toList();
     }
 
     @Override
-    public List<ProtocolLightDTO> getLastDrafts() {
+    public List<ProtocolLiteDTO> getLastDrafts() {
         PageRequest pageable = PageRequest.of(0, 10, Sort.by("date").descending());
         return protocolRepository.getLast(ProtocolStatus.DRAFT, pageable).stream()
                 .map(protocolMapper::toLightDTO).toList();
@@ -81,17 +81,18 @@ public class ProtocolServiceImpl implements ProtocolService {
     @Transactional
     @Override
     public void addTouristToProtocol(int protocolId, PendingTourist pending, int touristId) {
-        ProtocolDTO protocol = getProtocolById(protocolId);
+        ProtocolFormDTO protocol = getProtocolFormById(protocolId);
         int nextRow = protocol.getContentRows().stream()
                 .mapToInt(row -> row.getRowNum() != null ? row.getRowNum() : 0)
                 .max().orElse(0) + 1;
-        ProtocolContentDTO content = new ProtocolContentDTO();
-        content.setProtocolId(protocolId);
-        content.setRowNum(nextRow);
-        content.setTouristId(touristId);
-        content.setKindOfTourismId(pending.getKindOfTourism().getId());
-        content.setGradeId(pending.getGrade().getId());
-        content.setCertificationId(pending.getCertificationId());
+        ProtocolContentFormRow content = new ProtocolContentFormRow(
+                protocolId, nextRow,
+                touristId, "",
+                pending.getKindOfTourism().getId(),
+                pending.getGrade().getId(),
+                pending.getCertificationId(),
+                ""
+        );
         protocol.getContentRows().add(content);
         saveProtocolInner(protocol);
     }
@@ -111,10 +112,15 @@ public class ProtocolServiceImpl implements ProtocolService {
         return protocolRepository.findById(id).map(protocolMapper::toDTO).orElseThrow(() -> new ProtocolNotFoundException(id));
     }
 
+    @Override
+    public ProtocolFormDTO getProtocolFormById(int id) {
+        return protocolRepository.findById(id).map(protocolMapper::toFormDTO).orElseThrow(() -> new ProtocolNotFoundException(id));
+    }
+
     @Transactional
     @Override
-    public void saveProtocol(ProtocolDTO protocolDTO) {
-        saveProtocolInner(protocolDTO);
+    public void saveProtocol(ProtocolFormDTO protocolFormDTO) {
+        saveProtocolInner(protocolFormDTO);
     }
 
     @Transactional
@@ -124,7 +130,7 @@ public class ProtocolServiceImpl implements ProtocolService {
         protocolRepository.delete(protocol);
     }
 
-    private void saveProtocolInner(ProtocolDTO protocolDTO) {
-        protocolRepository.save(protocolMapper.toEntity(protocolDTO));
+    private void saveProtocolInner(ProtocolFormDTO protocolFormDTO) {
+        protocolRepository.save(protocolMapper.toEntity(protocolFormDTO));
     }
 }

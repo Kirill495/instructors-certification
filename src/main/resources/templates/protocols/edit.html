@@ -127,7 +127,7 @@
                                             required>
                                         <option th:if="${row.touristId != null}"
                                                 th:value="${row.touristId}"
-                                                th:text="${row.touristFullName}"
+                                                th:text="${row.touristTitle}"
                                                 selected>
                                         </option>
                                     </select>
@@ -148,8 +148,8 @@
                                         required>
                                     <option value="">Выберите...</option>
                                     <option th:each="kind : ${kindsOfTourism}"
-                                            th:value="${kind.id}"
-                                            th:text="${kind.title}">
+                                            th:value="${kind.id()}"
+                                            th:text="${kind.title()}">
                                     </option>
                                 </select>
                             </td>
@@ -160,8 +160,8 @@
                                         required>
                                     <option value="">Выберите...</option>
                                     <option th:each="grade : ${grades}"
-                                            th:value="${grade.id}"
-                                            th:text="${grade.title}">
+                                            th:value="${grade.id()}"
+                                            th:text="${grade.title()}">
                                     </option>
                                 </select>
                             </td>
@@ -256,7 +256,7 @@
             <select name="contentRows[{INDEX}].kindOfTourismId" required>
                 <option value="">Выберите...</option>
                 <th:block th:each="kind : ${kindsOfTourism}">
-                    <option th:value="${kind.id}" th:text="${kind.title}"></option>
+                    <option th:value="${kind.id()}" th:text="${kind.title()}"></option>
                 </th:block>
             </select>
         </td>
@@ -266,7 +266,7 @@
             <select name="contentRows[{INDEX}].gradeId" required>
                 <option value="">Выберите...</option>
                 <th:block th:each="grade : ${grades}">
-                    <option th:value="${grade.id}" th:text="${grade.title}"></option>
+                    <option th:value="${grade.id()}" th:text="${grade.title()}"></option>
                 </th:block>
             </select>
         </td>

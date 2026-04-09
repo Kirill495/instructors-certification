@@ -84,8 +84,8 @@
                 <td th:text="${tourist.getDateOfBirth()}"></td>
                 <td>
                     <a th:if="${tourist.getAssignments() != null && !tourist.getAssignments().isEmpty()}"
-                       th:href="@{/protocols/{id}(id=${tourist.getAssignments().getLast().protocolId})}"
-                       th:text="${tourist.getAssignments().getLast().getGrade().getTitle() + ' до ' + #temporals.format(tourist.getAssignments().getLast().getValidThrough(), 'dd.MM.yyyy')}"
+                       th:href="@{/protocols/{id}(id=${tourist.getAssignments().getLast().protocolId()})}"
+                       th:text="${tourist.getAssignments().getLast().grade().title() + ' до ' + #temporals.format(tourist.getAssignments().getLast().validThrough(), 'dd.MM.yyyy')}"
                        class="badge bg-secondary me-1 assignment-info"
                        onclick="event.stopPropagation()"></a>
                 </td>

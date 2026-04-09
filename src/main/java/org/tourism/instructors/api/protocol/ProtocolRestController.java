@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class ProtocolRestController {
     }
 
     @GetMapping("/search")
-    public List<ProtocolLightDTO> search(@RequestParam(defaultValue = "") String query) {
+    public List<ProtocolLiteDTO> search(@RequestParam(defaultValue = "") String query) {
         if (query.trim().isEmpty()) {
             return protocolService.getLastDrafts();
         } else {

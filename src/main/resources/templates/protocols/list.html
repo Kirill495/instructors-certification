@@ -122,27 +122,27 @@
                 <tr th:each="protocol : ${protocols}"
                     th:id="'protocol-' + ${protocol.id}"
                     class="clickable-row"
-                    th:onclick="'window.location.href=\'/protocols/' + ${protocol.getId()} + '\''">
+                    th:onclick="'window.location.href=\'/protocols/' + ${protocol.id()} + '\''">
                     <td th:text="${protocol.number ?: '-'}">123</td>
                     <td th:text="${#temporals.format(protocol.date, 'dd.MM.yyyy')}">01.01.2024</td>
                     <td th:text="${protocol.order ?: '-'}">123</td>
                     <td th:text="${protocol.status != null ? #messages.msg('enum.ProtocolStatus.' + protocol.status.name()) : '-'}">Статус</td>
                     <td>
-                        <span th:each="tourist, iterStat : ${protocol.getTourists()}">
+                        <span th:each="tourist, iterStat : ${protocol.tourists()}">
                             <a th:if="${iterStat.index < 2}"
                                th:href="@{/tourists/{id}(id=${tourist.id})}"
                                th:attr="data-tourist-id=${tourist.id}"
                                th:text="${tourist.getFullName()}"
                                class="badge bg-secondary me-1 tourist-link">tourist_name</a>
                         </span>
-                        <span th:if="${protocol.getTourists().size() > 2}"
+                        <span th:if="${protocol.tourists().size() > 2}"
                               class="badge bg-info me-1"
                               style="cursor: help;"
                               data-bs-toggle="tooltip"
                               data-bs-placement="top"
                               data-bs-html="true"
                               th:attr="data-bs-title=${protocol.getTooltipHtml()}"
-                              th:text="${protocol.getTourists().size() - 2} + ' more'">3 more</span>
+                              th:text="${protocol.tourists().size() - 2} + ' more'">3 more</span>
                     </td>
                 </tr>
                 </tbody>

@@ -1,9 +1,5 @@
 package org.tourism.instructors.api.protocol.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
@@ -12,22 +8,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Setter
-@Getter
-@NoArgsConstructor
-public class ProtocolForListDTO {
-    private int id;
-    private String number;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate date;
-    private String order;
-    private ProtocolStatus status;
-    private List<TouristSummaryDTO> tourists = new ArrayList<>();
+public record ProtocolForListDTO (
+    int id,
+    String number,
+    LocalDate date,
+    String order,
+    ProtocolStatus status,
+    List<TouristSummaryDTO> tourists) {
 
-    // In ProtocolForListDTO.java
+    public ProtocolForListDTO {
+        tourists = tourists == null ? new ArrayList<>() : tourists;
+    }
+
     public String getTooltipHtml() {
-        if (getTourists().size() <= 2) return "";
-        return getTourists().stream()
+        if (tourists.size() <= 2) return "";
+        return tourists().stream()
                        .skip(2)
                        .map(t -> "<li>" + t.getFullName() + "</li>")
                        .collect(Collectors.joining("", "<ul class=\"mb-0 ps-3\">", "</ul>"));
