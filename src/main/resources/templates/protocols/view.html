@@ -72,9 +72,9 @@
 
                     <!-- Clickable Tourist Name -->
                     <td>
-                        <a th:href="@{/tourists/{id}(id=${row.touristId})}"
-                           th:attr="data-tourist-id=${row.touristId}"
-                           th:text="${row.touristFullName}"
+                        <a th:href="@{/tourists/{id}(id=${row.tourist().id()})}"
+                           th:attr="data-tourist-id=${row.tourist().id()}"
+                           th:text="${row.tourist().title()}"
                            class="entity-link tourist-link"
                            title="Открыть карточку туриста">
                             Иванов Иван Иванович
@@ -83,8 +83,8 @@
 
                     <!-- Clickable Kind of Tourism -->
                     <td>
-                        <a th:href="@{/catalog/kinds-of-tourism/{id}(id=${row.kindOfTourismId})}"
-                           th:text="${row.kindOfTourismTitle}"
+                        <a th:href="@{/catalog/kinds-of-tourism/{id}(id=${row.kindOfTourism().id()})}"
+                           th:text="${row.kindOfTourism().title()}"
                            class="entity-link"
                            title="Открыть вид туризма">
                             Пешеходный туризм
@@ -93,8 +93,8 @@
 
                     <!-- Clickable Grade -->
                     <td>
-                        <a th:href="@{/catalog/grades/{id}(id=${row.gradeId})}"
-                           th:text="${row.gradeTitle}"
+                        <a th:href="@{/catalog/grades/{id}(id=${row.grade().id()})}"
+                           th:text="${row.grade().title()}"
                            class="entity-link"
                            title="Открыть звание">
                             Инструктор туризма

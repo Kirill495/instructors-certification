@@ -3,8 +3,9 @@ package org.tourism.instructors.application.protocol;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.domain.pending.PendingTourist;
 
 import java.util.List;
@@ -12,15 +13,17 @@ import java.util.List;
 public interface ProtocolService {
     Page<ProtocolForListDTO> getProtocolsForList(String searchString, Pageable pageable);
 
-    List<ProtocolLightDTO> searchDraftsByNumber(String query);
+    List<ProtocolLiteDTO> searchDraftsByNumber(String query);
 
-    List<ProtocolLightDTO> getLastDrafts();
+    List<ProtocolLiteDTO> getLastDrafts();
 
     ProtocolDTO getProtocolById(int id);
 
+    ProtocolFormDTO getProtocolFormById(int id);
+
     void deleteProtocol(int protocolId);
 
-    void saveProtocol(ProtocolDTO protocolDTO);
+    void saveProtocol(ProtocolFormDTO protocolFormDTO);
 
     void addTouristToProtocol(int protocolId, PendingTourist pending, int touristId);
 

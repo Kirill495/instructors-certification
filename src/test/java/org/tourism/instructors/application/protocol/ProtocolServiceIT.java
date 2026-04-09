@@ -16,8 +16,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.tourism.instructors.api.bot.BotInitializer;
 import org.tourism.instructors.api.bot.TouristRegistrationBot;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
@@ -79,8 +80,8 @@ class ProtocolServiceIT {
         Page<ProtocolForListDTO> result = protocolService.getProtocolsForList("Толстой", PageRequest.of(0, 1));
         assertEquals(1, result.getContent().size());
         ProtocolForListDTO dto = result.getContent().getFirst();
-        assertEquals(1, dto.getId());
-        assertEquals(1, dto.getTourists().getFirst().id());
+        assertEquals(1, dto.id());
+        assertEquals(1, dto.tourists().getFirst().id());
     }
 
     @Test
@@ -108,14 +109,14 @@ class ProtocolServiceIT {
         protocolService.addTouristToProtocol(1, pt, 3);
 
         ProtocolDTO dto = protocolService.getProtocolById(1);
-        assertEquals(3, dto.getContentRows().getLast().getTouristId());
+        assertEquals(3, dto.contentRows().getLast().tourist().id());
     }
 
     @Test
     @Transactional
     void testSearchDraftsByNumberShouldReturnEmptyResult() {
         String protocolNumber = "100";
-        List<ProtocolLightDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
+        List<ProtocolLiteDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
         assertTrue(result.isEmpty());
     }
 
@@ -123,37 +124,37 @@ class ProtocolServiceIT {
     @Transactional
     void testSearchDraftsByNumberShouldReturnOneProtocol() {
         String protocolNumber = "100";
-        ProtocolDTO protocolDTO = protocolService.getProtocolById(1);
+        ProtocolFormDTO protocolDTO = protocolService.getProtocolFormById(1);
         protocolDTO.setStatus(ProtocolStatus.DRAFT);
         protocolService.saveProtocol(protocolDTO);
 
-        List<ProtocolLightDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
+        List<ProtocolLiteDTO> result = protocolService.searchDraftsByNumber(protocolNumber);
         assertFalse(result.isEmpty());
-        assertEquals(1, result.getFirst().getId());
+        assertEquals(1, result.getFirst().id());
     }
 
     @Test
     @Transactional
     void testGetLastDraftsWhenAllProtocolsAreFinalized() {
-        List<ProtocolLightDTO> result =  protocolService.getLastDrafts();
+        List<ProtocolLiteDTO> result =  protocolService.getLastDrafts();
         assertTrue(result.isEmpty());
     }
 
     @Test
     @Transactional
     void testGetLastDrafts() {
-        ProtocolDTO protocolDTO1 = protocolService.getProtocolById(1);
+        ProtocolFormDTO protocolDTO1 = protocolService.getProtocolFormById(1);
         protocolDTO1.setStatus(ProtocolStatus.DRAFT);
         protocolService.saveProtocol(protocolDTO1);
 
-        ProtocolDTO protocolDTO2 = protocolService.getProtocolById(2);
+        ProtocolFormDTO protocolDTO2 = protocolService.getProtocolFormById(2);
         protocolDTO2.setStatus(ProtocolStatus.DRAFT);
         protocolService.saveProtocol(protocolDTO2);
 
-        List<ProtocolLightDTO> result =  protocolService.getLastDrafts();
+        List<ProtocolLiteDTO> result =  protocolService.getLastDrafts();
         assertEquals(2, result.size());
-        assertEquals(2, result.getFirst().getId());
-        assertEquals(1, result.getLast().getId());
+        assertEquals(2, result.getFirst().id());
+        assertEquals(1, result.getLast().id());
     }
 
     @Test

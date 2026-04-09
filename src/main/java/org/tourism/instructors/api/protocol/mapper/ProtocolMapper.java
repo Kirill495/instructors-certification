@@ -5,8 +5,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolLightDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
@@ -17,8 +18,11 @@ public interface ProtocolMapper {
     @Mapping(target = "contentRows", source = "protocolContents")
     ProtocolDTO toDTO(Protocol protocol);
 
+    @Mapping(target = "contentRows", source = "protocolContents")
+    ProtocolFormDTO toFormDTO(Protocol protocol);
+
     @Mapping(target = "protocolContents", source = "contentRows")
-    Protocol toEntity(ProtocolDTO protocolDTO);
+    Protocol toEntity(ProtocolFormDTO formDTO);
 
     @AfterMapping
     default void setProtocolRef(@MappingTarget Protocol protocol) {
@@ -32,5 +36,5 @@ public interface ProtocolMapper {
     @Mapping(target = "tourists", source = "protocolContents")
     ProtocolForListDTO toProtocolForListDTO(Protocol protocol);
 
-    ProtocolLightDTO toLightDTO(ProtocolRepository.ProtocolProjection projection);
+    ProtocolLiteDTO toLightDTO(ProtocolRepository.ProtocolProjection projection);
 }

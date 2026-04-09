@@ -3,11 +3,14 @@ package org.tourism.instructors.domain.tourist.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Entity
 @Getter
@@ -47,7 +50,7 @@ public class Tourist {
     @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ContactInfoItem> contactInfo = new ArrayList<>();
 
-    public String getFullName() {
-        return lastName + " " + firstName + " " + middleName;
+    public String getTitle() {
+        return Stream.of(lastName, firstName, middleName).filter(StringUtils::isNoneBlank).collect(Collectors.joining(" "));
     }
 }
