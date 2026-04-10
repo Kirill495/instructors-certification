@@ -37,12 +37,12 @@ public class TouristDTO {
         return id == null;
     }
 
-    public record AssignmentDTO (
-        int protocolId,
-        LocalDate date,
-        LocalDate validThrough,
-        GradeDTO grade,
-        KindOfTourismDTO kindOfTourism,
-        boolean valid)
-    {}
+    public record AssignmentDTO(
+            int protocolId,
+            LocalDate date,
+            LocalDate validThrough,
+            GradeDTO grade,
+            KindOfTourismDTO kindOfTourism,
+            boolean valid) {
+    }
 }

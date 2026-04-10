@@ -3,9 +3,9 @@ package org.tourism.instructors.domain.pending;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.tourism.instructors.api.bot.TouristRegistrationBot;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
+import org.tourism.instructors.domain.pending.repository.RegistrationStep;
 import org.tourism.instructors.domain.tourist.model.Gender;
 
 @Getter
@@ -17,7 +17,7 @@ public class ConversationState {
         this.tgUsername = tgUsername;
     }
 
-    private TouristRegistrationBot.Step step = TouristRegistrationBot.Step.NAME;
+    private RegistrationStep registrationStep = RegistrationStep.NAME;
     private Long chatId;
     private String fullName;
     private String firstName;
