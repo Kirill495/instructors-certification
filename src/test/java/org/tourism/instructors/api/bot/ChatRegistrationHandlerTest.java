@@ -22,6 +22,7 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.domain.pending.ConversationState;
+import org.tourism.instructors.domain.pending.repository.RegistrationStep;
 
 import java.time.YearMonth;
 
@@ -62,7 +63,7 @@ class ChatRegistrationHandlerTest {
     }
 
     @Nested
-    class HandleStepTest {
+    class HandleRegistrationStepTest {
         @BeforeEach
         void setUp() {
             when(conversationRegistry.get(chatId)).thenReturn(state);
@@ -71,19 +72,19 @@ class ChatRegistrationHandlerTest {
         @Test
         void handleNameStep() {
 
-            state.setStep(TouristRegistrationBot.Step.NAME);
+            state.setRegistrationStep(RegistrationStep.NAME);
             when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
             when(message.getMessageId()).thenReturn(messageId);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, "Andrew Fedorov", 1);
 
-            assertEquals(TouristRegistrationBot.Step.GENDER, state.getStep());
+            assertEquals(RegistrationStep.GENDER, state.getRegistrationStep());
         }
 
         @Test
         void handleNameStepEditing() {
             KindOfTourismDTO kindOfTourism = new KindOfTourismDTO();
-            state.setStep(TouristRegistrationBot.Step.NAME);
+            state.setRegistrationStep(RegistrationStep.NAME);
             GradeDTO grade = new GradeDTO(1, "grade", false, 10);
             state.setGrade(grade);
             state.setEditing(true);
@@ -93,7 +94,7 @@ class ChatRegistrationHandlerTest {
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
             assertFalse(state.isEditing());
-            assertEquals(TouristRegistrationBot.Step.CHECK_INPUT, state.getStep());
+            assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
             ArgumentCaptor<EditMessageText> argumentCaptor = ArgumentCaptor.forClass(EditMessageText.class);
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(chatId, Long.parseLong(argumentCaptor.getValue().getChatId()));
@@ -101,57 +102,57 @@ class ChatRegistrationHandlerTest {
 
         @Test
         void handleDateOfBirth() {
-            state.setStep(TouristRegistrationBot.Step.DATE_OF_BIRTH);
+            state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
-            assertEquals(TouristRegistrationBot.Step.DATE_OF_BIRTH, state.getStep());
+            assertEquals(RegistrationStep.DATE_OF_BIRTH, state.getRegistrationStep());
 
             verify(botExecutor).send(eq(chatId), any(String.class));
         }
 
         @Test
         void handlePhone() {
-            state.setStep(TouristRegistrationBot.Step.PHONE);
+            state.setRegistrationStep(RegistrationStep.PHONE);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
-            assertEquals(TouristRegistrationBot.Step.EMAIL, state.getStep());
+            assertEquals(RegistrationStep.EMAIL, state.getRegistrationStep());
 
             verify(botExecutor).send(eq(chatId), any(String.class));
         }
 
         @Test
         void handleEmail() {
-            state.setStep(TouristRegistrationBot.Step.EMAIL);
+            state.setRegistrationStep(RegistrationStep.EMAIL);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
-            assertEquals(TouristRegistrationBot.Step.KIND_OF_TOURISM, state.getStep());
+            assertEquals(RegistrationStep.KIND_OF_TOURISM, state.getRegistrationStep());
 
             verify(botExecutor).send(eq(chatId), any(String.class));
         }
 
         @Test
         void handleKindOfTourism() {
-            state.setStep(TouristRegistrationBot.Step.KIND_OF_TOURISM);
+            state.setRegistrationStep(RegistrationStep.KIND_OF_TOURISM);
             when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
             when(message.getMessageId()).thenReturn(messageId);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
-            assertEquals(TouristRegistrationBot.Step.GRADE, state.getStep());
+            assertEquals(RegistrationStep.GRADE, state.getRegistrationStep());
         }
 
         @Test
         void handleGrade() {
-            state.setStep(TouristRegistrationBot.Step.GRADE);
+            state.setRegistrationStep(RegistrationStep.GRADE);
             when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
             when(message.getMessageId()).thenReturn(messageId);
 
             chatRegistrationHandler.handleStep(botExecutor, chatId, messageTextWithName, messageId);
 
-            assertEquals(TouristRegistrationBot.Step.CHECK_INPUT, state.getStep());
+            assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
         }
     }
 
@@ -230,7 +231,7 @@ class ChatRegistrationHandlerTest {
         void handleSelectDayCalendarCommand() {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             ConversationState state = new ConversationState();
-            state.setStep(TouristRegistrationBot.Step.DATE_OF_BIRTH);
+            state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
             when(conversationRegistry.get(chatId)).thenReturn(state);
             chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
 

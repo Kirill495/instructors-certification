@@ -18,6 +18,7 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.domain.pending.ConversationState;
+import org.tourism.instructors.domain.pending.repository.RegistrationStep;
 import org.tourism.instructors.domain.tourist.model.Gender;
 
 import java.time.LocalDate;
@@ -50,7 +51,7 @@ public class ChatRegistrationHandler {
     public void handleStep(BotExecutor bot, long chatId, String text, Integer userMessageId) {
         ConversationState state = conversationsRegistry.get(chatId);
 
-        switch (state.getStep()) {
+        switch (state.getRegistrationStep()) {
             case NAME -> {
                 state.setFullName(text);
                 parseFullName(state, text);
@@ -58,12 +59,12 @@ public class ChatRegistrationHandler {
                     refreshSummary(bot, chatId, state, userMessageId);
                     return;
                 }
-                state.setStep(TouristRegistrationBot.Step.GENDER);
+                state.setRegistrationStep(RegistrationStep.GENDER);
                 sendGenderPicker(bot, chatId);
             }
             case GENDER -> {
                 sendYearPicker(bot, chatId);
-                state.setStep(TouristRegistrationBot.Step.DATE_OF_BIRTH);
+                state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
             }
             case DATE_OF_BIRTH -> bot.send(chatId, "Пожалуйста, выберите дату в календаре выше.");
             case PHONE -> {
@@ -73,7 +74,7 @@ public class ChatRegistrationHandler {
                     return;
                 }
                 bot.send(chatId, "Введите email:");
-                state.setStep(TouristRegistrationBot.Step.EMAIL);
+                state.setRegistrationStep(RegistrationStep.EMAIL);
             }
             case EMAIL -> {
                 state.setEmail(text.equals("-") ? null : text);
@@ -82,17 +83,17 @@ public class ChatRegistrationHandler {
                     return;
                 }
                 bot.send(chatId, "Введите номер удостоверения:");
-                state.setStep(TouristRegistrationBot.Step.KIND_OF_TOURISM);
+                state.setRegistrationStep(RegistrationStep.KIND_OF_TOURISM);
             }
             case KIND_OF_TOURISM -> {
                 sendKindOfTourismPicker(bot, chatId);
-                state.setStep(TouristRegistrationBot.Step.GRADE);
+                state.setRegistrationStep(RegistrationStep.GRADE);
             }
             case GRADE -> {
                 sendGradePicker(bot, chatId);
                 sendCheckInputQuestion(bot, chatId, state);
             }
-            default -> throw new UnknownQuestionnaireFieldException(state.getStep().name());
+            default -> throw new UnknownQuestionnaireFieldException(state.getRegistrationStep().name());
         }
     }
 
@@ -142,31 +143,31 @@ public class ChatRegistrationHandler {
                 state.setSummaryMessageId(messageId);
                 switch (dataParts.getFirst()) {
                     case "NAME"           -> {
-                        state.setStep(TouristRegistrationBot.Step.NAME);
+                        state.setRegistrationStep(RegistrationStep.NAME);
                         state.setEditingPromptMessageId(bot.send(chatId, "Введите ФИО:"));
                     }
                     case "GENDER"         -> {
-                        state.setStep(TouristRegistrationBot.Step.GENDER);
+                        state.setRegistrationStep(RegistrationStep.GENDER);
                         state.setEditingPromptMessageId(sendGenderPicker(bot, chatId));
                     }
                     case "DATE_OF_BIRTH"  -> {
-                        state.setStep(TouristRegistrationBot.Step.DATE_OF_BIRTH);
+                        state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
                         state.setEditingPromptMessageId(sendYearPicker(bot, chatId));
                     }
                     case "PHONE"          -> {
-                        state.setStep(TouristRegistrationBot.Step.PHONE);
+                        state.setRegistrationStep(RegistrationStep.PHONE);
                         state.setEditingPromptMessageId(bot.send(chatId, "Введите номер телефона:"));
                     }
                     case "EMAIL"          -> {
-                        state.setStep(TouristRegistrationBot.Step.EMAIL);
+                        state.setRegistrationStep(RegistrationStep.EMAIL);
                         state.setEditingPromptMessageId(bot.send(chatId, "Введите email (или «-» если нет):"));
                     }
                     case "KIND_OF_TOURISM" -> {
-                        state.setStep(TouristRegistrationBot.Step.KIND_OF_TOURISM);
+                        state.setRegistrationStep(RegistrationStep.KIND_OF_TOURISM);
                         state.setEditingPromptMessageId(sendKindOfTourismPicker(bot, chatId));
                     }
                     case "GRADE"          -> {
-                        state.setStep(TouristRegistrationBot.Step.GRADE);
+                        state.setRegistrationStep(RegistrationStep.GRADE);
                         state.setEditingPromptMessageId(sendGradePicker(bot, chatId));
                     }
                     default -> throw new UnknownQuestionnaireFieldException(dataParts.getFirst());
@@ -197,7 +198,7 @@ public class ChatRegistrationHandler {
             case "SELECT" -> {
                 LocalDate date = LocalDate.parse(dataParts.getFirst());
                 ConversationState state = conversationsRegistry.get(chatId);
-                if (state == null || state.getStep() != TouristRegistrationBot.Step.DATE_OF_BIRTH) return;
+                if (state == null || state.getRegistrationStep() != RegistrationStep.DATE_OF_BIRTH) return;
 
                 bot.dispatch(EditMessageText.builder()
                         .chatId(chatId)
@@ -209,7 +210,7 @@ public class ChatRegistrationHandler {
                 if (state.isEditing()) {
                     bot.deleteMessage(chatId, messageId); refreshSummary(bot, chatId, state, null); return;
                 }
-                state.setStep(TouristRegistrationBot.Step.PHONE);
+                state.setRegistrationStep(RegistrationStep.PHONE);
                 bot.send(chatId, "Введите номер телефона:");
             }
             default -> throw new UnknownTelegramOptionException(option);
@@ -235,7 +236,7 @@ public class ChatRegistrationHandler {
             bot.deleteMessage(chatId, userMessageId);
         }
         state.setEditing(false);
-        state.setStep(TouristRegistrationBot.Step.CHECK_INPUT);
+        state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
         EditMessageText message = EditMessageText.builder()
                 .chatId(chatId)
                 .messageId(state.getSummaryMessageId())
@@ -252,7 +253,7 @@ public class ChatRegistrationHandler {
                 .replyMarkup(buildSummaryKeyboard(state))
                 .build());
         state.setSummaryMessageId(message.getMessageId());
-        state.setStep(TouristRegistrationBot.Step.CHECK_INPUT);
+        state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
     }
 
     private InlineKeyboardMarkup buildSummaryKeyboard(ConversationState state) {

@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record ProtocolForListDTO (
-    int id,
-    String number,
-    LocalDate date,
-    String order,
-    ProtocolStatus status,
-    List<TouristSummaryDTO> tourists) {
+public record ProtocolForListDTO(
+        int id,
+        String number,
+        LocalDate date,
+        String order,
+        ProtocolStatus status,
+        List<TouristSummaryDTO> tourists) {
 
     public ProtocolForListDTO {
         tourists = tourists == null ? new ArrayList<>() : tourists;
@@ -23,8 +23,8 @@ public record ProtocolForListDTO (
     public String getTooltipHtml() {
         if (tourists.size() <= 2) return "";
         return tourists().stream()
-                       .skip(2)
-                       .map(t -> "<li>" + t.getFullName() + "</li>")
-                       .collect(Collectors.joining("", "<ul class=\"mb-0 ps-3\">", "</ul>"));
+                .skip(2)
+                .map(t -> "<li>" + t.getFullName() + "</li>")
+                .collect(Collectors.joining("", "<ul class=\"mb-0 ps-3\">", "</ul>"));
     }
 }

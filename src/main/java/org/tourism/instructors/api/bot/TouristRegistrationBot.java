@@ -27,9 +27,6 @@ import java.util.Optional;
 @Component
 public class TouristRegistrationBot extends TelegramLongPollingBot implements BotExecutor {
 
-    public enum Step { NAME, GENDER, DATE_OF_BIRTH, PHONE, EMAIL, KIND_OF_TOURISM, GRADE, CHECK_INPUT }
-
-
     private final TouristService touristService;
     private final PendingTouristService pendingTouristService;
     private final ChatRegistrationHandler chatRegistrationHandler;
