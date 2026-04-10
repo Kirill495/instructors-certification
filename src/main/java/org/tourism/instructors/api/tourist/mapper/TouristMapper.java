@@ -12,6 +12,8 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 import java.util.List;
 
+import static java.util.Objects.isNull;
+
 @Mapper(componentModel = "spring", uses = {GradeAssignmentMapper.class, ContactInfoMapper.class})
 public interface TouristMapper {
     TouristSummaryDTO toLightDTO(Tourist model);
@@ -20,12 +22,28 @@ public interface TouristMapper {
 
     TouristDTO toDTO(Tourist model);
 
-    TouristDTO toDTO(Tourist model, List<ProtocolRepository.GradeAssignmentProjection> assignments);
+    default TouristDTO toDTO(Tourist model, List<ProtocolRepository.GradeAssignmentProjection> assignments) {
+        if (isNull(model)) {
+            return null;
+        }
+        return toDTOWithAssignments(model, assignments);
+    }
+
+    TouristDTO toDTOWithAssignments(Tourist model, List<ProtocolRepository.GradeAssignmentProjection> assignments);
 
     @Mapping(target = "id", ignore = true)
     TouristDTO toDTO(PendingTourist pending);
 
-    TouristDTO toDTO(Tourist model,
+    default TouristDTO toDTO(Tourist model,
                      List<ProtocolRepository.GradeAssignmentProjection> assignments,
-                     List<ContactInfoItem> contactInfo);
+                     List<ContactInfoItem> contactInfo) {
+        if (isNull(model)) {
+            return null;
+        }
+        return toDTOWithAssignmentsAndContactInfo(model, assignments, contactInfo);
+    }
+
+    TouristDTO toDTOWithAssignmentsAndContactInfo(Tourist model,
+                                                  List<ProtocolRepository.GradeAssignmentProjection> assignments,
+                                                  List<ContactInfoItem> contactInfo);
 }
