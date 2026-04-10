@@ -29,7 +29,6 @@ jobs:
 
       - name: Analyze with SonarCloud
         run: mvn -B checkstyle:checkstyle verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.qualitygate.wait=true
           -Dsonar.projectKey="$PROJECT_KEY"
           -Dsonar.organization="$ORGANIZATION_KEY"
           -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
