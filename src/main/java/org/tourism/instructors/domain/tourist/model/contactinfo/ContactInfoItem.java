@@ -3,11 +3,13 @@ package org.tourism.instructors.domain.tourist.model.contactinfo;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import tools.jackson.databind.ObjectMapper;
 
+@Audited
 @Entity
-@Table(name = "contact_info", schema = "instructors_grades")
+@Table(name = "contact_info")
 @Getter
 @Setter
 @NoArgsConstructor

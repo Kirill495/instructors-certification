@@ -13,6 +13,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: instructors_grades
+      org.hibernate.envers.default_schema: instructors_grades
   flyway:
     enabled: true
     locations: classpath:db/migration
