@@ -9,6 +9,7 @@ import org.tourism.instructors.api.tourist.dto.ContactInfoItemDTO;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
+import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,9 +23,9 @@ class ContactInfoMapperTest {
 
     @Test
     void toModel() {
-        ContactInfoItemDTO dto = new ContactInfoItemDTO(ContactInfoType.PHONE_NUMBER, "111");
+        ContactInfoItemDTO dto = new ContactInfoItemDTO(0, 0, ContactInfoType.PHONE_NUMBER, "111", new TelegramDetails(1, "@tgNickname"));
         ContactInfoItem item = mapper.toModel(dto);
-        assertEquals(dto.type(), item.getType());
+        assertEquals(dto.getType(), item.getType());
     }
 
     @Test
@@ -40,14 +41,14 @@ class ContactInfoMapperTest {
         tourist.setId(1);
         item.setTourist(tourist);
         ContactInfoItemDTO dto = mapper.toDTO(item);
-        assertEquals(1, dto.touristId());
+        assertEquals(1, dto.getTouristId());
     }
 
     @Test
     void toDTOWhenTouristIsNull() {
         ContactInfoItem item = new ContactInfoItem();
         ContactInfoItemDTO dto = mapper.toDTO(item);
-        assertNull(dto.touristId());
+        assertNull(dto.getTouristId());
     }
 
     @Test
@@ -57,7 +58,7 @@ class ContactInfoMapperTest {
 
         item.setTourist(tourist);
         ContactInfoItemDTO dto = mapper.toDTO(item);
-        assertNull(dto.touristId());
+        assertNull(dto.getTouristId());
     }
 
     @Test

@@ -79,10 +79,10 @@ class TouristMapperTest {
         TouristDTO dto = touristMapper.toDTO(tourist);
         assertEquals(1, dto.getContactInfo().size());
         ContactInfoItemDTO item = dto.getContactInfo().getFirst();
-        assertEquals(1, item.id());
-        assertEquals(1, item.touristId());
-        assertEquals(ContactInfoType.TELEGRAM, item.type());
-        assertEquals("tg_id", item.value());
+        assertEquals(1, item.getId());
+        assertEquals(1, item.getTouristId());
+        assertEquals(ContactInfoType.TELEGRAM, item.getType());
+        assertEquals("tg_id", item.getValue());
     }
 
     @Test
@@ -90,10 +90,10 @@ class TouristMapperTest {
         TouristDTO dto = touristMapper.toDTO(tourist, getAssignments());
         assertEquals(1, dto.getContactInfo().size());
         ContactInfoItemDTO item = dto.getContactInfo().getFirst();
-        assertEquals(1, item.id());
-        assertEquals(1, item.touristId());
-        assertEquals(ContactInfoType.TELEGRAM, item.type());
-        assertEquals("tg_id", item.value());
+        assertEquals(1, item.getId());
+        assertEquals(1, item.getTouristId());
+        assertEquals(ContactInfoType.TELEGRAM, item.getType());
+        assertEquals("tg_id", item.getValue());
         assertEquals(1, dto.getAssignments().size());
         TouristDTO.AssignmentDTO assignmentDTO = dto.getAssignments().getFirst();
         assertEquals(1, assignmentDTO.kindOfTourism().getId());
@@ -111,10 +111,10 @@ class TouristMapperTest {
         TouristDTO dto = touristMapper.toDTO(tourist, getAssignments(), List.of(contactInfoItem));
         assertEquals(1, dto.getContactInfo().size());
         ContactInfoItemDTO item = dto.getContactInfo().getFirst();
-        assertEquals(1, item.id());
-        assertEquals(1, item.touristId());
-        assertEquals(ContactInfoType.TELEGRAM, item.type());
-        assertEquals("tg_id", item.value());
+        assertEquals(1, item.getId());
+        assertEquals(1, item.getTouristId());
+        assertEquals(ContactInfoType.TELEGRAM, item.getType());
+        assertEquals("tg_id", item.getValue());
         assertEquals(1, dto.getAssignments().size());
         TouristDTO.AssignmentDTO assignmentDTO = dto.getAssignments().getFirst();
         assertEquals(1, assignmentDTO.kindOfTourism().getId());
@@ -182,19 +182,19 @@ class TouristMapperTest {
 
     @Test
     void testPendingTouristToDTOWhenNull_2() {
-        TouristDTO dto = touristMapper.toDTO((Tourist) null, List.of());
+        TouristDTO dto = touristMapper.toDTO(null, List.of());
         assertNull(dto);
     }
 
     @Test
     void testPendingTouristToDTOWhenNull_3() {
-        TouristDTO dto = touristMapper.toDTO((Tourist) null, List.of(), List.of());
+        TouristDTO dto = touristMapper.toDTO(null, List.of(), List.of());
         assertNull(dto);
     }
 
     @Test
     void testPendingTouristToDTOWhenNull_4() {
-        TouristDTO dto = touristMapper.toDTO((Tourist) null, null, null);
+        TouristDTO dto = touristMapper.toDTO(null, null, null);
         assertNull(dto);
     }
 
@@ -219,7 +219,7 @@ class TouristMapperTest {
     void testToEntity() {
         TouristDTO dto = new TouristDTO();
         dto.setId(1);
-        ContactInfoItemDTO ciDTO = new ContactInfoItemDTO(ContactInfoType.TELEGRAM, "11");
+        ContactInfoItemDTO ciDTO = new ContactInfoItemDTO(1, 1, ContactInfoType.TELEGRAM, "11", new TelegramDetails(1, "@tgNickName"));
         dto.setContactInfo(List.of(ciDTO));
         Tourist result = touristMapper.toEntity(dto);
         assertEquals(1, result.getId());

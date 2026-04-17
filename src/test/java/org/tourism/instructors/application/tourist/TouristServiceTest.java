@@ -21,6 +21,7 @@ import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
+import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 import org.tourism.instructors.domain.tourist.repository.ContactInfoRepository;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
@@ -50,6 +51,7 @@ class TouristServiceTest {
     TouristServiceImpl touristService;
 
     TouristSummaryDTO outDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
+    ContactInfoItemDTO tgId = new ContactInfoItemDTO(null, null, ContactInfoType.TELEGRAM, "tg_id", new TelegramDetails(1, "@tg_nickName"));
 
     @Nested
     class GetAllTourists {
@@ -220,7 +222,8 @@ class TouristServiceTest {
         @Test
         void shouldSaveAndReturnWithContactInfo() {
             TouristDTO dto = new TouristDTO();
-            dto.setContactInfo(new ArrayList<>(List.of(new ContactInfoItemDTO(ContactInfoType.TELEGRAM, "tg_id"))));
+
+            dto.setContactInfo(new ArrayList<>(List.of(tgId)));
             Tourist tourist = new Tourist();
             tourist.setContactInfo(new ArrayList<>(List.of(new ContactInfoItem())));
             when(touristMapper.toEntity(dto)).thenReturn(tourist);
@@ -259,7 +262,7 @@ class TouristServiceTest {
     @Test
     void testSave() {
         TouristDTO touristDTO = new TouristDTO();
-        touristDTO.setContactInfo(List.of(new ContactInfoItemDTO(ContactInfoType.TELEGRAM, "tg_id")));
+        touristDTO.setContactInfo(List.of(tgId));
         Tourist tourist = new Tourist();
         when(touristMapper.toEntity(touristDTO)).thenReturn(tourist);
 
