@@ -76,15 +76,15 @@ public class PendingTouristController {
             List<ContactInfoItemDTO> contactInfo = new ArrayList<>();
             ContactInfoDetails details = new TelegramDetails(pending.getChatId(), pending.getTgUsername());
 
-            ContactInfoItemDTO tgItem = new ContactInfoItemDTO(ContactInfoType.TELEGRAM,
+            ContactInfoItemDTO tgItem = new ContactInfoItemDTO(null, null, ContactInfoType.TELEGRAM,
                     pending.getChatId().toString(), details);
             contactInfo.add(tgItem);
             if (Strings.isNotBlank(pending.getEmail())) {
-                ContactInfoItemDTO emailItem = new ContactInfoItemDTO(ContactInfoType.EMAIL, pending.getEmail());
+                ContactInfoItemDTO emailItem = new ContactInfoItemDTO(null, null, ContactInfoType.EMAIL, pending.getEmail(), null);
                 contactInfo.add(emailItem);
             }
             if (Strings.isNotBlank(pending.getPhoneNumber())) {
-                ContactInfoItemDTO phoneItem = new ContactInfoItemDTO(ContactInfoType.PHONE_NUMBER, pending.getPhoneNumber());
+                ContactInfoItemDTO phoneItem = new ContactInfoItemDTO(null, null, ContactInfoType.PHONE_NUMBER, pending.getPhoneNumber(), null);
                 contactInfo.add(phoneItem);
             }
             dto.setContactInfo(contactInfo);

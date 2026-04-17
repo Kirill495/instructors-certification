@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class AuditRevision {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @RevisionNumber
     @Column(name = "rev")
     private int rev;
