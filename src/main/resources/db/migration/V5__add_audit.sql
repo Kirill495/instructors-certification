@@ -1,5 +1,5 @@
 -- Revision info table (one row per transaction that modifies an audited entity)
-CREATE TABLE instructors_grades.revinfo
+CREATE TABLE IF NOT EXISTS instructors_grades.revinfo
 (
     rev              SERIAL PRIMARY KEY,
     username         VARCHAR(250),
@@ -8,7 +8,7 @@ CREATE TABLE instructors_grades.revinfo
 );
 
 -- Audit table for tourists (one row per revision of each tourist)
-CREATE TABLE instructors_grades.tourists_aud
+CREATE TABLE IF NOT EXISTS instructors_grades.tourists_aud
 (
     id               INT,
     rev              INT NOT NULL REFERENCES instructors_grades.revinfo (rev),
@@ -24,7 +24,7 @@ CREATE TABLE instructors_grades.tourists_aud
     PRIMARY KEY (id, rev)
 );
 
-CREATE TABLE instructors_grades.contact_info_aud
+CREATE TABLE IF NOT EXISTS instructors_grades.contact_info_aud
 (
     id         INT,
     rev        INT NOT NULL REFERENCES instructors_grades.revinfo (rev),
@@ -34,4 +34,30 @@ CREATE TABLE instructors_grades.contact_info_aud
     details    VARCHAR,
     tourist_id INTEGER,  -- plain column, no FK: referenced tourist may be deleted
     PRIMARY KEY (id, rev)
+);
+
+CREATE TABLE IF NOT EXISTS instructors_grades.protocols_aud
+(
+    id           INT,
+    rev          INT NOT NULL REFERENCES instructors_grades.revinfo(rev),
+    revtype      SMALLINT, -- 0 = INSERT, 1 = UPDATE, 2 = DELETE
+    number       VARCHAR(12),
+    date         DATE,
+    order_number VARCHAR(12),
+    status       VARCHAR(20),
+    PRIMARY KEY (id, rev)
+);
+
+CREATE TABLE IF NOT EXISTS instructors_grades.protocol_content_aud
+(
+    id INT,
+    rev INT NOT NULL REFERENCES instructors_grades.revinfo(rev),
+    revtype SMALLINT, -- 0 = INSERT, 1 = UPDATE, 2 = DELETE
+    tourist_id       INT,
+    kind_of_tourism  INT,
+    grade            INT,
+    certification_id VARCHAR(10),
+    club             VARCHAR,
+    decision_type    VARCHAR,
+    primary key (id, rev)
 );
