@@ -14,6 +14,10 @@ spring:
       hibernate:
         format_sql: true
         default_schema: instructors_grades
+        javax.cache.provider: org.ehcache.jsr107.EhcacheCachingProvider
+        cache:
+          use_second_level_cache: true
+          region.factory_class: jcache
       org.hibernate.envers.default_schema: instructors_grades
   flyway:
     enabled: true

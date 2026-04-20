@@ -1,0 +1,24 @@
+<config xmlns="http://www.ehcache.org/v3">
+    <cache alias="org.tourism.instructors.domain.catalog.model.Grade">
+        <expiry><ttl unit="hours">1</ttl></expiry>
+        <resources>
+            <heap unit="entries">100</heap>
+        </resources>
+    </cache>
+    <cache alias="org.tourism.instructors.domain.catalog.model.KindOfTourism">
+        <expiry>
+            <ttl unit="hours">1</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">100</heap>
+        </resources>
+    </cache>
+    <cache alias="org.tourism.instructors.domain.user.User">
+        <expiry>
+            <tti unit="minutes">30</tti>
+        </expiry>
+        <resources>
+            <heap unit="entries">100</heap>
+        </resources>
+    </cache>
+</config>
