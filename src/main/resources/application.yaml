@@ -38,6 +38,8 @@ app:
     login: ${USER_LOGIN}
     password: ${USER_PASSWORD}
 logging:
+  file:
+    name: logs/app.log
   level:
     org:
       hibernate:
