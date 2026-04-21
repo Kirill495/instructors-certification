@@ -94,7 +94,6 @@
                                        id="middleName"
                                        th:field="*{middleName}"
                                        placeholder="Иванович">
-                                <div class="form-text">Можно оставить пустым</div>
                             </div>
 
                             <!-- Gender Toggle -->
@@ -152,7 +151,8 @@
                                         <input th:field="*{contactInfo[__${iter.index}__].value}"
                                                type="text"
                                                class="form-control"
-                                               placeholder="Значение">
+                                               placeholder="Значение"
+                                               autocomplete="new-password">
                                         <button type="button"
                                                 class="btn btn-outline-danger"
                                                 onclick="removeContact(this)">✕</button>

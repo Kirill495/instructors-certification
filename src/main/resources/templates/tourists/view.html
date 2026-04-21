@@ -100,9 +100,11 @@
 
                         <th:block th:if="${contact.type.name() == 'TELEGRAM'}">
                             <i class="bi bi-telegram me-1"></i>
-                            <span th:if="${contact.details != null and contact.details.nickName != null}"
-                                  th:text="' (' + ${contact.details.nickName} + ')'"
-                                  class="text-muted"></span>
+                            <a th:if="${contact.value != null}"
+                               th:href="'https://t.me/' + ${contact.value.startsWith('@') ? contact.value.substring(1) : contact.value}"
+                               th:text="${contact.value}"
+                               class="text-decoration-none"
+                               target="_blank"></a>
                         </th:block>
 
                     </div>
