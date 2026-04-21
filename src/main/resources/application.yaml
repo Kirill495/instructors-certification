@@ -42,6 +42,12 @@ app:
 logging:
   file:
     name: logs/app.log
+  logback:
+    rollingpolicy:
+      clean-history-on-start: false
+      max-history: 2
+      max-file-size: 1MB
+      total-size-cap: 100MB
   console:
     enabled: false
   level:
@@ -49,4 +55,6 @@ logging:
       hibernate:
         SQL: DEBUG
         orm.jdbc.bind: TRACE
-
+    org.tourism.instructors: WARN
+    org.tourism.instructors.application: INFO
+    org.tourism.instructors.infrastructure.logging: INFO
