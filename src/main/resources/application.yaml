@@ -5,6 +5,8 @@ spring:
     name: Instructors assignments
   datasource:
     driver-class-name: org.postgresql.Driver
+  thymeleaf:
+    cache: false
   jpa:
     hibernate:
       ddl-auto: none
@@ -40,6 +42,8 @@ app:
 logging:
   file:
     name: logs/app.log
+  console:
+    enabled: false
   level:
     org:
       hibernate:
