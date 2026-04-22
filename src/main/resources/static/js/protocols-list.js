@@ -205,9 +205,9 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
             loadNextPage();
         }
     }, {
-        root: null,       // viewport
-        rootMargin: '0px',
-        threshold: 0.1
+        root: tableCard,
+        rootMargin: '100px',
+        threshold: 0
     });
 
     if (currentPage < totalPages - 1) {
