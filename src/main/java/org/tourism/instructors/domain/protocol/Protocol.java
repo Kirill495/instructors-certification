@@ -36,6 +36,7 @@ public class Protocol {
     private ProtocolStatus status;
 
     @OneToMany(mappedBy = "protocol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("id.rowNum ASC")
     List<ProtocolContent> protocolContents = new ArrayList<>();
 
 }

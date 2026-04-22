@@ -54,7 +54,7 @@
                           th:object="${tourist}"
                           method="post">
 
-                        <div th:fragment="touristFormFields">
+                        <div th:fragment="touristFormFields" th:object="${tourist}">
                             <!-- Hidden ID field for edit mode -->
                             <input type="hidden" th:field="*{id}" th:if="${tourist.id != null}">
 
@@ -128,7 +128,6 @@
                                        id="dateOfBirth"
                                        th:field="*{dateOfBirth}"
                                        required>
-                                <div class="form-text">Формат: ДД.ММ.ГГГГ</div>
                             </div>
 
                             <!-- Contact Info -->

@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.tourist.dto;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public record TouristSummaryDTO(
         int id,
         String firstName,
@@ -8,10 +12,10 @@ public record TouristSummaryDTO(
         String certificationId
 ) {
     public String getView() {
-        return lastName + " " + firstName + " " + middleName + " (" + certificationId + ")";
+        return getFullName() + " (" + certificationId + ")";
     }
 
     public String getFullName() {
-        return lastName + " " + firstName + " " + middleName;
+        return Stream.of(lastName, firstName, middleName).filter(Objects::nonNull).collect(Collectors.joining(" "));
     }
 }
