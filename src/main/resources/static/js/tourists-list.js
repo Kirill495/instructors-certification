@@ -27,6 +27,8 @@ searchInput.addEventListener('input', function () {
     }, 500);
 });
 
+const genderLabelsPromise = fetch("/api/enums/Gender").then(r => r.json());
+
 // ── Highlight ────────────────────────────────────────────────────────────
 function highlightSearchTerm() {
     const term = searchInput.value.trim();
@@ -104,9 +106,10 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
             if (!res.ok) throw new Error('Network error');
             const data = await res.json();
 
+            const genderLabels = await genderLabelsPromise;
             data.content.forEach(tourist => {
                 // Insert before the sentinel row so it stays last
-                tbody.insertBefore(buildRow(tourist), sentinel);
+                tbody.insertBefore(buildRow(tourist, genderLabels), sentinel);
             });
 
             if (searchInput.value.trim().length >= 3) highlightSearchTerm();
@@ -124,7 +127,7 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
         }
     }
 
-    function buildRow(tourist) {
+    function buildRow(tourist, genderLabels) {
         const tr = document.createElement('tr');
         tr.className = 'clickable-row';
         tr.onclick = () => window.location.href = `/tourists/${tourist.id}`;
@@ -141,7 +144,7 @@ searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length
         tr.innerHTML = `
             <td class="cert-id">${tourist.certificationId ?? ''}</td>
             <td class="tourist-name">${tourist.fullName ?? ''}</td>
-            <td>${tourist.gender ?? ''}</td>
+            <td>${genderLabels[tourist.gender] ?? ''}</td>
             <td>${tourist.dateOfBirth ?? ''}</td>
             <td>${assignmentHtml}</td>
         `;

@@ -9,6 +9,9 @@ import org.tourism.instructors.domain.tourist.model.Gender;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,7 +33,7 @@ public class TouristDTO {
     private List<ContactInfoItemDTO> contactInfo;
 
     public String getFullName() {
-        return lastName + " " + firstName + " " + middleName;
+        return Stream.of(lastName, firstName, middleName).filter(Objects::nonNull).collect(Collectors.joining(" "));
     }
 
     public boolean isNewItem() {

@@ -53,8 +53,11 @@ function initializeSelect2(element) {
                 const footer = document.createElement('div');
                 footer.className = 'ct-create-footer border-top p-1';
                 footer.innerHTML = '<button type="button" class="btn btn-sm btn-outline-success w-100"><i class="bi bi-person-plus"></i> Создать нового туриста</button>';
-                footer.querySelector('button').addEventListener('mousedown', function (e) {
-                    e.preventDefault();
+                const btn = footer.querySelector('button');
+                btn.addEventListener('mousedown', function (e) {
+                    e.preventDefault(); // keep focus on search field so dropdown stays open
+                });
+                btn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     const searchTerm = (dropdown.querySelector('.select2-search__field')?.value || '').trim();
                     $(selectEl).select2('close');
