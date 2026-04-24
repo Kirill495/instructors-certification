@@ -1,7 +1,6 @@
 package org.tourism.instructors.api.bot;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -25,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@Profile("telegram")
+//@Profile("telegram")
 @Component
 public class TouristRegistrationBot extends TelegramLongPollingBot implements BotExecutor {
 
