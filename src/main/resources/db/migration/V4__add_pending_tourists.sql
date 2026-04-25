@@ -1,4 +1,4 @@
-CREATE TABLE instructors_grades.pending_tourists (
+CREATE TABLE IF NOT EXISTS instructors_grades.pending_tourists (
     id          SERIAL PRIMARY KEY,
     chat_id     BIGINT       NOT NULL,
     tg_username VARCHAR(255),

@@ -49,7 +49,7 @@ logging:
       max-file-size: 1MB
       total-size-cap: 100MB
   console:
-    enabled: false
+    enabled: true
   level:
     org:
       hibernate:

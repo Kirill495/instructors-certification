@@ -16,7 +16,7 @@ target/
 .factorypath
 
 # Docker files themselves
-Dockerfile
+app/Dockerfile
 docker-compose.yml
 .dockerignore
 

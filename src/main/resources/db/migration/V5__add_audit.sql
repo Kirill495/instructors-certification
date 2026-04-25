@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS instructors_grades.contact_info_aud
     type       VARCHAR(50),
     value      VARCHAR(100),
     details    VARCHAR,
-    tourist_id INTEGER,  -- plain column, no FK: referenced tourist may be deleted
+    tourist_id INTEGER,
     PRIMARY KEY (id, rev)
 );
 
