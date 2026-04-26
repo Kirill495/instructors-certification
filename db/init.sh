@@ -4,7 +4,7 @@ set -e
 psql -v ON_ERROR_STOP=1 \
      --username "$POSTGRES_USER" \
      --dbname "$POSTGRES_DB" \
-     -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$DB_APP_USER') THEN CREATE USER '$DB_APP_USER' WITH PASSWORD '$DB_APP_PASSWORD'; END IF; END\$\$;"
+     -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$DB_APP_USER') THEN CREATE USER $DB_APP_USER WITH PASSWORD '$DB_APP_PASSWORD'; END IF; END\$\$;"
 
 psql -v ON_ERROR_STOP=1 \
      --username "$POSTGRES_USER" \
