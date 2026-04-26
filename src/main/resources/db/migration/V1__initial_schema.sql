@@ -7,8 +7,6 @@ CREATE TABLE IF NOT EXISTS instructors_grades.tourists
     middle_name      VARCHAR(150),
     gender           VARCHAR(6),
     date_of_birth    DATE,
-    phone_number     VARCHAR(100),
-    email            VARCHAR(100),
     certification_id VARCHAR(10)
 );
 

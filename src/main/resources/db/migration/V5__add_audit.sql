@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS instructors_grades.protocols_aud
     PRIMARY KEY (id, rev)
 );
 
-CREATE TABLE IF NOT EXISTS instructors_grades.protocol_content_aud
+CREATE TABLE IF NOT EXISTS instructors_grades.protocols_content_aud
 (
     id INT,
     rev INT NOT NULL REFERENCES instructors_grades.revinfo(rev),

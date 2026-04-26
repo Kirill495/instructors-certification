@@ -40,12 +40,6 @@ public class Tourist {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "email")
-    private String email;
-
     @Column(name = "certification_id")
     private String certificationId;
 

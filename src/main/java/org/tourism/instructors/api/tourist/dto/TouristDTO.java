@@ -27,8 +27,6 @@ public class TouristDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
     private Gender gender;
-    private String phoneNumber;
-    private String email;
     private List<AssignmentDTO> assignments;
     private List<ContactInfoItemDTO> contactInfo;
 

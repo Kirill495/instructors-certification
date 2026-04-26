@@ -163,8 +163,6 @@ class TouristMapperTest {
         pendingTourist.setId(1);
         TouristDTO dto = touristMapper.toDTO(pendingTourist);
         assertNull(dto.getId());
-        assertEquals(phone, dto.getPhoneNumber());
-        assertEquals(email, dto.getEmail());
     }
 
     @Test
