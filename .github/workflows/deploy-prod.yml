@@ -25,7 +25,7 @@ jobs:
       - name: Deploy
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd ~/instructors-certification
+            cd /opt/instructors-certification
             git pull origin main
             
             # пересобираем приложение
