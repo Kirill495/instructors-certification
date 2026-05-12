@@ -14,7 +14,11 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageRe
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.tourism.instructors.api.bot.exception.UnknownButtonConversationException;
+import org.tourism.instructors.api.bot.exception.UnknownQuestionnaireFieldException;
 import org.tourism.instructors.api.bot.exception.UnknownTelegramOptionException;
+import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
+import org.tourism.instructors.domain.tourist.model.Gender;
 import org.tourism.instructors.api.bot.keyboards.CalendarKeyboard;
 import org.tourism.instructors.api.bot.keyboards.MonthKeyboard;
 import org.tourism.instructors.api.bot.keyboards.YearKeyboard;
@@ -156,6 +160,77 @@ class ChatRegistrationHandlerTest {
 
             assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
         }
+
+        @Test
+        void handleNameWithThreeParts() {
+            state.setRegistrationStep(RegistrationStep.NAME);
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleStep(botExecutor, chatId, "Ivanov Ivan Ivanovich", 1);
+
+            assertEquals("Ivanov", state.getLastName());
+            assertEquals("Ivan", state.getFirstName());
+            assertEquals("Ivanovich", state.getMiddleName());
+        }
+
+        @Test
+        void handleNameWithOnePart() {
+            state.setRegistrationStep(RegistrationStep.NAME);
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleStep(botExecutor, chatId, "Ivanov", 1);
+
+            assertEquals("Ivanov", state.getLastName());
+            assertNull(state.getFirstName());
+            assertNull(state.getMiddleName());
+        }
+
+        @Test
+        void handlePhoneStepWhileEditing() {
+            state.setRegistrationStep(RegistrationStep.PHONE);
+            state.setEditing(true);
+            state.setGender(Gender.MALE);
+            state.setMiddleName("Ivanovich");
+
+            chatRegistrationHandler.handleStep(botExecutor, chatId, "+79001234567", messageId);
+
+            assertFalse(state.isEditing());
+            assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
+            assertEquals("+79001234567", state.getPhoneNumber());
+        }
+
+        @Test
+        void handleEmailStepWhileEditing() {
+            state.setRegistrationStep(RegistrationStep.EMAIL);
+            state.setEditing(true);
+            state.setPhoneNumber("+79001234567");
+
+            chatRegistrationHandler.handleStep(botExecutor, chatId, "user@example.com", messageId);
+
+            assertFalse(state.isEditing());
+            assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
+            assertEquals("user@example.com", state.getEmail());
+        }
+
+        @Test
+        void handleEmailWithDashSetsEmailToNull() {
+            state.setRegistrationStep(RegistrationStep.EMAIL);
+
+            chatRegistrationHandler.handleStep(botExecutor, chatId, "-", messageId);
+
+            assertNull(state.getEmail());
+            assertEquals(RegistrationStep.KIND_OF_TOURISM, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleUnknownStep() {
+            state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
+
+            assertThrows(UnknownQuestionnaireFieldException.class,
+                    () -> chatRegistrationHandler.handleStep(botExecutor, chatId, "text", messageId));
+        }
     }
 
     @Nested
@@ -246,6 +321,139 @@ class ChatRegistrationHandlerTest {
             verify(conversationRegistry, times(2)).get(chatId);
             assertEquals("01.01.2012", state.getDateOfBirth());
         }
+
+        @Test
+        void handleUnknownButtonCommand() {
+            when(conversationRegistry.hasActive(chatId)).thenReturn(true);
+            when(conversationRegistry.get(chatId)).thenReturn(state);
+
+            assertThrows(UnknownButtonConversationException.class,
+                    () -> chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "UNKNOWN:data"));
+        }
+
+        @Test
+        void handleSelectCalendarWhenStateIsNull() {
+            when(conversationRegistry.hasActive(chatId)).thenReturn(true);
+            when(conversationRegistry.get(chatId)).thenReturn(null);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+
+            verify(botExecutor, never()).dispatch(any(EditMessageText.class));
+        }
+
+        @Test
+        void handleSelectCalendarWhenStepIsNotDateOfBirth() {
+            ConversationState localState = new ConversationState();
+            localState.setRegistrationStep(RegistrationStep.NAME);
+            when(conversationRegistry.hasActive(chatId)).thenReturn(true);
+            when(conversationRegistry.get(chatId)).thenReturn(localState);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+
+            verify(botExecutor, never()).dispatch(any(EditMessageText.class));
+        }
+
+        @Test
+        void handleSelectCalendarWhileEditing() {
+            ConversationState localState = new ConversationState();
+            localState.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
+            localState.setEditing(true);
+            localState.setEditingPromptMessageId(99);
+            localState.setKindOfTourism(new KindOfTourismDTO(1, "cycling", false));
+            localState.setGrade(new GradeDTO(1, "instructor", true, 10));
+            when(conversationRegistry.hasActive(chatId)).thenReturn(true);
+            when(conversationRegistry.get(chatId)).thenReturn(localState);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+
+            assertFalse(localState.isEditing());
+            assertEquals(RegistrationStep.CHECK_INPUT, localState.getRegistrationStep());
+            assertEquals("01.01.2012", localState.getDateOfBirth());
+        }
+    }
+
+    @Nested
+    class HandleEditCommandTest {
+
+        @BeforeEach
+        void setUp() {
+            when(conversationRegistry.hasActive(chatId)).thenReturn(true);
+            when(conversationRegistry.get(chatId)).thenReturn(state);
+        }
+
+        @Test
+        void handleEditName() {
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:NAME");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.NAME, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditGender() {
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:GENDER");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.GENDER, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditDateOfBirth() {
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:DATE_OF_BIRTH");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.DATE_OF_BIRTH, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditPhone() {
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:PHONE");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.PHONE, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditEmail() {
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:EMAIL");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.EMAIL, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditKindOfTourism() {
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:KIND_OF_TOURISM");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.KIND_OF_TOURISM, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditGrade() {
+            when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
+            when(message.getMessageId()).thenReturn(messageId);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:GRADE");
+
+            assertTrue(state.isEditing());
+            assertEquals(RegistrationStep.GRADE, state.getRegistrationStep());
+        }
+
+        @Test
+        void handleEditUnknownField() {
+            assertThrows(UnknownQuestionnaireFieldException.class,
+                    () -> chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:UNKNOWN_FIELD"));
+        }
     }
 
     @Nested
@@ -268,6 +476,14 @@ class ChatRegistrationHandlerTest {
         void testHandleCommandCancel () {
             chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "CONFIRM:CANCEL");
             verify(botExecutor, times(1)).send(chatId, "Введите ФИО:");
+        }
+
+        @Test
+        void testHandleCommandUnknownAction() {
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "CONFIRM:RESTART");
+
+            verify(botExecutor, never()).send(eq(chatId), any(String.class));
+            verify(pendingTouristService, never()).register(any());
         }
     }
 
@@ -328,6 +544,17 @@ class ChatRegistrationHandlerTest {
             ArgumentCaptor<BotApiMethodMessage> argumentCaptor = ArgumentCaptor.forClass(BotApiMethodMessage.class);
 
             verify(botExecutor, times(2)).dispatch(argumentCaptor.capture());
+        }
+
+        @Test
+        void testHandleGenderCaseWhileEditing() {
+            state.setEditing(true);
+
+            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "GENDER:MALE");
+
+            assertFalse(state.isEditing());
+            assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
+            assertEquals(Gender.MALE, state.getGender());
         }
     }
 }
