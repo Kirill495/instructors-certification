@@ -1,5 +1,13 @@
 [![Quality gate Status](https://sonarcloud.io/api/project_badges/quality_gate?project=Kirill495_instructors-certification)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+
 
 # Instructors Assignments — Аттестация инструкторов
 

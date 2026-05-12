@@ -19,6 +19,7 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
 import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
@@ -71,7 +72,7 @@ public class PendingTouristController {
         PendingTourist pending = pendingTouristService.approve(id);
         Integer resolvedTouristId;
 
-        if (pending.getTourist() == null) {
+        if (Objects.isNull(pending.getTourist())) {
             TouristDTO dto = touristMapper.toDTO(pending);
             List<ContactInfoItemDTO> contactInfo = new ArrayList<>();
             ContactInfoDetails details = new TelegramDetails(pending.getChatId(), pending.getTgUsername());
