@@ -47,7 +47,7 @@ public class TouristController {
         if ("XMLHttpRequest".equals(requestedWith)) {
             return "tourists/list :: tableRows";
         }
-        model.addAttribute("tourist", new TouristDTO());
+        model.addAttribute(TOURIST_ATTRIBUTE, new TouristDTO());
         return "tourists/list";
     }
 

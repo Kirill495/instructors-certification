@@ -23,6 +23,7 @@ import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_
 public class ProtocolController {
 
     private static final String PROTOCOL_ATTRIBUTE = "protocol";
+    private static final String TOURIST_ATTRIBUTE = "tourist";
 
     private final ProtocolService protocolService;
     private final CatalogService catalogService;
@@ -109,7 +110,7 @@ public class ProtocolController {
     @GetMapping("/{id}")
     public String viewProtocol(@PathVariable int id, Model model) {
         model.addAttribute(PROTOCOL_ATTRIBUTE, protocolService.getProtocolById(id));
-        model.addAttribute("tourist", new TouristDTO());
+        model.addAttribute(TOURIST_ATTRIBUTE, new TouristDTO());
         return "protocols/view";
     }
 
@@ -119,7 +120,7 @@ public class ProtocolController {
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
         model.addAttribute("availableStatuses", ProtocolStatus.values());
-        model.addAttribute("tourist", new TouristDTO());
+        model.addAttribute(TOURIST_ATTRIBUTE, new TouristDTO());
         return "protocols/edit";
     }
 
@@ -128,7 +129,7 @@ public class ProtocolController {
         model.addAttribute(PROTOCOL_ATTRIBUTE, new ProtocolFormDTO());
         model.addAttribute("grades", catalogService.findActiveGrades());
         model.addAttribute("kindsOfTourism", catalogService.findActiveKindsOfTourism());
-        model.addAttribute("tourist", new TouristDTO());
+        model.addAttribute(TOURIST_ATTRIBUTE, new TouristDTO());
         return "protocols/edit";
     }
 

@@ -17,8 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.tourism.instructors.api.bot.exception.UnknownButtonConversationException;
 import org.tourism.instructors.api.bot.exception.UnknownQuestionnaireFieldException;
 import org.tourism.instructors.api.bot.exception.UnknownTelegramOptionException;
-import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
-import org.tourism.instructors.domain.tourist.model.Gender;
 import org.tourism.instructors.api.bot.keyboards.CalendarKeyboard;
 import org.tourism.instructors.api.bot.keyboards.MonthKeyboard;
 import org.tourism.instructors.api.bot.keyboards.YearKeyboard;
@@ -28,6 +26,7 @@ import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.domain.pending.ConversationState;
 import org.tourism.instructors.domain.pending.repository.RegistrationStep;
+import org.tourism.instructors.domain.tourist.model.Gender;
 
 import java.time.YearMonth;
 import java.util.List;
@@ -50,8 +49,6 @@ class ChatRegistrationHandlerTest {
     BotExecutor botExecutor;
     @Mock
     Message message;
-    @Mock
-    SendMessage sendMessage;
 
     @InjectMocks
     ChatRegistrationHandler chatRegistrationHandler;
