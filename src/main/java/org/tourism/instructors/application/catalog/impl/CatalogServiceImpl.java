@@ -1,5 +1,6 @@
 package org.tourism.instructors.application.catalog.impl;
 
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
@@ -9,13 +10,17 @@ import org.tourism.instructors.api.catalog.mapper.GradeMapper;
 import org.tourism.instructors.api.catalog.mapper.KindOfTourismMapper;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.catalog.exception.GradeNotFoundException;
+import org.tourism.instructors.application.catalog.exception.GradeUsedInProtocolsException;
 import org.tourism.instructors.application.catalog.exception.KindOfTourismNotFoundException;
+import org.tourism.instructors.application.catalog.exception.KindOfTourismUsedInProtocolsException;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
+import org.tourism.instructors.domain.protocol.repository.ProtocolContentRepository;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 @Transactional(readOnly = true)
 public class CatalogServiceImpl implements CatalogService {
 
@@ -24,13 +29,7 @@ public class CatalogServiceImpl implements CatalogService {
     private final KindOfTourismMapper kindOfTourismMapper;
     private final GradeMapper gradeMapper;
 
-
-    public CatalogServiceImpl(KindOfTourismRepository kindOfTourismRepository, GradeRepository gradeRepository, KindOfTourismMapper kindOfTourismMapper, GradeMapper gradeMapper) {
-        this.kindOfTourismRepository = kindOfTourismRepository;
-        this.gradeRepository = gradeRepository;
-        this.kindOfTourismMapper = kindOfTourismMapper;
-        this.gradeMapper = gradeMapper;
-    }
+    private final ProtocolContentRepository protocolContentRepository;
 
     @Override
     public int countActiveKindsOfTourism() {
@@ -70,7 +69,18 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional
     public void deleteKindOfTourism(int id) {
-        kindOfTourismRepository.deleteById(id);
+        kindOfTourismRepository.findById(id).ifPresentOrElse(
+                kind -> {
+                    if (protocolContentRepository.existsByKindOfTourism(kind)) {
+                        throw new KindOfTourismUsedInProtocolsException(kind);
+                    } else {
+                        kindOfTourismRepository.deleteById(id);
+                    }
+                },
+                () -> {
+                    throw new KindOfTourismNotFoundException(id);
+                }
+        );
     }
 
     @Override
@@ -108,6 +118,17 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional
     public void deleteGrade(int id) {
-        gradeRepository.deleteById(id);
+        gradeRepository.findById(id).ifPresentOrElse(
+                grade -> {
+                    if (protocolContentRepository.existsProtocolContentByGrade(grade)) {
+                        throw new GradeUsedInProtocolsException(grade);
+                    } else {
+                        gradeRepository.delete(grade);
+                    }
+                }, () -> {
+                    throw new GradeNotFoundException(id);
+                }
+        );
     }
+
 }
