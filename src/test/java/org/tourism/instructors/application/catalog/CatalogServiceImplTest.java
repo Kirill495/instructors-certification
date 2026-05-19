@@ -18,6 +18,7 @@ import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
+import org.tourism.instructors.domain.protocol.repository.ProtocolContentRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,8 @@ class CatalogServiceImplTest {
     KindOfTourismMapper kindOfTourismMapper;
     @Mock
     GradeMapper gradeMapper;
+    @Mock
+    ProtocolContentRepository contentRepository;
 
     @InjectMocks
     CatalogServiceImpl catalogService;
@@ -151,6 +154,8 @@ class CatalogServiceImplTest {
 
         @Test
         void delegatesToRepository() {
+            when(kindOfTourismRepository.findById(3)).thenReturn(Optional.of(new KindOfTourism(3, "kind", false)));
+            when(contentRepository.existsByKindOfTourism(any(KindOfTourism.class))).thenReturn(false);
             catalogService.deleteKindOfTourism(3);
             verify(kindOfTourismRepository).deleteById(3);
         }
@@ -269,8 +274,13 @@ class CatalogServiceImplTest {
 
         @Test
         void delegatesToRepository() {
+            Grade grade = new Grade();
+            grade.setId(5);
+            Optional<Grade> gradeOpt = Optional.of(grade);
+            when(contentRepository.existsProtocolContentByGrade(any(Grade.class))).thenReturn(false);
+            when(gradeRepository.findById(5)).thenReturn(gradeOpt);
             catalogService.deleteGrade(5);
-            verify(gradeRepository).deleteById(5);
+            verify(gradeRepository).delete(grade);
         }
     }
 }
