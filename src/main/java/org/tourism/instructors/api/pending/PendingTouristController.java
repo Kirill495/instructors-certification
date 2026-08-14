@@ -1,5 +1,11 @@
 package org.tourism.instructors.api.pending;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,13 +23,6 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoDetai
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
-
 @Controller
 @RequestMapping("/pending")
 public class PendingTouristController {
@@ -35,11 +34,12 @@ public class PendingTouristController {
     private final TouristMapper touristMapper;
     private final ProtocolService protocolService;
 
-    public PendingTouristController(PendingTouristService pendingTouristService,
-                                    TouristRegistrationBot bot,
-                                    TouristService touristService,
-                                    TouristMapper touristMapper,
-                                    ProtocolService protocolService) {
+    public PendingTouristController(
+            PendingTouristService pendingTouristService,
+            TouristRegistrationBot bot,
+            TouristService touristService,
+            TouristMapper touristMapper,
+            ProtocolService protocolService) {
         this.pendingTouristService = pendingTouristService;
         this.bot = bot;
         this.touristService = touristService;
@@ -66,32 +66,50 @@ public class PendingTouristController {
     }
 
     @PostMapping("/{id}/approve")
-    public String approve(@PathVariable int id,
-                          @RequestParam(required = false) Integer protocolId,
-                          RedirectAttributes redirectAttributes) {
+    public String approve(
+            @PathVariable int id,
+            @RequestParam(required = false) Integer protocolId,
+            RedirectAttributes redirectAttributes) {
         PendingTourist pending = pendingTouristService.approve(id);
         Integer resolvedTouristId;
 
         if (Objects.isNull(pending.getTourist())) {
             TouristDTO dto = touristMapper.toDTO(pending);
             List<ContactInfoItemDTO> contactInfo = new ArrayList<>();
-            ContactInfoDetails details = new TelegramDetails(pending.getChatId(), pending.getTgUsername());
+            ContactInfoDetails details =
+                    new TelegramDetails(pending.getChatId(), pending.getTgUsername());
 
-            ContactInfoItemDTO tgItem = new ContactInfoItemDTO(null, null, ContactInfoType.TELEGRAM,
-                    pending.getChatId().toString(), details);
+            ContactInfoItemDTO tgItem =
+                    new ContactInfoItemDTO(
+                            null,
+                            null,
+                            ContactInfoType.TELEGRAM,
+                            pending.getChatId().toString(),
+                            details);
             contactInfo.add(tgItem);
             if (Strings.isNotBlank(pending.getEmail())) {
-                ContactInfoItemDTO emailItem = new ContactInfoItemDTO(null, null, ContactInfoType.EMAIL, pending.getEmail(), null);
+                ContactInfoItemDTO emailItem =
+                        new ContactInfoItemDTO(
+                                null, null, ContactInfoType.EMAIL, pending.getEmail(), null);
                 contactInfo.add(emailItem);
             }
             if (Strings.isNotBlank(pending.getPhoneNumber())) {
-                ContactInfoItemDTO phoneItem = new ContactInfoItemDTO(null, null, ContactInfoType.PHONE_NUMBER, pending.getPhoneNumber(), null);
+                ContactInfoItemDTO phoneItem =
+                        new ContactInfoItemDTO(
+                                null,
+                                null,
+                                ContactInfoType.PHONE_NUMBER,
+                                pending.getPhoneNumber(),
+                                null);
                 contactInfo.add(phoneItem);
             }
             dto.setContactInfo(contactInfo);
             touristService.save(dto);
-            resolvedTouristId = touristService.findTouristByTelegramId(pending.getChatId())
-                    .map(TouristDTO::getId).orElse(null);
+            resolvedTouristId =
+                    touristService
+                            .findTouristByTelegramId(pending.getChatId())
+                            .map(TouristDTO::getId)
+                            .orElse(null);
         } else {
             resolvedTouristId = pending.getTourist().getId();
         }
@@ -101,7 +119,8 @@ public class PendingTouristController {
         }
 
         bot.send(pending.getChatId(), "Ваша заявка одобрена ✅.");
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Турист " + pending.getFullName() + " одобрен");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Турист " + pending.getFullName() + " одобрен");
         return REDIRECT_URL;
     }
 
@@ -109,8 +128,8 @@ public class PendingTouristController {
     public String reject(@PathVariable int id, RedirectAttributes redirectAttributes) {
         PendingTourist pending = pendingTouristService.reject(id);
         bot.send(pending.getChatId(), "Ваша заявка отклонена ❌ Обратитесь к администратору.");
-        redirectAttributes.addFlashAttribute(ERROR_MESSAGE_ATTRIBUTE, "Заявка " + pending.getFullName() + " отклонена");
+        redirectAttributes.addFlashAttribute(
+                ERROR_MESSAGE_ATTRIBUTE, "Заявка " + pending.getFullName() + " отклонена");
         return REDIRECT_URL;
     }
-
 }

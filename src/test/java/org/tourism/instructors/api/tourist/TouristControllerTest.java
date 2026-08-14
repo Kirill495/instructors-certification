@@ -1,5 +1,14 @@
 package org.tourism.instructors.api.tourist;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,24 +25,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.tourist.TouristService;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class TouristControllerTest {
 
-    @Mock
-    TouristService touristService;
+    @Mock TouristService touristService;
 
-    @InjectMocks
-    TouristController controller;
+    @InjectMocks TouristController controller;
 
     MockMvc mockMvc;
 
@@ -47,15 +44,18 @@ class TouristControllerTest {
 
         @BeforeEach
         void stubService() {
-            lenient().when(touristService.getAllTourists(any())).thenReturn(new PageImpl<>(List.of()));
+            lenient()
+                    .when(touristService.getAllTourists(any()))
+                    .thenReturn(new PageImpl<>(List.of()));
         }
 
         @Test
         void noParams_callsGetAllTouristsWithDefaultSort() throws Exception {
             mockMvc.perform(get("/tourists"));
 
-            verify(touristService).getAllTourists(
-                    PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "certificationId")));
+            verify(touristService)
+                    .getAllTourists(
+                            PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "certificationId")));
         }
 
         @Test
@@ -67,21 +67,18 @@ class TouristControllerTest {
 
         @Test
         void noParams_addsTouristAttributeToModel() throws Exception {
-            mockMvc.perform(get("/tourists"))
-                    .andExpect(model().attributeExists("tourist"));
+            mockMvc.perform(get("/tourists")).andExpect(model().attributeExists("tourist"));
         }
 
         @Test
         void ajaxRequest_returnsTableRowsFragment() throws Exception {
-            mockMvc.perform(get("/tourists")
-                            .header("X-Requested-With", "XMLHttpRequest"))
+            mockMvc.perform(get("/tourists").header("X-Requested-With", "XMLHttpRequest"))
                     .andExpect(view().name("tourists/list :: tableRows"));
         }
 
         @Test
         void ajaxRequest_doesNotAddTouristAttribute() throws Exception {
-            mockMvc.perform(get("/tourists")
-                            .header("X-Requested-With", "XMLHttpRequest"))
+            mockMvc.perform(get("/tourists").header("X-Requested-With", "XMLHttpRequest"))
                     .andExpect(model().attributeDoesNotExist("tourist"));
         }
 
@@ -106,22 +103,20 @@ class TouristControllerTest {
 
         @Test
         void descOrder_appliesDescSort() throws Exception {
-            mockMvc.perform(get("/tourists")
-                    .param("sort", "lastName")
-                    .param("order", "desc"));
+            mockMvc.perform(get("/tourists").param("sort", "lastName").param("order", "desc"));
 
-            verify(touristService).getAllTourists(
-                    PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "lastName")));
+            verify(touristService)
+                    .getAllTourists(
+                            PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "lastName")));
         }
 
         @Test
         void customPageAndSize_passedToPageable() throws Exception {
-            mockMvc.perform(get("/tourists")
-                    .param("page", "2")
-                    .param("size", "5"));
+            mockMvc.perform(get("/tourists").param("page", "2").param("size", "5"));
 
-            verify(touristService).getAllTourists(
-                    PageRequest.of(2, 5, Sort.by(Sort.Direction.ASC, "certificationId")));
+            verify(touristService)
+                    .getAllTourists(
+                            PageRequest.of(2, 5, Sort.by(Sort.Direction.ASC, "certificationId")));
         }
 
         @Test
@@ -247,7 +242,9 @@ class TouristControllerTest {
             mockMvc.perform(post("/tourists/12/edit"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/tourists"))
-                    .andExpect(flash().attribute("successMessage", "Данные туриста успешно обновлены"));
+                    .andExpect(
+                            flash().attribute(
+                                            "successMessage", "Данные туриста успешно обновлены"));
         }
     }
 

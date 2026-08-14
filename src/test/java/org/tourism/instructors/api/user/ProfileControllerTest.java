@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.user;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,21 +14,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.tourism.instructors.application.user.UserService;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class ProfileControllerTest {
 
-    @Mock
-    UserService userService;
+    @Mock UserService userService;
 
-    @Mock
-    Authentication authentication;
+    @Mock Authentication authentication;
 
-    @InjectMocks
-    ProfileController controller;
+    @InjectMocks ProfileController controller;
 
     @Nested
     class PasswordForm {
@@ -58,7 +55,8 @@ class ProfileControllerTest {
 
         @Test
         void passwordsMismatch_doesNotCallService() {
-            controller.changePassword("newPass", "different", authentication, new RedirectAttributesModelMap());
+            controller.changePassword(
+                    "newPass", "different", authentication, new RedirectAttributesModelMap());
 
             verify(userService, never()).changePassword(any(), any());
         }
@@ -67,7 +65,8 @@ class ProfileControllerTest {
         void passwordsMatch_callsServiceWithUsernameAndNewPassword() {
             when(authentication.getName()).thenReturn("admin");
 
-            controller.changePassword("secret", "secret", authentication, new RedirectAttributesModelMap());
+            controller.changePassword(
+                    "secret", "secret", authentication, new RedirectAttributesModelMap());
 
             verify(userService).changePassword("admin", "secret");
         }
@@ -89,7 +88,8 @@ class ProfileControllerTest {
 
             controller.changePassword("secret", "secret", authentication, attrs);
 
-            assertEquals("Пароль успешно изменён", attrs.getFlashAttributes().get("successMessage"));
+            assertEquals(
+                    "Пароль успешно изменён", attrs.getFlashAttributes().get("successMessage"));
         }
     }
 }

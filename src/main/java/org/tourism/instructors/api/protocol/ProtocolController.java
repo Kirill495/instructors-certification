@@ -1,5 +1,7 @@
 package org.tourism.instructors.api.protocol;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +17,6 @@ import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
-
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/protocols")
@@ -58,7 +58,8 @@ public class ProtocolController {
         } else {
             pageable = PageRequest.of(page, size, sortObj);
         }
-        Page<ProtocolForListDTO> pageProtocol = protocolService.getProtocolsForList(search, pageable);
+        Page<ProtocolForListDTO> pageProtocol =
+                protocolService.getProtocolsForList(search, pageable);
 
         addPaginationAttributes(model, pageProtocol, search, page, size, sort, order);
         if ("XMLHttpRequest".equals(requestedWith)) {
@@ -68,7 +69,14 @@ public class ProtocolController {
         return "protocols/list";
     }
 
-    private void addPaginationAttributes(Model model, Page<ProtocolForListDTO> page, String searchQuery, int currentPage, int size, String sort, String order) {
+    private void addPaginationAttributes(
+            Model model,
+            Page<ProtocolForListDTO> page,
+            String searchQuery,
+            int currentPage,
+            int size,
+            String sort,
+            String order) {
 
         model.addAttribute("protocols", page.getContent());
         model.addAttribute("currentPage", currentPage);
@@ -93,13 +101,13 @@ public class ProtocolController {
 
         model.addAttribute("pageStart", pageStart);
         model.addAttribute("pageEnd", pageEnd);
-
     }
 
     private static Sort createSort(String sort, String order) {
         Sort sortObj;
         if (sort != null) {
-            Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Sort.Direction direction =
+                    "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
             sortObj = Sort.by(direction, sort);
         } else {
             sortObj = Sort.by(Sort.Direction.ASC, "number");
@@ -134,9 +142,10 @@ public class ProtocolController {
     }
 
     @PostMapping("/save")
-    public String saveProtocol(@ModelAttribute ProtocolFormDTO protocol,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
+    public String saveProtocol(
+            @ModelAttribute ProtocolFormDTO protocol,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
         protocolService.saveProtocol(protocol);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Протокол записан");
         return "redirect:/protocols";
@@ -148,5 +157,4 @@ public class ProtocolController {
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Протокол удален");
         return "redirect:/protocols";
     }
-
 }

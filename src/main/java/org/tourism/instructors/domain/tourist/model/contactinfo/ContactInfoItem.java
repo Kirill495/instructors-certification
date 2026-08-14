@@ -1,6 +1,5 @@
 package org.tourism.instructors.domain.tourist.model.contactinfo;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,8 +38,7 @@ public class ContactInfoItem {
     @Column(name = "details")
     private String detailsJson;
 
-    @Transient
-    private ContactInfoDetails details;
+    @Transient private ContactInfoDetails details;
 
     @PostLoad
     private void deserializeDetails() {
@@ -55,4 +53,3 @@ public class ContactInfoItem {
         this.detailsJson = details != null ? MAPPER.writeValueAsString(details) : null;
     }
 }
-

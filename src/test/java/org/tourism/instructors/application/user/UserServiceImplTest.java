@@ -1,5 +1,12 @@
 package org.tourism.instructors.application.user;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,24 +21,13 @@ import org.tourism.instructors.application.user.impl.UserServiceImpl;
 import org.tourism.instructors.domain.user.User;
 import org.tourism.instructors.domain.user.repository.UserRepository;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    @Mock
-    UserRepository userRepository;
-    @Mock
-    PasswordEncoder passwordEncoder;
+    @Mock UserRepository userRepository;
+    @Mock PasswordEncoder passwordEncoder;
 
-    @InjectMocks
-    UserServiceImpl userService;
+    @InjectMocks UserServiceImpl userService;
 
     // --- findAll ---
 
@@ -232,7 +228,8 @@ class UserServiceImplTest {
         void throwsWhenUsernameNotFound() {
             when(userRepository.findByName("ghost")).thenReturn(Optional.empty());
 
-            assertThrows(UserNotFoundException.class, () -> userService.changePassword("ghost", "pass"));
+            assertThrows(
+                    UserNotFoundException.class, () -> userService.changePassword("ghost", "pass"));
         }
     }
 }

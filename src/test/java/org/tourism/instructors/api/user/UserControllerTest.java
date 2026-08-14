@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.user;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,22 +17,14 @@ import org.tourism.instructors.api.user.dto.UserDTO;
 import org.tourism.instructors.application.user.UserService;
 import org.tourism.instructors.domain.user.User;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
-    @Mock
-    UserService userService;
+    @Mock UserService userService;
 
-    @Mock
-    RedirectAttributes redirectAttributes;
+    @Mock RedirectAttributes redirectAttributes;
 
-    @InjectMocks
-    UserController controller;
+    @InjectMocks UserController controller;
 
     @Nested
     class ListUsersTest {
@@ -88,7 +84,8 @@ class UserControllerTest {
         void addsSuccessFlashAttribute() {
             controller.createUser(new UserDTO(), redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Пользователь успешно создан");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Пользователь успешно создан");
         }
     }
 
@@ -127,7 +124,8 @@ class UserControllerTest {
         void addsSuccessFlashAttribute() {
             controller.updateUser(3, new UserDTO(), redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Пользователь успешно обновлён");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Пользователь успешно обновлён");
         }
     }
 
@@ -146,7 +144,8 @@ class UserControllerTest {
         void addsSuccessFlashAttribute() {
             controller.deleteUser(7, redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Пользователь успешно удалён");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Пользователь успешно удалён");
         }
     }
 }

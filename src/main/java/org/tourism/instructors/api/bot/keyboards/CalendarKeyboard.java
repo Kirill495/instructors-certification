@@ -1,14 +1,13 @@
 package org.tourism.instructors.api.bot.keyboards;
 
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 public class CalendarKeyboard {
 
@@ -16,8 +15,7 @@ public class CalendarKeyboard {
             DateTimeFormatter.ofPattern("LLLL yyyy", Locale.of("ru"));
     private static final String IGNORE_CALLBACK_DATA = "cal:IGNORE";
 
-    private CalendarKeyboard() {
-    }
+    private CalendarKeyboard() {}
 
     public static InlineKeyboardMarkup build(YearMonth yearMonth) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -28,12 +26,15 @@ public class CalendarKeyboard {
         rows.add(List.of(button(header, IGNORE_CALLBACK_DATA)));
 
         // Day-of-week headers
-        rows.add(List.of(
-                button("Пн", IGNORE_CALLBACK_DATA), button("Вт", IGNORE_CALLBACK_DATA),
-                button("Ср", IGNORE_CALLBACK_DATA), button("Чт", IGNORE_CALLBACK_DATA),
-                button("Пт", IGNORE_CALLBACK_DATA), button("Сб", IGNORE_CALLBACK_DATA),
-                button("Вс", IGNORE_CALLBACK_DATA)
-        ));
+        rows.add(
+                List.of(
+                        button("Пн", IGNORE_CALLBACK_DATA),
+                        button("Вт", IGNORE_CALLBACK_DATA),
+                        button("Ср", IGNORE_CALLBACK_DATA),
+                        button("Чт", IGNORE_CALLBACK_DATA),
+                        button("Пт", IGNORE_CALLBACK_DATA),
+                        button("Сб", IGNORE_CALLBACK_DATA),
+                        button("Вс", IGNORE_CALLBACK_DATA)));
 
         // Day grid
         LocalDate firstDay = yearMonth.atDay(1);

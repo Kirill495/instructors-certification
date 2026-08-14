@@ -17,23 +17,18 @@ import org.tourism.instructors.api.bot.TouristRegistrationBot;
 @Testcontainers
 class InstructorsAssignmentsApplicationTests {
 
-	@Container
-	static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
+    @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
 
-	@DynamicPropertySource
-	static void configureDataSource(DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", postgres::getJdbcUrl);
-		registry.add("spring.datasource.username", postgres::getUsername);
-		registry.add("spring.datasource.password", postgres::getPassword);
-	}
+    @DynamicPropertySource
+    static void configureDataSource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
-	@MockitoBean
-	TouristRegistrationBot bot;
-	@MockitoBean
-	BotInitializer botInitializer;
+    @MockitoBean TouristRegistrationBot bot;
+    @MockitoBean BotInitializer botInitializer;
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {}
 }

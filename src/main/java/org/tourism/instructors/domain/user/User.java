@@ -1,6 +1,5 @@
 package org.tourism.instructors.domain.user;
 
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +18,7 @@ public class User {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     @Column(name = "name", unique = true, nullable = false)
     private String name;
 

@@ -1,17 +1,16 @@
 package org.tourism.instructors.domain.tourist.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
-import org.hibernate.envers.Audited;
-import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.envers.Audited;
+import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 
 @Audited
 @Entity
@@ -43,10 +42,16 @@ public class Tourist {
     @Column(name = "certification_id")
     private String certificationId;
 
-    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "tourist",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<ContactInfoItem> contactInfo = new ArrayList<>();
 
     public String getTitle() {
-        return Stream.of(lastName, firstName, middleName).filter(StringUtils::isNoneBlank).collect(Collectors.joining(" "));
+        return Stream.of(lastName, firstName, middleName)
+                .filter(StringUtils::isNoneBlank)
+                .collect(Collectors.joining(" "));
     }
 }

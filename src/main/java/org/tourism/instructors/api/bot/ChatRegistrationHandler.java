@@ -1,5 +1,12 @@
 package org.tourism.instructors.api.bot;
 
+import static java.util.Arrays.asList;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
@@ -21,24 +28,20 @@ import org.tourism.instructors.domain.pending.ConversationState;
 import org.tourism.instructors.domain.pending.repository.RegistrationStep;
 import org.tourism.instructors.domain.tourist.model.Gender;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
-
 @Component
 public class ChatRegistrationHandler {
 
-    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private static final DateTimeFormatter DISPLAY_FORMAT =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final CatalogService catalogService;
     private final PendingTouristService pendingTouristService;
     private final ConversationStateRegistry conversationsRegistry;
 
-    public ChatRegistrationHandler(CatalogService catalogService, PendingTouristService pendingTouristService, ConversationStateRegistry registry) {
+    public ChatRegistrationHandler(
+            CatalogService catalogService,
+            PendingTouristService pendingTouristService,
+            ConversationStateRegistry registry) {
         this.catalogService = catalogService;
         this.pendingTouristService = pendingTouristService;
         this.conversationsRegistry = registry;
@@ -90,12 +93,14 @@ public class ChatRegistrationHandler {
                 sendGradePicker(bot, chatId);
                 sendCheckInputQuestion(bot, chatId, state);
             }
-            default -> throw new UnknownQuestionnaireFieldException(state.getRegistrationStep().name());
+            default ->
+                    throw new UnknownQuestionnaireFieldException(
+                            state.getRegistrationStep().name());
         }
     }
 
-    private boolean refreshSummaryIfEditing(BotExecutor bot, long chatId,
-                                            ConversationState state, Integer userMessageId) {
+    private boolean refreshSummaryIfEditing(
+            BotExecutor bot, long chatId, ConversationState state, Integer userMessageId) {
         if (!state.isEditing()) {
             return false;
         }
@@ -116,17 +121,21 @@ public class ChatRegistrationHandler {
         String step = dataParts.removeFirst();
         switch (step) {
             case "cal" -> processCalendarCommand(bot, dataParts, chatId, messageId);
-            case "CONFIRM" -> processConfirmationCommand(bot, dataParts.removeFirst(), state, chatId);
+            case "CONFIRM" ->
+                    processConfirmationCommand(bot, dataParts.removeFirst(), state, chatId);
             case "GENDER" -> {
                 state.setGender(Gender.valueOf(dataParts.getFirst()));
                 applyUserDataAndAdvance(bot, chatId, messageId, state);
             }
             case "KIND_OF_TOURISM" -> {
-                state.setKindOfTourism(catalogService.getKindOfTourismById(Integer.parseInt(dataParts.getFirst())));
+                state.setKindOfTourism(
+                        catalogService.getKindOfTourismById(
+                                Integer.parseInt(dataParts.getFirst())));
                 applyUserDataAndAdvance(bot, chatId, messageId, state);
             }
             case "GRADE" -> {
-                state.setGrade(catalogService.findGradeById(Integer.parseInt(dataParts.getFirst())));
+                state.setGrade(
+                        catalogService.findGradeById(Integer.parseInt(dataParts.getFirst())));
                 applyUserDataAndAdvance(bot, chatId, messageId, state);
             }
             case "EDIT" -> {
@@ -136,7 +145,8 @@ public class ChatRegistrationHandler {
         }
     }
 
-    private void applyUserDataAndAdvance(BotExecutor bot, long chatId, int messageId, ConversationState state) {
+    private void applyUserDataAndAdvance(
+            BotExecutor bot, long chatId, int messageId, ConversationState state) {
         if (state.isEditing()) {
             bot.deleteMessage(chatId, messageId);
             refreshSummary(bot, chatId, state, null);
@@ -145,35 +155,41 @@ public class ChatRegistrationHandler {
         handleStep(bot, chatId, null, null);
     }
 
-    private void handleEditCommand(BotExecutor bot, long chatId, int messageId, ConversationState state, List<String> dataParts) {
+    private void handleEditCommand(
+            BotExecutor bot,
+            long chatId,
+            int messageId,
+            ConversationState state,
+            List<String> dataParts) {
         state.setEditing(true);
         state.setSummaryMessageId(messageId);
         switch (dataParts.getFirst()) {
-            case "NAME"           -> {
+            case "NAME" -> {
                 state.setRegistrationStep(RegistrationStep.NAME);
                 state.setEditingPromptMessageId(bot.send(chatId, "Введите ФИО:"));
             }
-            case "GENDER"         -> {
+            case "GENDER" -> {
                 state.setRegistrationStep(RegistrationStep.GENDER);
                 state.setEditingPromptMessageId(sendGenderPicker(bot, chatId));
             }
-            case "DATE_OF_BIRTH"  -> {
+            case "DATE_OF_BIRTH" -> {
                 state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
                 state.setEditingPromptMessageId(sendYearPicker(bot, chatId));
             }
-            case "PHONE"          -> {
+            case "PHONE" -> {
                 state.setRegistrationStep(RegistrationStep.PHONE);
                 state.setEditingPromptMessageId(bot.send(chatId, "Введите номер телефона:"));
             }
-            case "EMAIL"          -> {
+            case "EMAIL" -> {
                 state.setRegistrationStep(RegistrationStep.EMAIL);
-                state.setEditingPromptMessageId(bot.send(chatId, "Введите email (или «-» если нет):"));
+                state.setEditingPromptMessageId(
+                        bot.send(chatId, "Введите email (или «-» если нет):"));
             }
             case "KIND_OF_TOURISM" -> {
                 state.setRegistrationStep(RegistrationStep.KIND_OF_TOURISM);
                 state.setEditingPromptMessageId(sendKindOfTourismPicker(bot, chatId));
             }
-            case "GRADE"          -> {
+            case "GRADE" -> {
                 state.setRegistrationStep(RegistrationStep.GRADE);
                 state.setEditingPromptMessageId(sendGradePicker(bot, chatId));
             }
@@ -181,7 +197,8 @@ public class ChatRegistrationHandler {
         }
     }
 
-    private void processConfirmationCommand(BotExecutor bot, String action, ConversationState state, long chatId) {
+    private void processConfirmationCommand(
+            BotExecutor bot, String action, ConversationState state, long chatId) {
         if ("OK".equals(action)) {
             pendingTouristService.register(state);
             bot.send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
@@ -192,27 +209,47 @@ public class ChatRegistrationHandler {
         }
     }
 
-    private void processCalendarCommand(BotExecutor bot, List<String> dataParts, long chatId, int messageId) {
+    private void processCalendarCommand(
+            BotExecutor bot, List<String> dataParts, long chatId, int messageId) {
 
         String option = dataParts.removeFirst();
         switch (option) {
-            case "YEAR_PAGE" -> editKeyboard(bot, chatId, messageId, YearKeyboard.build(Integer.parseInt(dataParts.getFirst())));
-            case "SELECT_YEAR" -> editKeyboard(bot, chatId, messageId, MonthKeyboard.build(Integer.parseInt(dataParts.getFirst())));
-            case "SELECT_MONTH" -> editKeyboard(bot, chatId, messageId, CalendarKeyboard.build(YearMonth.parse(dataParts.getFirst())));
+            case "YEAR_PAGE" ->
+                    editKeyboard(
+                            bot,
+                            chatId,
+                            messageId,
+                            YearKeyboard.build(Integer.parseInt(dataParts.getFirst())));
+            case "SELECT_YEAR" ->
+                    editKeyboard(
+                            bot,
+                            chatId,
+                            messageId,
+                            MonthKeyboard.build(Integer.parseInt(dataParts.getFirst())));
+            case "SELECT_MONTH" ->
+                    editKeyboard(
+                            bot,
+                            chatId,
+                            messageId,
+                            CalendarKeyboard.build(YearMonth.parse(dataParts.getFirst())));
             case "SELECT" -> {
                 LocalDate date = LocalDate.parse(dataParts.getFirst());
                 ConversationState state = conversationsRegistry.get(chatId);
-                if (state == null || state.getRegistrationStep() != RegistrationStep.DATE_OF_BIRTH) return;
+                if (state == null || state.getRegistrationStep() != RegistrationStep.DATE_OF_BIRTH)
+                    return;
 
-                bot.dispatch(EditMessageText.builder()
-                        .chatId(chatId)
-                        .messageId(messageId)
-                        .text("Дата рождения: " + date + " ✅")
-                        .build());
+                bot.dispatch(
+                        EditMessageText.builder()
+                                .chatId(chatId)
+                                .messageId(messageId)
+                                .text("Дата рождения: " + date + " ✅")
+                                .build());
 
                 state.setDateOfBirth(date.format(DISPLAY_FORMAT));
                 if (state.isEditing()) {
-                    bot.deleteMessage(chatId, messageId); refreshSummary(bot, chatId, state, null); return;
+                    bot.deleteMessage(chatId, messageId);
+                    refreshSummary(bot, chatId, state, null);
+                    return;
                 }
                 state.setRegistrationStep(RegistrationStep.PHONE);
                 bot.send(chatId, "Введите номер телефона:");
@@ -234,28 +271,32 @@ public class ChatRegistrationHandler {
         }
     }
 
-    private void refreshSummary(BotExecutor bot, long chatId, ConversationState state, Integer userMessageId) {
+    private void refreshSummary(
+            BotExecutor bot, long chatId, ConversationState state, Integer userMessageId) {
         bot.deleteMessage(chatId, state.getEditingPromptMessageId());
         if (Objects.nonNull(userMessageId)) {
             bot.deleteMessage(chatId, userMessageId);
         }
         state.setEditing(false);
         state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
-        EditMessageText message = EditMessageText.builder()
-                .chatId(chatId)
-                .messageId(state.getSummaryMessageId())
-                .text("Проверьте данные:")
-                .replyMarkup(buildSummaryKeyboard(state))
-                .build();
+        EditMessageText message =
+                EditMessageText.builder()
+                        .chatId(chatId)
+                        .messageId(state.getSummaryMessageId())
+                        .text("Проверьте данные:")
+                        .replyMarkup(buildSummaryKeyboard(state))
+                        .build();
         bot.dispatch(message);
     }
 
     private void sendCheckInputQuestion(BotExecutor bot, long chatId, ConversationState state) {
-        var message = bot.dispatch(SendMessage.builder()
-                .chatId(chatId)
-                .text("Проверьте данные:")
-                .replyMarkup(buildSummaryKeyboard(state))
-                .build());
+        var message =
+                bot.dispatch(
+                        SendMessage.builder()
+                                .chatId(chatId)
+                                .text("Проверьте данные:")
+                                .replyMarkup(buildSummaryKeyboard(state))
+                                .build());
         state.setSummaryMessageId(message.getMessageId());
         state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
     }
@@ -263,76 +304,105 @@ public class ChatRegistrationHandler {
     private InlineKeyboardMarkup buildSummaryKeyboard(ConversationState state) {
         String genderLabel = state.getGender() == Gender.MALE ? "Мужской ♂" : "Женский ♀";
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        rows.add(summaryRow(state.getLastName() + " " + state.getFirstName() + (state.getMiddleName() != null ? " " + state.getMiddleName() : ""), "EDIT:NAME"));
+        rows.add(
+                summaryRow(
+                        state.getLastName()
+                                + " "
+                                + state.getFirstName()
+                                + (state.getMiddleName() != null
+                                        ? " " + state.getMiddleName()
+                                        : ""),
+                        "EDIT:NAME"));
         rows.add(summaryRow(genderLabel, "EDIT:GENDER"));
         rows.add(summaryRow(state.getDateOfBirth(), "EDIT:DATE_OF_BIRTH"));
-        rows.add(summaryRow(state.getPhoneNumber() != null ? state.getPhoneNumber() : "-", "EDIT:PHONE"));
+        rows.add(
+                summaryRow(
+                        state.getPhoneNumber() != null ? state.getPhoneNumber() : "-",
+                        "EDIT:PHONE"));
         rows.add(summaryRow(state.getEmail() != null ? state.getEmail() : "-", "EDIT:EMAIL"));
         rows.add(summaryRow(state.getKindOfTourism().getTitle(), "EDIT:KIND_OF_TOURISM"));
         rows.add(summaryRow(state.getGrade().title(), "EDIT:GRADE"));
-        rows.add(List.of(InlineKeyboardButton.builder()
-                .text("✅ Всё верно").callbackData("CONFIRM:OK").build()));
+        rows.add(
+                List.of(
+                        InlineKeyboardButton.builder()
+                                .text("✅ Всё верно")
+                                .callbackData("CONFIRM:OK")
+                                .build()));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
     private List<InlineKeyboardButton> summaryRow(String value, String callback) {
-        return List.of(InlineKeyboardButton.builder()
-                .text(value + " ✏️").callbackData(callback).build());
+        return List.of(
+                InlineKeyboardButton.builder().text(value + " ✏️").callbackData(callback).build());
     }
 
     private int sendKindOfTourismPicker(BotExecutor bot, long chatId) {
-        Map<String, String> buttons = catalogService.findActiveKindsOfTourism().stream()
-                .collect(Collectors.toMap(
-                        KindOfTourismListDTO::title,
-                        k -> "KIND_OF_TOURISM:" + k.id(),
-                        (s1, s2) -> s1,
-                        LinkedHashMap::new));
-        var message = SendMessage.builder().chatId(chatId).text("Укажите вид туризма:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build();
+        Map<String, String> buttons =
+                catalogService.findActiveKindsOfTourism().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        KindOfTourismListDTO::title,
+                                        k -> "KIND_OF_TOURISM:" + k.id(),
+                                        (s1, s2) -> s1,
+                                        LinkedHashMap::new));
+        var message =
+                SendMessage.builder()
+                        .chatId(chatId)
+                        .text("Укажите вид туризма:")
+                        .replyMarkup(OneLineKeyboard.build(() -> buttons))
+                        .build();
         return bot.dispatch(message).getMessageId();
     }
 
     private int sendGradePicker(BotExecutor bot, long chatId) {
-        Map<String, String> buttons = catalogService.findActiveGrades().stream()
-                .collect(Collectors.toMap(
-                        GradeDTO::title,
-                        gradeDTO -> "GRADE:" + gradeDTO.id(),
-                        (s1, s2) -> s1,
-                        LinkedHashMap::new));
-        return bot
-                .dispatch(SendMessage.builder()
-                        .chatId(chatId)
-                        .text("Укажите звание:")
-                        .replyMarkup(OneLineKeyboard.build(() -> buttons))
-                        .build())
+        Map<String, String> buttons =
+                catalogService.findActiveGrades().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        GradeDTO::title,
+                                        gradeDTO -> "GRADE:" + gradeDTO.id(),
+                                        (s1, s2) -> s1,
+                                        LinkedHashMap::new));
+        return bot.dispatch(
+                        SendMessage.builder()
+                                .chatId(chatId)
+                                .text("Укажите звание:")
+                                .replyMarkup(OneLineKeyboard.build(() -> buttons))
+                                .build())
                 .getMessageId();
     }
 
-    private int sendGenderPicker(BotExecutor bot,
-                                 long chatId) {
+    private int sendGenderPicker(BotExecutor bot, long chatId) {
         Map<String, String> buttons = new LinkedHashMap<>();
         buttons.put("Мужской", "GENDER:MALE");
         buttons.put("Женский", "GENDER:FEMALE");
-        SendMessage message = SendMessage.builder().chatId(chatId).text("Укажите пол:").replyMarkup(OneLineKeyboard.build(() -> buttons)).build();
+        SendMessage message =
+                SendMessage.builder()
+                        .chatId(chatId)
+                        .text("Укажите пол:")
+                        .replyMarkup(OneLineKeyboard.build(() -> buttons))
+                        .build();
         return bot.dispatch(message).getMessageId();
-
     }
 
     private int sendYearPicker(BotExecutor bot, long chatId) {
         int defaultStartYear = YearKeyboard.pageStartFor(2000);
-        return bot.dispatch(SendMessage.builder()
-                .chatId(chatId)
-                .text("Выберите год рождения:")
-                .replyMarkup(YearKeyboard.build(defaultStartYear))
-                .build()).getMessageId();
+        return bot.dispatch(
+                        SendMessage.builder()
+                                .chatId(chatId)
+                                .text("Выберите год рождения:")
+                                .replyMarkup(YearKeyboard.build(defaultStartYear))
+                                .build())
+                .getMessageId();
     }
 
-    private void editKeyboard(BotExecutor bot, long chatId, int messageId,
-                              InlineKeyboardMarkup markup) {
-        bot.dispatch(EditMessageReplyMarkup.builder()
-                .chatId(chatId)
-                .messageId(messageId)
-                .replyMarkup(markup)
-                .build());
+    private void editKeyboard(
+            BotExecutor bot, long chatId, int messageId, InlineKeyboardMarkup markup) {
+        bot.dispatch(
+                EditMessageReplyMarkup.builder()
+                        .chatId(chatId)
+                        .messageId(messageId)
+                        .replyMarkup(markup)
+                        .build());
     }
-
 }

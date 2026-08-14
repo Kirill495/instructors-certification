@@ -1,5 +1,8 @@
 package org.tourism.instructors.api.protocol;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -10,17 +13,12 @@ import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class ProtocolExceptionHandlerTest {
 
-    @Mock
-    ProtocolService protocolService;
+    @Mock ProtocolService protocolService;
 
-    @InjectMocks
-    ProtocolExceptionHandler handler;
+    @InjectMocks ProtocolExceptionHandler handler;
 
     final ProtocolNotFoundException exception = new ProtocolNotFoundException(42);
 

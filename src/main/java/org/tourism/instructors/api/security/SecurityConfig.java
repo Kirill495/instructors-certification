@@ -18,10 +18,10 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) {
-        http
-                .securityMatcher("/api/**")
+        http.securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.NEVER))
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.NEVER))
                 .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
@@ -29,12 +29,16 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain webFilterChain(HttpSecurity http) {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/bot/**").permitAll()
-                        .anyRequest().authenticated())
-                .formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/", true).permitAll());
+        http.authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/admin/**")
+                                        .hasRole("ADMIN")
+                                        .requestMatchers("/bot/**")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .formLogin(
+                        form -> form.loginPage("/login").defaultSuccessUrl("/", true).permitAll());
         return http.build();
     }
 

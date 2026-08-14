@@ -1,13 +1,13 @@
 package org.tourism.instructors.api.catalog;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
-
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/catalog/grades")
@@ -24,8 +24,9 @@ public class GradeController {
     }
 
     @GetMapping
-    public String listGrades(@RequestParam(required = false, defaultValue = "false") boolean showInactive,
-                             Model model) {
+    public String listGrades(
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
+            Model model) {
         if (showInactive) {
             model.addAttribute(GRADES_ATTRIBUTE, catalogService.findAllGrades());
         } else {
@@ -48,10 +49,12 @@ public class GradeController {
     }
 
     @PostMapping("/{id}/edit")
-    public String updateGrade(@PathVariable int id,
-                              @ModelAttribute GradeDTO grade,
-                              RedirectAttributes redirectAttributes) {
-        catalogService.saveGrade(new GradeDTO(id, grade.title(), grade.inactive(), grade.expiresInYears()));
+    public String updateGrade(
+            @PathVariable int id,
+            @ModelAttribute GradeDTO grade,
+            RedirectAttributes redirectAttributes) {
+        catalogService.saveGrade(
+                new GradeDTO(id, grade.title(), grade.inactive(), grade.expiresInYears()));
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно обновлено");
         return REDIRECT_URL;
     }
@@ -63,16 +66,15 @@ public class GradeController {
     }
 
     @PostMapping("/new")
-    public String createGrade(@ModelAttribute GradeDTO gradeDTO,
-                              RedirectAttributes redirectAttributes) {
+    public String createGrade(
+            @ModelAttribute GradeDTO gradeDTO, RedirectAttributes redirectAttributes) {
         catalogService.saveGrade(gradeDTO);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно создано");
         return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
-    public String deleteGrade(@PathVariable int id,
-                              RedirectAttributes redirectAttributes) {
+    public String deleteGrade(@PathVariable int id, RedirectAttributes redirectAttributes) {
         catalogService.deleteGrade(id);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Звание успешно удалено");
         return REDIRECT_URL;

@@ -1,5 +1,7 @@
 package org.tourism.instructors.api.tourist;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -10,8 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.tourist.TouristService;
-
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/tourists")
@@ -27,13 +27,14 @@ public class TouristController {
     }
 
     @GetMapping
-    public String listTourists(@RequestParam(required = false) String search,
-                               @RequestParam(required = false, defaultValue = "certificationId") String sort,
-                               @RequestParam(required = false, defaultValue = "asc") String order,
-                               @RequestParam(required = false, defaultValue = "0") int page,
-                               @RequestParam(required = false, defaultValue = "20") int size,
-                               @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
-                               Model model) {
+    public String listTourists(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "certificationId") String sort,
+            @RequestParam(required = false, defaultValue = "asc") String order,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
+            Model model) {
         Sort sortObj = createSort(sort, order);
         Pageable pageable = PageRequest.of(page, size, sortObj);
         Page<TouristDTO> touristsPage;
@@ -51,7 +52,14 @@ public class TouristController {
         return "tourists/list";
     }
 
-    private static void addPaginationAttributes(Model model, Page<TouristDTO> page, String search, int currentPage, int size, String sort, String order) {
+    private static void addPaginationAttributes(
+            Model model,
+            Page<TouristDTO> page,
+            String search,
+            int currentPage,
+            int size,
+            String sort,
+            String order) {
         model.addAttribute("tourists", page.getContent());
 
         model.addAttribute("currentPage", currentPage);
@@ -94,38 +102,40 @@ public class TouristController {
     }
 
     @PostMapping("/new")
-    public String createTourist(@ModelAttribute TouristDTO touristDTO,
-                                RedirectAttributes redirectAttributes) {
+    public String createTourist(
+            @ModelAttribute TouristDTO touristDTO, RedirectAttributes redirectAttributes) {
         touristService.save(touristDTO);
         redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Данные туриста сохранены");
         return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/edit")
-    public String updateTourist(@PathVariable int id,
-                                @ModelAttribute TouristDTO tourist,
-                                RedirectAttributes redirectAttributes) {
+    public String updateTourist(
+            @PathVariable int id,
+            @ModelAttribute TouristDTO tourist,
+            RedirectAttributes redirectAttributes) {
         tourist.setId(id);
         touristService.save(tourist);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Данные туриста успешно обновлены");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Данные туриста успешно обновлены");
         return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
-    public String deleteTourist(@PathVariable int id,
-                                RedirectAttributes redirectAttributes) {
+    public String deleteTourist(@PathVariable int id, RedirectAttributes redirectAttributes) {
         touristService.delete(id);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Сведения о туристе удалены");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Сведения о туристе удалены");
         return REDIRECT_URL;
     }
 
     private static Sort createSort(String sort, String order) {
         Sort sortObj = Sort.unsorted();
         if (sort != null) {
-            Sort.Direction direction = "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Sort.Direction direction =
+                    "desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
             sortObj = Sort.by(direction, sort);
         }
         return sortObj;
     }
-
 }

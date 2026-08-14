@@ -1,9 +1,8 @@
 package org.tourism.instructors.api.protocol.dto;
 
-import org.tourism.instructors.domain.protocol.ProtocolStatus;
-
 import java.time.LocalDate;
 import java.util.List;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 public record ProtocolDTO(
         Integer id,
@@ -11,5 +10,4 @@ public record ProtocolDTO(
         LocalDate date,
         String order,
         ProtocolStatus status,
-        List<ProtocolContentDTO> contentRows) {
-}
+        List<ProtocolContentDTO> contentRows) {}

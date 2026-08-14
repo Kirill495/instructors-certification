@@ -1,6 +1,8 @@
 package org.tourism.instructors.domain.pending;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,9 +10,6 @@ import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
 import org.tourism.instructors.domain.tourist.model.Gender;
 import org.tourism.instructors.domain.tourist.model.Tourist;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

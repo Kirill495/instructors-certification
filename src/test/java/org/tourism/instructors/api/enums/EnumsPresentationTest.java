@@ -1,5 +1,11 @@
 package org.tourism.instructors.api.enums;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+
+import java.util.Locale;
+import java.util.Map;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,21 +16,12 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Locale;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class EnumsPresentationTest {
 
-    @Mock
-    MessageSource messageSource;
+    @Mock MessageSource messageSource;
 
-    @InjectMocks
-    EnumsPresentation controller;
+    @InjectMocks EnumsPresentation controller;
 
     final Locale locale = Locale.ENGLISH;
 
@@ -33,8 +30,10 @@ class EnumsPresentationTest {
 
         @Test
         void unknownEnumClass_throwsNotFoundWithNameInReason() {
-            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                    () -> controller.getEnumLabels("NonExistent", locale));
+            ResponseStatusException ex =
+                    assertThrows(
+                            ResponseStatusException.class,
+                            () -> controller.getEnumLabels("NonExistent", locale));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
             assertTrue(ex.getReason().contains("NonExistent"));
@@ -44,7 +43,8 @@ class EnumsPresentationTest {
         void gender_returnsTranslatedLabelsFromMessageSource() {
             when(messageSource.getMessage(eq("enum.Gender.MALE"), isNull(), eq("MALE"), eq(locale)))
                     .thenReturn("Мужской");
-            when(messageSource.getMessage(eq("enum.Gender.FEMALE"), isNull(), eq("FEMALE"), eq(locale)))
+            when(messageSource.getMessage(
+                            eq("enum.Gender.FEMALE"), isNull(), eq("FEMALE"), eq(locale)))
                     .thenReturn("Женский");
 
             Map<String, String> result = controller.getEnumLabels("Gender", locale);

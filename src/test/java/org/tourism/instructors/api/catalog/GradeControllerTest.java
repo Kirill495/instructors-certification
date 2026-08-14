@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.catalog;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,22 +17,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class GradeControllerTest {
 
-    @Mock
-    CatalogService catalogService;
+    @Mock CatalogService catalogService;
 
-    @Mock
-    RedirectAttributes redirectAttributes;
+    @Mock RedirectAttributes redirectAttributes;
 
-    @InjectMocks
-    GradeController controller;
+    @InjectMocks GradeController controller;
 
     @Nested
     class ListGradesTest {
@@ -142,7 +138,8 @@ class GradeControllerTest {
         void addsSuccessFlashAttribute() {
             controller.updateGrade(1, new GradeDTO(1, "T", false, 0), redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Звание успешно обновлено");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Звание успешно обновлено");
         }
     }
 
@@ -182,7 +179,8 @@ class GradeControllerTest {
         void addsSuccessFlashAttribute() {
             controller.createGrade(new GradeDTO(null, "T", false, 0), redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Звание успешно создано");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Звание успешно создано");
         }
     }
 
@@ -201,7 +199,8 @@ class GradeControllerTest {
         void addsSuccessFlashAttribute() {
             controller.deleteGrade(7, redirectAttributes);
 
-            verify(redirectAttributes).addFlashAttribute("successMessage", "Звание успешно удалено");
+            verify(redirectAttributes)
+                    .addFlashAttribute("successMessage", "Звание успешно удалено");
         }
     }
 }

@@ -1,5 +1,8 @@
 package org.tourism.instructors.api.user;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,9 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.application.user.UserService;
-
-import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/profile")
@@ -28,10 +28,11 @@ public class ProfileController {
     }
 
     @PostMapping("/password")
-    public String changePassword(@RequestParam String newPassword,
-                                 @RequestParam String confirmPassword,
-                                 Authentication authentication,
-                                 RedirectAttributes redirectAttributes) {
+    public String changePassword(
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
         if (!newPassword.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute(ERROR_MESSAGE_ATTRIBUTE, "Пароли не совпадают");
             return "redirect:/profile/password";

@@ -10,5 +10,4 @@ public class TouristCannotBeDeletedException extends RuntimeException {
         super(message);
         this.touristId = touristId;
     }
-
 }

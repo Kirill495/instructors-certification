@@ -1,9 +1,8 @@
 package org.tourism.instructors.application.user;
 
+import java.util.List;
 import org.tourism.instructors.api.user.dto.UserDTO;
 import org.tourism.instructors.domain.user.User;
-
-import java.util.List;
 
 public interface UserService {
     List<User> findAll();

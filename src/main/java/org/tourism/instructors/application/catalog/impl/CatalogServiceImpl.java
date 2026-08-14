@@ -1,5 +1,6 @@
 package org.tourism.instructors.application.catalog.impl;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,8 +17,6 @@ import org.tourism.instructors.application.catalog.exception.KindOfTourismUsedIn
 import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
 import org.tourism.instructors.domain.protocol.repository.ProtocolContentRepository;
-
-import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -38,24 +37,22 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public List<KindOfTourismListDTO> findAllKindsOfTourism() {
-        return kindOfTourismRepository.findAllByOrderByIdAsc()
-                .stream()
+        return kindOfTourismRepository.findAllByOrderByIdAsc().stream()
                 .map(kindOfTourismMapper::toListDTO)
                 .toList();
-
     }
 
     @Override
     public List<KindOfTourismListDTO> findActiveKindsOfTourism() {
-        return kindOfTourismRepository.findByInactiveFalseOrderByIdAsc()
-                .stream()
+        return kindOfTourismRepository.findByInactiveFalseOrderByIdAsc().stream()
                 .map(kindOfTourismMapper::toListDTO)
                 .toList();
     }
 
     @Override
     public KindOfTourismDTO getKindOfTourismById(int id) {
-        return kindOfTourismRepository.findById(id)
+        return kindOfTourismRepository
+                .findById(id)
                 .map(kindOfTourismMapper::toDTO)
                 .orElseThrow(() -> new KindOfTourismNotFoundException(id));
     }
@@ -69,18 +66,19 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional
     public void deleteKindOfTourism(int id) {
-        kindOfTourismRepository.findById(id).ifPresentOrElse(
-                kind -> {
-                    if (protocolContentRepository.existsByKindOfTourism(kind)) {
-                        throw new KindOfTourismUsedInProtocolsException(kind);
-                    } else {
-                        kindOfTourismRepository.deleteById(id);
-                    }
-                },
-                () -> {
-                    throw new KindOfTourismNotFoundException(id);
-                }
-        );
+        kindOfTourismRepository
+                .findById(id)
+                .ifPresentOrElse(
+                        kind -> {
+                            if (protocolContentRepository.existsByKindOfTourism(kind)) {
+                                throw new KindOfTourismUsedInProtocolsException(kind);
+                            } else {
+                                kindOfTourismRepository.deleteById(id);
+                            }
+                        },
+                        () -> {
+                            throw new KindOfTourismNotFoundException(id);
+                        });
     }
 
     @Override
@@ -90,9 +88,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public List<GradeDTO> findAllGrades() {
-        return gradeRepository.findAllByOrderById().stream()
-                .map(gradeMapper::toDTO)
-                .toList();
+        return gradeRepository.findAllByOrderById().stream().map(gradeMapper::toDTO).toList();
     }
 
     @Override
@@ -104,7 +100,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public GradeDTO findGradeById(int id) {
-        return gradeRepository.findById(id)
+        return gradeRepository
+                .findById(id)
                 .map(gradeMapper::toDTO)
                 .orElseThrow(() -> new GradeNotFoundException(id));
     }
@@ -118,17 +115,18 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional
     public void deleteGrade(int id) {
-        gradeRepository.findById(id).ifPresentOrElse(
-                grade -> {
-                    if (protocolContentRepository.existsProtocolContentByGrade(grade)) {
-                        throw new GradeUsedInProtocolsException(grade);
-                    } else {
-                        gradeRepository.delete(grade);
-                    }
-                }, () -> {
-                    throw new GradeNotFoundException(id);
-                }
-        );
+        gradeRepository
+                .findById(id)
+                .ifPresentOrElse(
+                        grade -> {
+                            if (protocolContentRepository.existsProtocolContentByGrade(grade)) {
+                                throw new GradeUsedInProtocolsException(grade);
+                            } else {
+                                gradeRepository.delete(grade);
+                            }
+                        },
+                        () -> {
+                            throw new GradeNotFoundException(id);
+                        });
     }
-
 }

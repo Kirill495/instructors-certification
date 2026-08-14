@@ -1,5 +1,13 @@
 package org.tourism.instructors.api.reports;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,23 +22,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.tourism.instructors.application.reports.ReportService;
 
-import java.time.LocalDate;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class ReportControllerTest {
 
-    @Mock
-    ReportService reportService;
+    @Mock ReportService reportService;
 
-    @InjectMocks
-    ReportController controller;
+    @InjectMocks ReportController controller;
 
     MockMvc mockMvc;
 
@@ -51,21 +48,24 @@ class ReportControllerTest {
         void bothDatesPresent_returnsNameWithRange() {
             LocalDate from = LocalDate.of(2024, 1, 1);
             LocalDate till = LocalDate.of(2024, 12, 31);
-            assertEquals("Отчёт [2024-01-01 - 2024-12-31].xlsx",
+            assertEquals(
+                    "Отчёт [2024-01-01 - 2024-12-31].xlsx",
                     controller.createFileName("Отчёт", "xlsx", from, till));
         }
 
         @Test
         void onlyFromPresent_returnsNameWithOpenEndRange() {
             LocalDate from = LocalDate.of(2024, 1, 1);
-            assertEquals("Отчёт [2024-01-01 - ].xlsx",
+            assertEquals(
+                    "Отчёт [2024-01-01 - ].xlsx",
                     controller.createFileName("Отчёт", "xlsx", from, null));
         }
 
         @Test
         void onlyTillPresent_returnsNameWithOpenStartRange() {
             LocalDate till = LocalDate.of(2024, 12, 31);
-            assertEquals("Отчёт [ - 2024-12-31].xlsx",
+            assertEquals(
+                    "Отчёт [ - 2024-12-31].xlsx",
                     controller.createFileName("Отчёт", "xlsx", null, till));
         }
     }
@@ -77,13 +77,14 @@ class ReportControllerTest {
         void setsExcelContentType() {
             ResponseEntity<byte[]> response = controller.createResponse(new byte[0], "report.xlsx");
             assertEquals(
-                    MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                    MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                     response.getHeaders().getContentType());
         }
 
         @Test
         void setsContentLengthToDataSize() {
-            byte[] data = new byte[]{1, 2, 3, 4, 5};
+            byte[] data = new byte[] {1, 2, 3, 4, 5};
             ResponseEntity<byte[]> response = controller.createResponse(data, "report.xlsx");
             assertEquals(5, response.getHeaders().getContentLength());
         }
@@ -98,7 +99,8 @@ class ReportControllerTest {
 
         @Test
         void encodesSpacesAsPercent20NotPlus() {
-            ResponseEntity<byte[]> response = controller.createResponse(new byte[0], "My Report.xlsx");
+            ResponseEntity<byte[]> response =
+                    controller.createResponse(new byte[0], "My Report.xlsx");
             String disposition = response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
             assertNotNull(disposition);
             assertFalse(disposition.contains("+"), "spaces must be encoded as %20, not +");
@@ -122,8 +124,7 @@ class ReportControllerTest {
             when(reportService.exportProtocols(Optional.empty(), Optional.empty()))
                     .thenReturn(new byte[0]);
 
-            mockMvc.perform(get("/api/report/protocols"))
-                    .andExpect(status().isOk());
+            mockMvc.perform(get("/api/report/protocols")).andExpect(status().isOk());
 
             verify(reportService).exportProtocols(Optional.empty(), Optional.empty());
         }
@@ -133,14 +134,17 @@ class ReportControllerTest {
             LocalDate from = LocalDate.of(2024, 1, 1);
             LocalDate till = LocalDate.of(2024, 12, 31);
             when(reportService.exportProtocols(Optional.of(from), Optional.of(till)))
-                    .thenReturn(new byte[]{1, 2, 3});
+                    .thenReturn(new byte[] {1, 2, 3});
 
-            mockMvc.perform(get("/api/report/protocols")
-                            .param("dateFrom", "2024-01-01")
-                            .param("dateTill", "2024-12-31"))
+            mockMvc.perform(
+                            get("/api/report/protocols")
+                                    .param("dateFrom", "2024-01-01")
+                                    .param("dateTill", "2024-12-31"))
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                    .andExpect(
+                            content()
+                                    .contentType(
+                                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
 
             verify(reportService).exportProtocols(Optional.of(from), Optional.of(till));
         }

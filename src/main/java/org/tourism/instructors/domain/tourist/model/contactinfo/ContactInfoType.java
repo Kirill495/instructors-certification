@@ -13,5 +13,4 @@ public enum ContactInfoType {
     ContactInfoType(Class<? extends ContactInfoDetails> detailsClass) {
         this.detailsClass = detailsClass;
     }
-
 }

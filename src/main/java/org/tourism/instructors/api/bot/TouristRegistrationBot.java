@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.bot;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -19,12 +23,7 @@ import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.application.tourist.TouristService;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-//@Profile("telegram")
+// @Profile("telegram")
 @Component
 public class TouristRegistrationBot extends TelegramLongPollingBot implements BotExecutor {
 
@@ -32,7 +31,6 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
     private final PendingTouristService pendingTouristService;
     private final ChatRegistrationHandler chatRegistrationHandler;
     private final MiniAppHandler miniAppHandler;
-
 
     @Override
     public <T extends Serializable> T dispatch(BotApiMethod<T> method) {
@@ -49,11 +47,12 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
     @Value("${telegram.bot.mini-app-url}")
     private String miniAppUrl;
 
-    public TouristRegistrationBot(@Value("${telegram.bot.token}") String token,
-                                  PendingTouristService pendingTouristService,
-                                  TouristService touristService,
-                                  ChatRegistrationHandler chatRegistrationHandler,
-                                  MiniAppHandler miniAppHandler) {
+    public TouristRegistrationBot(
+            @Value("${telegram.bot.token}") String token,
+            PendingTouristService pendingTouristService,
+            TouristService touristService,
+            ChatRegistrationHandler chatRegistrationHandler,
+            MiniAppHandler miniAppHandler) {
         super(token);
         this.pendingTouristService = pendingTouristService;
         this.touristService = touristService;
@@ -89,7 +88,8 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
         }
         String text = update.getMessage().getText().trim();
         if (chatRegistrationHandler.hasActiveConversation(chatId)) {
-            chatRegistrationHandler.handleStep(this, chatId, text, update.getMessage().getMessageId());
+            chatRegistrationHandler.handleStep(
+                    this, chatId, text, update.getMessage().getMessageId());
             return;
         }
         Optional<TouristDTO> touristOpt = touristService.findTouristByTelegramId(chatId);
@@ -117,16 +117,23 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
             send(chatId, "Вы уже оставляли заявку ранее. Ожидайте решения.");
             return;
         }
-        var button = KeyboardButton.builder()
-                .text("📋 Заполнить анкету")
-                .webApp(new WebAppInfo(miniAppUrl))
-                .build();
-        var keyboard = ReplyKeyboardMarkup.builder()
-                .keyboardRow(new KeyboardRow(List.of(button)))
-                .resizeKeyboard(true)
-                .oneTimeKeyboard(true)
-                .build();
-        dispatch(SendMessage.builder().chatId(chatId).text("Для регистрации заполните анкету:").replyMarkup(keyboard).build());
+        var button =
+                KeyboardButton.builder()
+                        .text("📋 Заполнить анкету")
+                        .webApp(new WebAppInfo(miniAppUrl))
+                        .build();
+        var keyboard =
+                ReplyKeyboardMarkup.builder()
+                        .keyboardRow(new KeyboardRow(List.of(button)))
+                        .resizeKeyboard(true)
+                        .oneTimeKeyboard(true)
+                        .build();
+        dispatch(
+                SendMessage.builder()
+                        .chatId(chatId)
+                        .text("Для регистрации заполните анкету:")
+                        .replyMarkup(keyboard)
+                        .build());
     }
 
     // ── Callback handling ────────────────────────────────────────────────────
@@ -139,5 +146,4 @@ public class TouristRegistrationBot extends TelegramLongPollingBot implements Bo
         dispatch(AnswerCallbackQuery.builder().callbackQueryId(callback.getId()).build());
         chatRegistrationHandler.handleCommand(this, chatId, messageId, data);
     }
-
 }

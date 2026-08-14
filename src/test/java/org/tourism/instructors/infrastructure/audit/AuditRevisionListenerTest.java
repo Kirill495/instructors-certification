@@ -1,5 +1,8 @@
 package org.tourism.instructors.infrastructure.audit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,14 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class AuditRevisionListenerTest {
 
-    @Mock
-    Authentication authentication;
+    @Mock Authentication authentication;
 
     final AuditRevisionListener listener = new AuditRevisionListener();
 

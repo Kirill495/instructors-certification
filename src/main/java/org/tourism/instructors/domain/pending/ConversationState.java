@@ -34,5 +34,4 @@ public class ConversationState {
     private boolean editing;
     private Integer summaryMessageId;
     private Integer editingPromptMessageId;
-
 }

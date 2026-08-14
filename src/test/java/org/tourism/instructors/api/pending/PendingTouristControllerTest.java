@@ -1,5 +1,13 @@
 package org.tourism.instructors.api.pending;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,31 +27,16 @@ import org.tourism.instructors.application.tourist.TouristService;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class PendingTouristControllerTest {
 
-    @Mock
-    PendingTouristService pendingTouristService;
-    @Mock
-    TouristRegistrationBot bot;
-    @Mock
-    TouristService touristService;
-    @Mock
-    TouristMapper touristMapper;
-    @Mock
-    ProtocolService protocolService;
+    @Mock PendingTouristService pendingTouristService;
+    @Mock TouristRegistrationBot bot;
+    @Mock TouristService touristService;
+    @Mock TouristMapper touristMapper;
+    @Mock ProtocolService protocolService;
 
-    @InjectMocks
-    PendingTouristController controller;
+    @InjectMocks PendingTouristController controller;
 
     MockMvc mockMvc;
 
@@ -107,7 +100,8 @@ class PendingTouristControllerTest {
     class Approve {
 
         @Test
-        void withLinkedTouristAndProtocol_addsToProtocolSendsBotMessageAndRedirects() throws Exception {
+        void withLinkedTouristAndProtocol_addsToProtocolSendsBotMessageAndRedirects()
+                throws Exception {
             Tourist tourist = new Tourist();
             tourist.setId(7);
             PendingTourist pending = pendingTouristWith(100L, "Petrov", "Ivan");
@@ -145,7 +139,8 @@ class PendingTouristControllerTest {
             TouristDTO dto = new TouristDTO();
             when(pendingTouristService.approve(2)).thenReturn(pending);
             when(touristMapper.toDTO(pending)).thenReturn(dto);
-            when(touristService.findTouristByTelegramId(200L)).thenReturn(Optional.of(new TouristDTO()));
+            when(touristService.findTouristByTelegramId(200L))
+                    .thenReturn(Optional.of(new TouristDTO()));
 
             mockMvc.perform(post("/pending/2/approve"))
                     .andExpect(status().is3xxRedirection())
@@ -157,7 +152,8 @@ class PendingTouristControllerTest {
         }
 
         @Test
-        void withNoLinkedTourist_withEmailAndPhone_createsNewTouristWithThreeContacts() throws Exception {
+        void withNoLinkedTourist_withEmailAndPhone_createsNewTouristWithThreeContacts()
+                throws Exception {
             PendingTourist pending = pendingTouristWith(300L, "Volkova", "Anna");
             pending.setTgUsername("anna_tg");
             pending.setEmail("anna@example.com");

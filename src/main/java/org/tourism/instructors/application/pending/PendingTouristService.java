@@ -1,9 +1,8 @@
 package org.tourism.instructors.application.pending;
 
+import java.util.List;
 import org.tourism.instructors.domain.pending.ConversationState;
 import org.tourism.instructors.domain.pending.PendingTourist;
-
-import java.util.List;
 
 public interface PendingTouristService {
     void register(ConversationState conversation);

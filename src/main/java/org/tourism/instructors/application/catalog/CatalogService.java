@@ -1,10 +1,9 @@
 package org.tourism.instructors.application.catalog;
 
+import java.util.List;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
-
-import java.util.List;
 
 public interface CatalogService {
     int countActiveKindsOfTourism();

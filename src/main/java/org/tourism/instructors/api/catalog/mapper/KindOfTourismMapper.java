@@ -12,5 +12,4 @@ public interface KindOfTourismMapper {
     KindOfTourismListDTO toListDTO(KindOfTourism entity);
 
     KindOfTourism toEntity(KindOfTourismDTO dto);
-
 }

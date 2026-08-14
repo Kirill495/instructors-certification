@@ -10,5 +10,4 @@ public abstract class KindOfTourismCannotBeDeletedException extends RuntimeExcep
         super(message);
         this.kindOfTourismId = kindOfTourismId;
     }
-
 }

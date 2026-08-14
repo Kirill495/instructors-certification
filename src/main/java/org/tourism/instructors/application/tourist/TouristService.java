@@ -1,12 +1,11 @@
 package org.tourism.instructors.application.tourist;
 
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
-
-import java.util.List;
-import java.util.Optional;
 
 public interface TouristService {
 

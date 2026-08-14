@@ -21,7 +21,8 @@ public class PendingTouristRestController {
     }
 
     @PostMapping("/{id}/link")
-    public ResponseEntity<Void> linkTourist(@PathVariable int id, @RequestParam("tourist_id") int touristId) {
+    public ResponseEntity<Void> linkTourist(
+            @PathVariable int id, @RequestParam("tourist_id") int touristId) {
         pendingTouristService.linkTourist(id, touristId);
         return ResponseEntity.ok().build();
     }

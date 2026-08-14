@@ -1,5 +1,8 @@
 package org.tourism.instructors.application.protocol;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,8 +19,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.tourism.instructors.api.bot.BotInitializer;
 import org.tourism.instructors.api.bot.TouristRegistrationBot;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.domain.catalog.model.Grade;
 import org.tourism.instructors.domain.catalog.model.KindOfTourism;
@@ -28,18 +31,12 @@ import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Testcontainers
 class ProtocolServiceIT {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
+    @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
 
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
@@ -48,36 +45,33 @@ class ProtocolServiceIT {
         registry.add("spring.datasource.password", postgres::getPassword);
     }
 
-    @MockitoBean
-    TouristRegistrationBot bot;
-    @MockitoBean
-    BotInitializer botInitializer;
+    @MockitoBean TouristRegistrationBot bot;
+    @MockitoBean BotInitializer botInitializer;
 
-    @Autowired
-    ProtocolService protocolService;
-    @Autowired
-    GradeRepository gradeRepository;
-    @Autowired
-    KindOfTourismRepository kindOfTourismRepository;
+    @Autowired ProtocolService protocolService;
+    @Autowired GradeRepository gradeRepository;
+    @Autowired KindOfTourismRepository kindOfTourismRepository;
 
-    @Autowired
-    TouristRepository touristRepository;
+    @Autowired TouristRepository touristRepository;
 
     @Test
     void getProtocolsForList() {
-        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList(null, PageRequest.of(0, 10));
+        Page<ProtocolForListDTO> result =
+                protocolService.getProtocolsForList(null, PageRequest.of(0, 10));
         assertEquals(2, result.getTotalElements());
     }
 
     @Test
     void getOneProtocolForList() {
-        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList(null, PageRequest.of(0, 1));
+        Page<ProtocolForListDTO> result =
+                protocolService.getProtocolsForList(null, PageRequest.of(0, 1));
         assertEquals(1, result.getContent().size());
     }
 
     @Test
     void getProtocolForListWithSearchByName() {
-        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList("Толстой", PageRequest.of(0, 1));
+        Page<ProtocolForListDTO> result =
+                protocolService.getProtocolsForList("Толстой", PageRequest.of(0, 1));
         assertEquals(1, result.getContent().size());
         ProtocolForListDTO dto = result.getContent().getFirst();
         assertEquals(1, dto.id());
@@ -86,13 +80,15 @@ class ProtocolServiceIT {
 
     @Test
     void getProtocolForListWithSearchByNameWhenNoTouristFound() {
-        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList("_Толстой", PageRequest.of(0, 1));
+        Page<ProtocolForListDTO> result =
+                protocolService.getProtocolsForList("_Толстой", PageRequest.of(0, 1));
         assertTrue(result.getContent().isEmpty());
     }
 
     @Test
     void getProtocolForListWithTooShortSearchString() {
-        Page<ProtocolForListDTO> result = protocolService.getProtocolsForList("_", PageRequest.of(0, 10));
+        Page<ProtocolForListDTO> result =
+                protocolService.getProtocolsForList("_", PageRequest.of(0, 10));
         assertEquals(2, result.getContent().size());
     }
 
@@ -136,7 +132,7 @@ class ProtocolServiceIT {
     @Test
     @Transactional
     void testGetLastDraftsWhenAllProtocolsAreFinalized() {
-        List<ProtocolLiteDTO> result =  protocolService.getLastDrafts();
+        List<ProtocolLiteDTO> result = protocolService.getLastDrafts();
         assertTrue(result.isEmpty());
     }
 
@@ -151,7 +147,7 @@ class ProtocolServiceIT {
         protocolDTO2.setStatus(ProtocolStatus.DRAFT);
         protocolService.saveProtocol(protocolDTO2);
 
-        List<ProtocolLiteDTO> result =  protocolService.getLastDrafts();
+        List<ProtocolLiteDTO> result = protocolService.getLastDrafts();
         assertEquals(2, result.size());
         assertEquals(2, result.getFirst().id());
         assertEquals(1, result.getLast().id());

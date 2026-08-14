@@ -1,5 +1,11 @@
 package org.tourism.instructors.api.enums;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,22 +17,15 @@ import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.tourist.model.Gender;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 @RestController
 @RequestMapping("/api/enums")
 public class EnumsPresentation {
 
-    private static final Map<String, Class<? extends Enum<?>>> REGISTRY = Map.of(
-            "Gender", Gender.class,
-            "ProtocolStatus", ProtocolStatus.class,
-            "ContactInfoType", ContactInfoType.class
-    );
+    private static final Map<String, Class<? extends Enum<?>>> REGISTRY =
+            Map.of(
+                    "Gender", Gender.class,
+                    "ProtocolStatus", ProtocolStatus.class,
+                    "ContactInfoType", ContactInfoType.class);
 
     private final MessageSource messageSource;
 
@@ -42,13 +41,21 @@ public class EnumsPresentation {
         }
 
         return Arrays.stream(clazz.getEnumConstants())
-                .collect(Collectors.toMap(
-                        Enum::name,
-                        e -> Objects.requireNonNullElse(
-                                messageSource.getMessage("enum." + clazz.getSimpleName() + "." + e.name(), null, e.name(), locale),
-                                e.name()),
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
+                .collect(
+                        Collectors.toMap(
+                                Enum::name,
+                                e ->
+                                        Objects.requireNonNullElse(
+                                                messageSource.getMessage(
+                                                        "enum."
+                                                                + clazz.getSimpleName()
+                                                                + "."
+                                                                + e.name(),
+                                                        null,
+                                                        e.name(),
+                                                        locale),
+                                                e.name()),
+                                (a, b) -> a,
+                                LinkedHashMap::new));
     }
 }
