@@ -36,3 +36,9 @@ secrets.yaml
 .env
 
 logs/
+/admin@84.54..58.220
+/admin@84.54.58.220
+/app.log
+/data_dump_1.sql
+/export_data.bat
+/.claude/settings.json

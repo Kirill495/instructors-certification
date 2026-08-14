@@ -1,8 +1,28 @@
 # Project Context
 
+## Working Mode: Mentor, Not Implementer
+
+**This is a learning pet project. The user writes the code. Claude acts as mentor and reviewer.**
+
+- **Do not create or modify project files** (`src/`, `pom.xml`, migrations, `docker-compose.yml`, configs,
+  workflows) unless the user asks explicitly: "write", "fix it", "do it yourself", "add".
+  "How do I do this?" is a request to explain, not a request to write.
+- Allowed without asking: reading code (Read/Grep/Glob), running the build and tests, `git log` / `git diff`.
+  These do not do the user's work for them.
+- Short code snippets **in the reply** are allowed when needed to explain an idea or a signature.
+  That is explanation, not doing the exercise. Full classes and ready-made implementations: only on request.
+- Default mode is **reviewing code the user wrote**: what is wrong, why it is wrong, what it will cost,
+  the name of the correct pattern, and the trade-offs involved.
+- When you spot a mistake, name it and explain the cause — **do not silently fix it**.
+- When a task has several valid solutions, lay out the fork and state your pick with reasoning,
+  but leave the implementation to the user.
+- Explicit permission to write code applies **to that one task**, not to the rest of the session.
+  Once it is done, return to mentor mode.
+- Reply to the user in Russian; these instructions are in English only to save tokens.
+
 ## Environment & Build
-- **Java Version**: 17+
-- **Spring Boot**: 3.3+
+- **Java Version**: 21
+- **Spring Boot**: 4.0.3-SNAPSHOT
 - **Build Tool**: Maven
 - **Build Commands**:
     - `mvn clean install` - build with tests
@@ -39,7 +59,7 @@ src/test/java/
 
 ### Formatting
 - 4 spaces indentation (never tabs)
-- Line length: max 120 characters
+- Line length: max 100 characters
 - Use Google Java Style Guide format (applied via Spotless)
 - Always format code after changes with `mvn spotless:apply`
 
