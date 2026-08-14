@@ -14,6 +14,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 public class BotInitializer {
 
     private final TouristRegistrationBot bot;
+
     @Value("${telegram.bot.token:}")
     private String token;
 

@@ -1,5 +1,9 @@
 package org.tourism.instructors.api.pending.mapper;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,11 +15,6 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.domain.pending.ConversationState;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.tourist.model.Gender;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @Import(PendingTouristMapperImpl.class)

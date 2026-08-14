@@ -1,5 +1,7 @@
 package org.tourism.instructors.api.tourist;
 
+import java.util.Collections;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -9,9 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
 import org.tourism.instructors.application.tourist.TouristService;
-
-import java.util.Collections;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/tourists")
@@ -29,13 +28,15 @@ public class TouristRestController {
     }
 
     @PutMapping("/{id}")
-    public TouristSummaryDTO updateTourist(@PathVariable int id, @RequestBody TouristDTO touristDTO) {
+    public TouristSummaryDTO updateTourist(
+            @PathVariable int id, @RequestBody TouristDTO touristDTO) {
         touristDTO.setId(id);
         return touristService.saveAndReturn(touristDTO);
     }
 
     @GetMapping("/search")
-    public List<TouristSummaryDTO> searchTourists(@RequestParam(required = false, defaultValue = "") String query) {
+    public List<TouristSummaryDTO> searchTourists(
+            @RequestParam(required = false, defaultValue = "") String query) {
         if (query.trim().isEmpty()) {
             return Collections.emptyList();
         }
@@ -50,7 +51,8 @@ public class TouristRestController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Sort sortObj = Sort.by("desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC, sort);
+        Sort sortObj =
+                Sort.by("desc".equals(order) ? Sort.Direction.DESC : Sort.Direction.ASC, sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
         return search != null && !search.trim().isEmpty()

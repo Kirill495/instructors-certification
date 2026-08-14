@@ -1,5 +1,10 @@
 package org.tourism.instructors.application.catalog;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,28 +25,16 @@ import org.tourism.instructors.domain.catalog.repository.GradeRepository;
 import org.tourism.instructors.domain.catalog.repository.KindOfTourismRepository;
 import org.tourism.instructors.domain.protocol.repository.ProtocolContentRepository;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class CatalogServiceImplTest {
 
-    @Mock
-    KindOfTourismRepository kindOfTourismRepository;
-    @Mock
-    GradeRepository gradeRepository;
-    @Mock
-    KindOfTourismMapper kindOfTourismMapper;
-    @Mock
-    GradeMapper gradeMapper;
-    @Mock
-    ProtocolContentRepository contentRepository;
+    @Mock KindOfTourismRepository kindOfTourismRepository;
+    @Mock GradeRepository gradeRepository;
+    @Mock KindOfTourismMapper kindOfTourismMapper;
+    @Mock GradeMapper gradeMapper;
+    @Mock ProtocolContentRepository contentRepository;
 
-    @InjectMocks
-    CatalogServiceImpl catalogService;
+    @InjectMocks CatalogServiceImpl catalogService;
 
     // --- KindOfTourism ---
 
@@ -95,7 +88,8 @@ class CatalogServiceImplTest {
         void returnsMappedActiveList() {
             KindOfTourism entity = new KindOfTourism(2, "Climbing", false);
             KindOfTourismListDTO dto = new KindOfTourismListDTO(2, "Climbing");
-            when(kindOfTourismRepository.findByInactiveFalseOrderByIdAsc()).thenReturn(List.of(entity));
+            when(kindOfTourismRepository.findByInactiveFalseOrderByIdAsc())
+                    .thenReturn(List.of(entity));
             when(kindOfTourismMapper.toListDTO(entity)).thenReturn(dto);
 
             List<KindOfTourismListDTO> result = catalogService.findActiveKindsOfTourism();
@@ -130,7 +124,9 @@ class CatalogServiceImplTest {
         @Test
         void throwsExceptionWhenNotFound() {
             when(kindOfTourismRepository.findById(99)).thenReturn(Optional.empty());
-            assertThrows(KindOfTourismNotFoundException.class, () -> catalogService.getKindOfTourismById(99));
+            assertThrows(
+                    KindOfTourismNotFoundException.class,
+                    () -> catalogService.getKindOfTourismById(99));
         }
     }
 
@@ -154,8 +150,10 @@ class CatalogServiceImplTest {
 
         @Test
         void delegatesToRepository() {
-            when(kindOfTourismRepository.findById(3)).thenReturn(Optional.of(new KindOfTourism(3, "kind", false)));
-            when(contentRepository.existsByKindOfTourism(any(KindOfTourism.class))).thenReturn(false);
+            when(kindOfTourismRepository.findById(3))
+                    .thenReturn(Optional.of(new KindOfTourism(3, "kind", false)));
+            when(contentRepository.existsByKindOfTourism(any(KindOfTourism.class)))
+                    .thenReturn(false);
             catalogService.deleteKindOfTourism(3);
             verify(kindOfTourismRepository).deleteById(3);
         }
@@ -277,7 +275,8 @@ class CatalogServiceImplTest {
             Grade grade = new Grade();
             grade.setId(5);
             Optional<Grade> gradeOpt = Optional.of(grade);
-            when(contentRepository.existsProtocolContentByGrade(any(Grade.class))).thenReturn(false);
+            when(contentRepository.existsProtocolContentByGrade(any(Grade.class)))
+                    .thenReturn(false);
             when(gradeRepository.findById(5)).thenReturn(gradeOpt);
             catalogService.deleteGrade(5);
             verify(gradeRepository).delete(grade);

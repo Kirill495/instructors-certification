@@ -15,11 +15,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Value("${app.admin.login}")
     private String adminLogin;
+
     @Value("${app.admin.password}")
     private String adminPassword;
 
     @Value("${app.user.login}")
     private String userLogin;
+
     @Value("${app.user.password}")
     private String userPassword;
 

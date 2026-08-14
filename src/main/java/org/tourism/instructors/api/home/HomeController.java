@@ -18,10 +18,11 @@ public class HomeController {
     private final CatalogService catalogService;
     private final PendingTouristService pendingTouristService;
 
-    public HomeController(ProtocolService protocolService,
-                          TouristService touristService,
-                          CatalogService catalogService,
-                          PendingTouristService pendingTouristService) {
+    public HomeController(
+            ProtocolService protocolService,
+            TouristService touristService,
+            CatalogService catalogService,
+            PendingTouristService pendingTouristService) {
         this.protocolService = protocolService;
         this.touristService = touristService;
         this.catalogService = catalogService;
@@ -40,8 +41,9 @@ public class HomeController {
 
         UserInfo userInfo = new UserInfo();
         userInfo.setName(authentication.getName());
-        userInfo.setAdmin(authentication.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+        userInfo.setAdmin(
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
         model.addAttribute("userInfo", userInfo);
         model.addAttribute("stats", stats);
 
@@ -55,9 +57,7 @@ public class HomeController {
         private boolean isAdmin;
     }
 
-    /**
-     * Simple DTO for dashboard statistics
-     */
+    /** Simple DTO for dashboard statistics */
     @Getter
     @Setter
     public static class DashboardStats {
@@ -67,5 +67,4 @@ public class HomeController {
         private int gradesCount;
         private int pendingCount;
     }
-
 }

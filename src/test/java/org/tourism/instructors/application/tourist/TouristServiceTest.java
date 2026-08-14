@@ -1,5 +1,12 @@
 package org.tourism.instructors.application.tourist;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,33 +32,25 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 import org.tourism.instructors.domain.tourist.repository.ContactInfoRepository;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class TouristServiceTest {
 
-    @Mock
-    TouristRepository touristRepository;
-    @Mock
-    ProtocolRepository protocolRepository;
-    @Mock
-    TouristMapper touristMapper;
-    @Mock
-    ContactInfoRepository contactInfoRepository;
-    @Mock
-    ProtocolRepository.GradeAssignmentProjection projection;
+    @Mock TouristRepository touristRepository;
+    @Mock ProtocolRepository protocolRepository;
+    @Mock TouristMapper touristMapper;
+    @Mock ContactInfoRepository contactInfoRepository;
+    @Mock ProtocolRepository.GradeAssignmentProjection projection;
 
-    @InjectMocks
-    TouristServiceImpl touristService;
+    @InjectMocks TouristServiceImpl touristService;
 
     TouristSummaryDTO outDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
-    ContactInfoItemDTO tgId = new ContactInfoItemDTO(null, null, ContactInfoType.TELEGRAM, "tg_id", new TelegramDetails(1, "@tg_nickName"));
+    ContactInfoItemDTO tgId =
+            new ContactInfoItemDTO(
+                    null,
+                    null,
+                    ContactInfoType.TELEGRAM,
+                    "tg_id",
+                    new TelegramDetails(1, "@tg_nickName"));
 
     @Nested
     class GetAllTourists {
@@ -66,7 +65,6 @@ class TouristServiceTest {
 
             verify(touristRepository).findAll(pageable);
             assertTrue(result.isEmpty());
-
         }
 
         @Test
@@ -88,7 +86,6 @@ class TouristServiceTest {
             assertEquals(1L, result.getTotalElements());
             assertEquals(1, result.getContent().size());
             assertEquals(dto, result.getContent().getFirst());
-
         }
     }
 
@@ -118,7 +115,8 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            when(touristRepository.searchByLastNameStartingWithIgnoreCase(searchString)).thenReturn(List.of(tourist));
+            when(touristRepository.searchByLastNameStartingWithIgnoreCase(searchString))
+                    .thenReturn(List.of(tourist));
             TouristDTO touristDTO = new TouristDTO();
             touristDTO.setId(1);
             when(touristMapper.toDTO(eq(tourist), anyList())).thenReturn(touristDTO);
@@ -134,7 +132,8 @@ class TouristServiceTest {
 
             Tourist tourist = new Tourist();
             tourist.setId(1);
-            when(touristRepository.searchByCertificationId(searchString)).thenReturn(List.of(tourist));
+            when(touristRepository.searchByCertificationId(searchString))
+                    .thenReturn(List.of(tourist));
             TouristDTO touristDTO = new TouristDTO();
             touristDTO.setId(1);
             when(touristMapper.toDTO(eq(tourist), anyList())).thenReturn(touristDTO);
@@ -162,7 +161,8 @@ class TouristServiceTest {
             Tourist tourist = new Tourist();
             tourist.setId(1);
             TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
-            when(touristRepository.searchByLastNameStartingWithIgnoreCase(testQuery)).thenReturn(List.of(tourist));
+            when(touristRepository.searchByLastNameStartingWithIgnoreCase(testQuery))
+                    .thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
             List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
@@ -177,8 +177,10 @@ class TouristServiceTest {
             Tourist tourist = new Tourist();
             tourist.setId(1);
             TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
-            when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(parts.getFirst(),
-                    parts.getLast())).thenReturn(List.of(tourist));
+            when(touristRepository
+                            .searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCase(
+                                    parts.getFirst(), parts.getLast()))
+                    .thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
             List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
@@ -193,8 +195,10 @@ class TouristServiceTest {
             Tourist tourist = new Tourist();
             tourist.setId(1);
             TouristSummaryDTO touristDTO = new TouristSummaryDTO(1, "f", "l", "m", "c_id");
-            when(touristRepository.searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(
-                    parts.getFirst(), parts.get(1), parts.getLast())).thenReturn(List.of(tourist));
+            when(touristRepository
+                            .searchByLastNameStartingWithIgnoreCaseAndFirstNameStartingWithIgnoreCaseAndMiddleNameStartingWithIgnoreCase(
+                                    parts.getFirst(), parts.get(1), parts.getLast()))
+                    .thenReturn(List.of(tourist));
             when(touristMapper.toLightDTO(eq(tourist))).thenReturn(touristDTO);
 
             List<TouristSummaryDTO> result = touristService.searchLightTourists(testQuery);
@@ -287,7 +291,9 @@ class TouristServiceTest {
     @Test
     void testFindTouristByTelegramIdWhenEmpty() {
 
-        when(contactInfoRepository.findTouristIdByTypeAndValue(ContactInfoType.TELEGRAM, String.valueOf(1L))).thenReturn(Optional.empty());
+        when(contactInfoRepository.findTouristIdByTypeAndValue(
+                        ContactInfoType.TELEGRAM, String.valueOf(1L)))
+                .thenReturn(Optional.empty());
         Optional<TouristDTO> result = touristService.findTouristByTelegramId(1L);
         assertTrue(result.isEmpty());
         verify(touristMapper, never()).toDTO(any(Tourist.class));
@@ -299,7 +305,9 @@ class TouristServiceTest {
         ContactInfoItem item = new ContactInfoItem();
         TouristDTO touristDTO = new TouristDTO();
         item.setTourist(tourist);
-        when(contactInfoRepository.findTouristIdByTypeAndValue(ContactInfoType.TELEGRAM, String.valueOf(1L))).thenReturn(Optional.of(item));
+        when(contactInfoRepository.findTouristIdByTypeAndValue(
+                        ContactInfoType.TELEGRAM, String.valueOf(1L)))
+                .thenReturn(Optional.of(item));
         when(touristMapper.toDTO(tourist)).thenReturn(touristDTO);
 
         Optional<TouristDTO> result = touristService.findTouristByTelegramId(1L);
@@ -308,6 +316,5 @@ class TouristServiceTest {
         ArgumentCaptor<Tourist> argTourist = ArgumentCaptor.forClass(Tourist.class);
         verify(touristMapper).toDTO(argTourist.capture());
         assertEquals(tourist, argTourist.getValue());
-
     }
 }

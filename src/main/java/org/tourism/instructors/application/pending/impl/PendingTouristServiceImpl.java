@@ -1,5 +1,6 @@
 package org.tourism.instructors.application.pending.impl;
 
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.tourism.instructors.api.pending.mapper.PendingTouristMapper;
 import org.tourism.instructors.application.pending.PendingTouristService;
@@ -9,8 +10,6 @@ import org.tourism.instructors.domain.pending.repository.PendingTouristRepositor
 import org.tourism.instructors.domain.tourist.model.Tourist;
 import org.tourism.instructors.domain.tourist.repository.TouristRepository;
 
-import java.util.List;
-
 @Service
 public class PendingTouristServiceImpl implements PendingTouristService {
 
@@ -18,14 +17,14 @@ public class PendingTouristServiceImpl implements PendingTouristService {
     private final TouristRepository touristRepository;
     private final PendingTouristMapper mapper;
 
-    public PendingTouristServiceImpl(PendingTouristRepository pendingTouristRepository,
-                                     TouristRepository touristRepository,
-                                     PendingTouristMapper mapper) {
+    public PendingTouristServiceImpl(
+            PendingTouristRepository pendingTouristRepository,
+            TouristRepository touristRepository,
+            PendingTouristMapper mapper) {
         this.pendingTouristRepository = pendingTouristRepository;
         this.touristRepository = touristRepository;
         this.mapper = mapper;
     }
-
 
     @Override
     public void register(ConversationState state) {
@@ -40,8 +39,13 @@ public class PendingTouristServiceImpl implements PendingTouristService {
     @Override
     public PendingTourist linkTourist(int pendingId, int touristId) {
         PendingTourist pending = findById(pendingId);
-        Tourist tourist = touristRepository.findById(touristId)
-                .orElseThrow(() -> new IllegalArgumentException("Tourist not found: " + touristId));
+        Tourist tourist =
+                touristRepository
+                        .findById(touristId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Tourist not found: " + touristId));
         pending.setTourist(tourist);
         return pendingTouristRepository.save(pending);
     }
@@ -73,8 +77,10 @@ public class PendingTouristServiceImpl implements PendingTouristService {
     }
 
     private PendingTourist findById(int id) {
-        return pendingTouristRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pending tourist not found: " + id));
+        return pendingTouristRepository
+                .findById(id)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Pending tourist not found: " + id));
     }
 
     @Override

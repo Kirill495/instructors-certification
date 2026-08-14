@@ -1,5 +1,13 @@
 package org.tourism.instructors.api.protocol;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,35 +23,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.GradeDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.protocol.ProtocolService;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class ProtocolControllerTest {
 
-    @Mock
-    ProtocolService protocolService;
+    @Mock ProtocolService protocolService;
 
-    @Mock
-    CatalogService catalogService;
+    @Mock CatalogService catalogService;
 
-    @Mock
-    RedirectAttributes redirectAttributes;
+    @Mock RedirectAttributes redirectAttributes;
 
-    @InjectMocks
-    ProtocolController controller;
+    @InjectMocks ProtocolController controller;
 
     @Nested
     class ListProtocolsTest {
@@ -52,7 +47,8 @@ class ProtocolControllerTest {
 
         @Test
         void returnsListView() {
-            when(protocolService.getProtocolsForList(eq(null), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(eq(null), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             String view = controller.listProtocols(null, null, "asc", 0, 20, null, null, model);
 
@@ -61,18 +57,23 @@ class ProtocolControllerTest {
 
         @Test
         void returnsTableRowsFragmentForAjaxRequest() {
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
-            String view = controller.listProtocols(null, null, "asc", 0, 20, null, "XMLHttpRequest", model);
+            String view =
+                    controller.listProtocols(
+                            null, null, "asc", 0, 20, null, "XMLHttpRequest", model);
 
             assertEquals("protocols/list :: tableRows", view);
         }
 
         @Test
         void putsProtocolsAndPaginationAttributesIntoModel() {
-            ProtocolForListDTO dto = new ProtocolForListDTO(
-                    1, "П-001", LocalDate.now(), "order", ProtocolStatus.DRAFT, List.of());
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of(dto)));
+            ProtocolForListDTO dto =
+                    new ProtocolForListDTO(
+                            1, "П-001", LocalDate.now(), "order", ProtocolStatus.DRAFT, List.of());
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(dto)));
 
             controller.listProtocols(null, null, "asc", 0, 20, null, null, model);
 
@@ -84,7 +85,8 @@ class ProtocolControllerTest {
 
         @Test
         void passesSearchQueryToServiceAndModel() {
-            when(protocolService.getProtocolsForList(eq("abc"), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(eq("abc"), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols("abc", null, "asc", 0, 20, null, null, model);
 
@@ -94,66 +96,75 @@ class ProtocolControllerTest {
 
         @Test
         void appliesDefaultAscSortByNumberWhenSortNotProvided() {
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols(null, null, "asc", 0, 20, null, null, model);
 
-            verify(protocolService).getProtocolsForList(
-                    eq(null),
-                    eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "number")))
-            );
+            verify(protocolService)
+                    .getProtocolsForList(
+                            eq(null),
+                            eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "number"))));
         }
 
         @Test
         void appliesDescSortWhenRequested() {
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols(null, "date", "desc", 0, 20, null, null, model);
 
-            verify(protocolService).getProtocolsForList(
-                    eq(null),
-                    eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "date")))
-            );
+            verify(protocolService)
+                    .getProtocolsForList(
+                            eq(null),
+                            eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "date"))));
         }
 
         @Test
         void highlightIdAdjustsPageSizeWhenProtocolFound() {
             when(protocolService.getProtocolIndex(5)).thenReturn(42);
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols(null, null, "asc", 0, 20, 5, null, model);
 
             int expectedPage = 42 / 20;
             int expectedSize = 20 * (expectedPage + 1);
-            verify(protocolService).getProtocolsForList(
-                    eq(null),
-                    eq(PageRequest.of(0, expectedSize, Sort.by(Sort.Direction.ASC, "number")))
-            );
+            verify(protocolService)
+                    .getProtocolsForList(
+                            eq(null),
+                            eq(
+                                    PageRequest.of(
+                                            0,
+                                            expectedSize,
+                                            Sort.by(Sort.Direction.ASC, "number"))));
         }
 
         @Test
         void highlightIdFallsBackToDefaultPageWhenProtocolNotFound() {
             when(protocolService.getProtocolIndex(99)).thenReturn(-1);
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols(null, null, "asc", 0, 20, 99, null, model);
 
-            verify(protocolService).getProtocolsForList(
-                    eq(null),
-                    eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "number")))
-            );
+            verify(protocolService)
+                    .getProtocolsForList(
+                            eq(null),
+                            eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "number"))));
         }
 
         @Test
         void highlightIdIsIgnoredWhenPageIsNotZero() {
-            when(protocolService.getProtocolsForList(any(), any())).thenReturn(new PageImpl<>(List.of()));
+            when(protocolService.getProtocolsForList(any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
 
             controller.listProtocols(null, null, "asc", 2, 20, 5, null, model);
 
-            verify(protocolService).getProtocolsForList(
-                    eq(null),
-                    eq(PageRequest.of(2, 20, Sort.by(Sort.Direction.ASC, "number")))
-            );
+            verify(protocolService)
+                    .getProtocolsForList(
+                            eq(null),
+                            eq(PageRequest.of(2, 20, Sort.by(Sort.Direction.ASC, "number"))));
         }
     }
 
@@ -203,7 +214,9 @@ class ProtocolControllerTest {
 
         @Test
         void returnsViewWithProtocol() {
-            ProtocolDTO dto = new ProtocolDTO(1, "П-001", LocalDate.now(), "order", ProtocolStatus.DRAFT, List.of());
+            ProtocolDTO dto =
+                    new ProtocolDTO(
+                            1, "П-001", LocalDate.now(), "order", ProtocolStatus.DRAFT, List.of());
             when(protocolService.getProtocolById(1)).thenReturn(dto);
 
             String view = controller.viewProtocol(1, model);
@@ -235,7 +248,9 @@ class ProtocolControllerTest {
             assertEquals(form, model.getAttribute("protocol"));
             assertEquals(List.of(grade), model.getAttribute("grades"));
             assertEquals(List.of(kindOfTourism), model.getAttribute("kindsOfTourism"));
-            assertArrayEquals(ProtocolStatus.values(), (ProtocolStatus[]) model.getAttribute("availableStatuses"));
+            assertArrayEquals(
+                    ProtocolStatus.values(),
+                    (ProtocolStatus[]) model.getAttribute("availableStatuses"));
             assertNotNull(model.getAttribute("tourist"));
         }
     }

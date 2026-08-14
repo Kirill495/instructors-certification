@@ -1,14 +1,13 @@
 package org.tourism.instructors.domain.protocol;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,8 +34,11 @@ public class Protocol {
     @Enumerated(EnumType.STRING)
     private ProtocolStatus status;
 
-    @OneToMany(mappedBy = "protocol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "protocol",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     @OrderBy("id.rowNum ASC")
     List<ProtocolContent> protocolContents = new ArrayList<>();
-
 }

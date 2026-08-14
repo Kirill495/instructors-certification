@@ -1,6 +1,5 @@
 package org.tourism.instructors.domain.protocol;
 
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,8 +15,7 @@ import org.tourism.instructors.domain.tourist.model.Tourist;
 @NoArgsConstructor
 public class ProtocolContent {
 
-    @EmbeddedId
-    private ProtocolContentPk id;
+    @EmbeddedId private ProtocolContentPk id;
 
     @MapsId("protocolId")
     @ManyToOne(fetch = FetchType.LAZY)

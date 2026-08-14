@@ -1,5 +1,9 @@
 package org.tourism.instructors.application.user;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,19 +16,12 @@ import org.tourism.instructors.application.user.impl.UserDetailsServiceImpl;
 import org.tourism.instructors.domain.user.User;
 import org.tourism.instructors.domain.user.repository.UserRepository;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class UserDetailsServiceImplTest {
 
-    @Mock
-    UserRepository userRepository;
+    @Mock UserRepository userRepository;
 
-    @InjectMocks
-    UserDetailsServiceImpl userDetailsService;
+    @InjectMocks UserDetailsServiceImpl userDetailsService;
 
     @Test
     void returnsUserDetailsWithCorrectFields() {
@@ -45,7 +42,8 @@ class UserDetailsServiceImplTest {
     void throwsUsernameNotFoundExceptionWhenUserMissing() {
         when(userRepository.findByName("ghost")).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class,
+        assertThrows(
+                UsernameNotFoundException.class,
                 () -> userDetailsService.loadUserByUsername("ghost"));
     }
 }

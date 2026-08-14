@@ -1,13 +1,13 @@
 package org.tourism.instructors.api.catalog;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
-
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/catalog/kinds-of-tourism")
@@ -23,8 +23,9 @@ public class KindOfTourismController {
     }
 
     @GetMapping
-    public String listKindsOfTourism(@RequestParam(required = false, defaultValue = "false") boolean showInactive,
-                                     Model model) {
+    public String listKindsOfTourism(
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
+            Model model) {
         if (showInactive) {
             model.addAttribute(KINDS_ATTRIBUTE, catalogService.findAllKindsOfTourism());
         } else {
@@ -47,12 +48,14 @@ public class KindOfTourismController {
     }
 
     @PostMapping("/{id}/edit")
-    public String updateKindOfTourism(@PathVariable int id,
-                                      @ModelAttribute KindOfTourismDTO kindOfTourism,
-                                      RedirectAttributes redirectAttributes) {
+    public String updateKindOfTourism(
+            @PathVariable int id,
+            @ModelAttribute KindOfTourismDTO kindOfTourism,
+            RedirectAttributes redirectAttributes) {
         kindOfTourism.setId(id);
         catalogService.saveKindOfTourism(kindOfTourism);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно обновлен");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно обновлен");
         return REDIRECT_URL;
     }
 
@@ -63,18 +66,19 @@ public class KindOfTourismController {
     }
 
     @PostMapping("/new")
-    public String createKindOfTourism(@ModelAttribute KindOfTourismDTO kindOfTourism,
-                                      RedirectAttributes redirectAttributes) {
+    public String createKindOfTourism(
+            @ModelAttribute KindOfTourismDTO kindOfTourism, RedirectAttributes redirectAttributes) {
         catalogService.saveKindOfTourism(kindOfTourism);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно создан");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно создан");
         return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
-    public String deleteKindOfTourism(@PathVariable int id,
-                                      RedirectAttributes redirectAttributes) {
+    public String deleteKindOfTourism(@PathVariable int id, RedirectAttributes redirectAttributes) {
         catalogService.deleteKindOfTourism(id);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно удален");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Вид туризма успешно удален");
         return REDIRECT_URL;
     }
 }

@@ -1,5 +1,7 @@
 package org.tourism.instructors.api.catalog;
 
+import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
+
 import lombok.AllArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -8,8 +10,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.application.catalog.CatalogService;
 import org.tourism.instructors.application.catalog.exception.GradeNotFoundException;
 import org.tourism.instructors.application.catalog.exception.GradeUsedInProtocolsException;
-
-import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
 
 @AllArgsConstructor
 @ControllerAdvice(assignableTypes = GradeController.class)

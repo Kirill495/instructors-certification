@@ -1,5 +1,11 @@
 package org.tourism.instructors.api.bot;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,13 +24,6 @@ import org.telegram.telegrambots.meta.api.objects.webapp.WebAppData;
 import org.tourism.instructors.api.tourist.dto.TouristDTO;
 import org.tourism.instructors.application.pending.PendingTouristService;
 import org.tourism.instructors.application.tourist.TouristService;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TouristRegistrationBotTest {
@@ -45,12 +44,14 @@ class TouristRegistrationBotTest {
 
     @BeforeEach
     void setUp() {
-        bot = spy(new TouristRegistrationBot(
-                "fake-token",
-                pendingTouristService,
-                touristService,
-                chatRegistrationHandler,
-                miniAppHandler));
+        bot =
+                spy(
+                        new TouristRegistrationBot(
+                                "fake-token",
+                                pendingTouristService,
+                                touristService,
+                                chatRegistrationHandler,
+                                miniAppHandler));
         ReflectionTestUtils.setField(bot, "miniAppUrl", "https://mini-app.example.com");
     }
 
@@ -89,7 +90,8 @@ class TouristRegistrationBotTest {
 
             bot.onUpdateReceived(update);
 
-            ArgumentCaptor<AnswerCallbackQuery> answerCaptor = ArgumentCaptor.forClass(AnswerCallbackQuery.class);
+            ArgumentCaptor<AnswerCallbackQuery> answerCaptor =
+                    ArgumentCaptor.forClass(AnswerCallbackQuery.class);
             verify(bot).dispatch(answerCaptor.capture());
             assertEquals(CALLBACK_ID, answerCaptor.getValue().getCallbackQueryId());
             verify(chatRegistrationHandler).handleCommand(bot, CHAT_ID, MESSAGE_ID, "EDIT:NAME");
@@ -132,7 +134,8 @@ class TouristRegistrationBotTest {
 
             bot.onUpdateReceived(update);
 
-            verify(chatRegistrationHandler).handleStep(bot, CHAT_ID, "Иванов Иван Иванович", MESSAGE_ID);
+            verify(chatRegistrationHandler)
+                    .handleStep(bot, CHAT_ID, "Иванов Иван Иванович", MESSAGE_ID);
             verify(touristService, never()).findTouristByTelegramId(anyLong());
         }
 

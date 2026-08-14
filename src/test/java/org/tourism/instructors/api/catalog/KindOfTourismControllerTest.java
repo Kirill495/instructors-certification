@@ -1,5 +1,13 @@
 package org.tourism.instructors.api.catalog;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,23 +22,12 @@ import org.tourism.instructors.api.catalog.dto.KindOfTourismDTO;
 import org.tourism.instructors.api.catalog.dto.KindOfTourismListDTO;
 import org.tourism.instructors.application.catalog.CatalogService;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class KindOfTourismControllerTest {
 
-    @Mock
-    CatalogService catalogService;
+    @Mock CatalogService catalogService;
 
-    @InjectMocks
-    KindOfTourismController controller;
+    @InjectMocks KindOfTourismController controller;
 
     MockMvc mockMvc;
 
@@ -77,9 +74,10 @@ class KindOfTourismControllerTest {
 
         @Test
         void withShowInactiveTrue_addsAllKindsAndFlagToModel() throws Exception {
-            List<KindOfTourismListDTO> kinds = List.of(
-                    new KindOfTourismListDTO(1, "Hiking"),
-                    new KindOfTourismListDTO(2, "Cycling"));
+            List<KindOfTourismListDTO> kinds =
+                    List.of(
+                            new KindOfTourismListDTO(1, "Hiking"),
+                            new KindOfTourismListDTO(2, "Cycling"));
             when(catalogService.findAllKindsOfTourism()).thenReturn(kinds);
 
             mockMvc.perform(get("/catalog/kinds-of-tourism").param("showInactive", "true"))
@@ -125,7 +123,8 @@ class KindOfTourismControllerTest {
         void setsIdOnDtoBeforeSaving() throws Exception {
             mockMvc.perform(post("/catalog/kinds-of-tourism/7/edit"));
 
-            ArgumentCaptor<KindOfTourismDTO> captor = ArgumentCaptor.forClass(KindOfTourismDTO.class);
+            ArgumentCaptor<KindOfTourismDTO> captor =
+                    ArgumentCaptor.forClass(KindOfTourismDTO.class);
             verify(catalogService).saveKindOfTourism(captor.capture());
             assertEquals(7, captor.getValue().getId());
         }

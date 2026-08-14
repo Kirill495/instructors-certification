@@ -1,5 +1,7 @@
 package org.tourism.instructors.api.tourist.mapper;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +13,6 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(SpringExtension.class)
 @Import(ContactInfoMapperImpl.class)
 class ContactInfoMapperTest {
@@ -23,7 +23,13 @@ class ContactInfoMapperTest {
 
     @Test
     void toModel() {
-        ContactInfoItemDTO dto = new ContactInfoItemDTO(0, 0, ContactInfoType.PHONE_NUMBER, "111", new TelegramDetails(1, "@tgNickname"));
+        ContactInfoItemDTO dto =
+                new ContactInfoItemDTO(
+                        0,
+                        0,
+                        ContactInfoType.PHONE_NUMBER,
+                        "111",
+                        new TelegramDetails(1, "@tgNickname"));
         ContactInfoItem item = mapper.toModel(dto);
         assertEquals(dto.getType(), item.getType());
     }

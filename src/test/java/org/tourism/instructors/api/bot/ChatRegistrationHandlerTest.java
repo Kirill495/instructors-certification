@@ -1,5 +1,12 @@
 package org.tourism.instructors.api.bot;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+import java.time.YearMonth;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,30 +35,16 @@ import org.tourism.instructors.domain.pending.ConversationState;
 import org.tourism.instructors.domain.pending.repository.RegistrationStep;
 import org.tourism.instructors.domain.tourist.model.Gender;
 
-import java.time.YearMonth;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class ChatRegistrationHandlerTest {
 
-    @Mock
-    CatalogService catalogService;
-    @Mock
-    PendingTouristService pendingTouristService;
-    @Mock
-    ConversationStateRegistry conversationRegistry;
-    @Mock
-    BotExecutor botExecutor;
-    @Mock
-    Message message;
+    @Mock CatalogService catalogService;
+    @Mock PendingTouristService pendingTouristService;
+    @Mock ConversationStateRegistry conversationRegistry;
+    @Mock BotExecutor botExecutor;
+    @Mock Message message;
 
-    @InjectMocks
-    ChatRegistrationHandler chatRegistrationHandler;
+    @InjectMocks ChatRegistrationHandler chatRegistrationHandler;
 
     int messageId = 1;
     long chatId = 1L;
@@ -98,7 +91,8 @@ class ChatRegistrationHandlerTest {
 
             assertFalse(state.isEditing());
             assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
-            ArgumentCaptor<EditMessageText> argumentCaptor = ArgumentCaptor.forClass(EditMessageText.class);
+            ArgumentCaptor<EditMessageText> argumentCaptor =
+                    ArgumentCaptor.forClass(EditMessageText.class);
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(chatId, Long.parseLong(argumentCaptor.getValue().getChatId()));
         }
@@ -225,8 +219,11 @@ class ChatRegistrationHandlerTest {
         void handleUnknownStep() {
             state.setRegistrationStep(RegistrationStep.CHECK_INPUT);
 
-            assertThrows(UnknownQuestionnaireFieldException.class,
-                    () -> chatRegistrationHandler.handleStep(botExecutor, chatId, "text", messageId));
+            assertThrows(
+                    UnknownQuestionnaireFieldException.class,
+                    () ->
+                            chatRegistrationHandler.handleStep(
+                                    botExecutor, chatId, "text", messageId));
         }
     }
 
@@ -251,8 +248,11 @@ class ChatRegistrationHandlerTest {
         void handleUnknownCalendarCommand() {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
 
-            assertThrows(UnknownTelegramOptionException.class,
-                    () -> chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:b"));
+            assertThrows(
+                    UnknownTelegramOptionException.class,
+                    () ->
+                            chatRegistrationHandler.handleCommand(
+                                    botExecutor, chatId, messageId, "cal:b"));
             verify(conversationRegistry).get(chatId);
         }
 
@@ -261,9 +261,11 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             InlineKeyboardMarkup m = YearKeyboard.build(1000);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:YEAR_PAGE:1000");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:YEAR_PAGE:1000");
 
-            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor = ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
+            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor =
+                    ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(m, argumentCaptor.getValue().getReplyMarkup());
             assertEquals(chatId, Long.parseLong(argumentCaptor.getValue().getChatId()));
@@ -276,9 +278,11 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             InlineKeyboardMarkup m = MonthKeyboard.build(12);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT_YEAR:12");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT_YEAR:12");
 
-            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor = ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
+            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor =
+                    ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(m, argumentCaptor.getValue().getReplyMarkup());
             assertEquals(chatId, Long.parseLong(argumentCaptor.getValue().getChatId()));
@@ -291,9 +295,11 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             InlineKeyboardMarkup m = CalendarKeyboard.build(YearMonth.of(2012, 1));
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT_MONTH:2012-01");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT_MONTH:2012-01");
 
-            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor = ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
+            ArgumentCaptor<EditMessageReplyMarkup> argumentCaptor =
+                    ArgumentCaptor.forClass(EditMessageReplyMarkup.class);
 
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(m, argumentCaptor.getValue().getReplyMarkup());
@@ -308,9 +314,11 @@ class ChatRegistrationHandlerTest {
             ConversationState state = new ConversationState();
             state.setRegistrationStep(RegistrationStep.DATE_OF_BIRTH);
             when(conversationRegistry.get(chatId)).thenReturn(state);
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
 
-            ArgumentCaptor<EditMessageText> argumentCaptor = ArgumentCaptor.forClass(EditMessageText.class);
+            ArgumentCaptor<EditMessageText> argumentCaptor =
+                    ArgumentCaptor.forClass(EditMessageText.class);
 
             verify(botExecutor).dispatch(argumentCaptor.capture());
             assertEquals(chatId, Long.parseLong(argumentCaptor.getValue().getChatId()));
@@ -324,8 +332,11 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             when(conversationRegistry.get(chatId)).thenReturn(state);
 
-            assertThrows(UnknownButtonConversationException.class,
-                    () -> chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "UNKNOWN:data"));
+            assertThrows(
+                    UnknownButtonConversationException.class,
+                    () ->
+                            chatRegistrationHandler.handleCommand(
+                                    botExecutor, chatId, messageId, "UNKNOWN:data"));
         }
 
         @Test
@@ -333,7 +344,8 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             when(conversationRegistry.get(chatId)).thenReturn(null);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
 
             verify(botExecutor, never()).dispatch(any(EditMessageText.class));
         }
@@ -345,7 +357,8 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             when(conversationRegistry.get(chatId)).thenReturn(localState);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
 
             verify(botExecutor, never()).dispatch(any(EditMessageText.class));
         }
@@ -361,7 +374,8 @@ class ChatRegistrationHandlerTest {
             when(conversationRegistry.hasActive(chatId)).thenReturn(true);
             when(conversationRegistry.get(chatId)).thenReturn(localState);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "cal:SELECT:2012-01-01");
 
             assertFalse(localState.isEditing());
             assertEquals(RegistrationStep.CHECK_INPUT, localState.getRegistrationStep());
@@ -402,7 +416,8 @@ class ChatRegistrationHandlerTest {
             when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
             when(message.getMessageId()).thenReturn(messageId);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:DATE_OF_BIRTH");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "EDIT:DATE_OF_BIRTH");
 
             assertTrue(state.isEditing());
             assertEquals(RegistrationStep.DATE_OF_BIRTH, state.getRegistrationStep());
@@ -429,7 +444,8 @@ class ChatRegistrationHandlerTest {
             when(botExecutor.dispatch(any(SendMessage.class))).thenReturn(message);
             when(message.getMessageId()).thenReturn(messageId);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:KIND_OF_TOURISM");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "EDIT:KIND_OF_TOURISM");
 
             assertTrue(state.isEditing());
             assertEquals(RegistrationStep.KIND_OF_TOURISM, state.getRegistrationStep());
@@ -448,8 +464,11 @@ class ChatRegistrationHandlerTest {
 
         @Test
         void handleEditUnknownField() {
-            assertThrows(UnknownQuestionnaireFieldException.class,
-                    () -> chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "EDIT:UNKNOWN_FIELD"));
+            assertThrows(
+                    UnknownQuestionnaireFieldException.class,
+                    () ->
+                            chatRegistrationHandler.handleCommand(
+                                    botExecutor, chatId, messageId, "EDIT:UNKNOWN_FIELD"));
         }
     }
 
@@ -464,20 +483,22 @@ class ChatRegistrationHandlerTest {
         }
 
         @Test
-        void testHandleCommandOK () {
+        void testHandleCommandOK() {
             chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "CONFIRM:OK");
-            verify(botExecutor, times(1)).send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
+            verify(botExecutor, times(1))
+                    .send(chatId, "Ваша заявка принята ✅ и будет рассмотрена.");
         }
 
         @Test
-        void testHandleCommandCancel () {
+        void testHandleCommandCancel() {
             chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "CONFIRM:CANCEL");
             verify(botExecutor, times(1)).send(chatId, "Введите ФИО:");
         }
 
         @Test
         void testHandleCommandUnknownAction() {
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "CONFIRM:RESTART");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "CONFIRM:RESTART");
 
             verify(botExecutor, never()).send(eq(chatId), any(String.class));
             verify(pendingTouristService, never()).register(any());
@@ -516,7 +537,8 @@ class ChatRegistrationHandlerTest {
             when(message.getMessageId()).thenReturn(messageId);
             state.setRegistrationStep(RegistrationStep.KIND_OF_TOURISM);
 
-            chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "KIND_OF_TOURISM:1");
+            chatRegistrationHandler.handleCommand(
+                    botExecutor, chatId, messageId, "KIND_OF_TOURISM:1");
 
             assertEquals(RegistrationStep.GRADE, state.getRegistrationStep());
             ArgumentCaptor<SendMessage> argumentCaptor = ArgumentCaptor.forClass(SendMessage.class);
@@ -538,7 +560,8 @@ class ChatRegistrationHandlerTest {
             chatRegistrationHandler.handleCommand(botExecutor, chatId, messageId, "GRADE:1");
 
             assertEquals(RegistrationStep.CHECK_INPUT, state.getRegistrationStep());
-            ArgumentCaptor<BotApiMethodMessage> argumentCaptor = ArgumentCaptor.forClass(BotApiMethodMessage.class);
+            ArgumentCaptor<BotApiMethodMessage> argumentCaptor =
+                    ArgumentCaptor.forClass(BotApiMethodMessage.class);
 
             verify(botExecutor, times(2)).dispatch(argumentCaptor.capture());
         }

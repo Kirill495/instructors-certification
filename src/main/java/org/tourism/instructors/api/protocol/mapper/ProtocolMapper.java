@@ -5,14 +5,16 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.tourism.instructors.api.protocol.dto.ProtocolDTO;
-import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolForListDTO;
+import org.tourism.instructors.api.protocol.dto.ProtocolFormDTO;
 import org.tourism.instructors.api.protocol.dto.ProtocolLiteDTO;
 import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
 
-@Mapper(componentModel = "spring", uses = {ProtocolContentMapper.class})
+@Mapper(
+        componentModel = "spring",
+        uses = {ProtocolContentMapper.class})
 public interface ProtocolMapper {
 
     @Mapping(target = "contentRows", source = "protocolContents")

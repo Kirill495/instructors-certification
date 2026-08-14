@@ -23,6 +23,5 @@ public class ServiceLoggingAspect {
             log.error("{} failed: {}", method, e.getMessage());
             throw e;
         }
-
     }
 }

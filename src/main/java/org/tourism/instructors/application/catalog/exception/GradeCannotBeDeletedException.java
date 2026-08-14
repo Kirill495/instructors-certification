@@ -10,5 +10,4 @@ public abstract class GradeCannotBeDeletedException extends RuntimeException {
         super(message);
         this.gradeId = gradeId;
     }
-
 }

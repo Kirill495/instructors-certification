@@ -1,10 +1,9 @@
 package org.tourism.instructors.api.bot;
 
-import org.springframework.stereotype.Component;
-import org.tourism.instructors.domain.pending.ConversationState;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
+import org.tourism.instructors.domain.pending.ConversationState;
 
 @Component
 public class ConversationStateRegistry {
@@ -22,5 +21,4 @@ public class ConversationStateRegistry {
     public boolean hasActive(Long chatId) {
         return activeConversations.containsKey(chatId);
     }
-
 }

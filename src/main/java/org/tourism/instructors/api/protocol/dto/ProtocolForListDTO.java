@@ -1,12 +1,11 @@
 package org.tourism.instructors.api.protocol.dto;
 
-import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
-import org.tourism.instructors.domain.protocol.ProtocolStatus;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.tourism.instructors.api.tourist.dto.TouristSummaryDTO;
+import org.tourism.instructors.domain.protocol.ProtocolStatus;
 
 public record ProtocolForListDTO(
         int id,

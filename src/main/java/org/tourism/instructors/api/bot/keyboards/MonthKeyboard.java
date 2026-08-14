@@ -1,22 +1,20 @@
 package org.tourism.instructors.api.bot.keyboards;
 
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 public class MonthKeyboard {
 
-    private MonthKeyboard() {
-    }
+    private MonthKeyboard() {}
 
     private static final String[] MONTHS = {
-            "Январь", "Февраль", "Март",
-            "Апрель", "Май", "Июнь",
-            "Июль", "Август", "Сентябрь",
-            "Октябрь", "Ноябрь", "Декабрь"
+        "Январь", "Февраль", "Март",
+        "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь",
+        "Октябрь", "Ноябрь", "Декабрь"
     };
 
     public static InlineKeyboardMarkup build(int year) {

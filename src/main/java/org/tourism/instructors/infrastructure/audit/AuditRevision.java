@@ -1,13 +1,12 @@
 package org.tourism.instructors.infrastructure.audit;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.RevisionEntity;
 import org.hibernate.envers.RevisionNumber;
 import org.hibernate.envers.RevisionTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @RevisionEntity(AuditRevisionListener.class)

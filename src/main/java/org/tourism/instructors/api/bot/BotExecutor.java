@@ -1,10 +1,9 @@
 package org.tourism.instructors.api.bot;
 
+import java.io.Serializable;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-
-import java.io.Serializable;
 
 @FunctionalInterface
 public interface BotExecutor {
@@ -20,6 +19,5 @@ public interface BotExecutor {
         }
 
         dispatch(DeleteMessage.builder().chatId(chatId).messageId(messageId).build());
-
     }
 }

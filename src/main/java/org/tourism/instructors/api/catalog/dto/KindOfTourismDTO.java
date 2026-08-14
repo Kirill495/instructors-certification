@@ -17,5 +17,4 @@ public class KindOfTourismDTO {
     public boolean isNewItem() {
         return id == null;
     }
-
 }

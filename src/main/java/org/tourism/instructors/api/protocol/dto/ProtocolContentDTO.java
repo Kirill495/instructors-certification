@@ -8,6 +8,5 @@ public record ProtocolContentDTO(
         Ref kindOfTourism,
         String certificationId,
         String club) {
-    public record Ref(Integer id, String title) {
-    }
+    public record Ref(Integer id, String title) {}
 }

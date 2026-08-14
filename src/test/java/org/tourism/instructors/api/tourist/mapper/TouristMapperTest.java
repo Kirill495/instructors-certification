@@ -1,5 +1,10 @@
 package org.tourism.instructors.api.tourist.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,19 +26,13 @@ import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoItem;
 import org.tourism.instructors.domain.tourist.model.contactinfo.ContactInfoType;
 import org.tourism.instructors.domain.tourist.model.contactinfo.TelegramDetails;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 @ExtendWith(SpringExtension.class)
 @Import({
-        TouristMapperImpl.class,
-        GradeAssignmentMapperImpl.class,
-        ContactInfoMapperImpl.class,
-        GradeMapperImpl.class,
-        KindOfTourismMapperImpl.class
+    TouristMapperImpl.class,
+    GradeAssignmentMapperImpl.class,
+    ContactInfoMapperImpl.class,
+    GradeMapperImpl.class,
+    KindOfTourismMapperImpl.class
 })
 class TouristMapperTest {
 
@@ -122,36 +121,36 @@ class TouristMapperTest {
     }
 
     private List<ProtocolRepository.GradeAssignmentProjection> getAssignments() {
-        ProtocolRepository.GradeAssignmentProjection assignment = new ProtocolRepository.GradeAssignmentProjection() {
-            @Override
-            public Integer getProtocolId() {
-                return 1;
-            }
+        ProtocolRepository.GradeAssignmentProjection assignment =
+                new ProtocolRepository.GradeAssignmentProjection() {
+                    @Override
+                    public Integer getProtocolId() {
+                        return 1;
+                    }
 
-            @Override
-            public LocalDate getProtocolDate() {
-                return LocalDate.of(2020, 1, 1);
-            }
+                    @Override
+                    public LocalDate getProtocolDate() {
+                        return LocalDate.of(2020, 1, 1);
+                    }
 
-            @Override
-            public Integer getTouristId() {
-                return 1;
-            }
+                    @Override
+                    public Integer getTouristId() {
+                        return 1;
+                    }
 
-            @Override
-            public Grade getGrade() {
-                return grade;
-            }
+                    @Override
+                    public Grade getGrade() {
+                        return grade;
+                    }
 
-            @Override
-            public KindOfTourism getKindOfTourism() {
-                return kindOfTourism;
-            }
-        };
+                    @Override
+                    public KindOfTourism getKindOfTourism() {
+                        return kindOfTourism;
+                    }
+                };
 
         return List.of(assignment);
     }
-
 
     @Test
     void testPendingTouristToDTO() {
@@ -176,7 +175,6 @@ class TouristMapperTest {
         TouristDTO dto = touristMapper.toDTO((Tourist) null);
         assertNull(dto);
     }
-
 
     @Test
     void testPendingTouristToDTOWhenNull_2() {
@@ -217,7 +215,13 @@ class TouristMapperTest {
     void testToEntity() {
         TouristDTO dto = new TouristDTO();
         dto.setId(1);
-        ContactInfoItemDTO ciDTO = new ContactInfoItemDTO(1, 1, ContactInfoType.TELEGRAM, "11", new TelegramDetails(1, "@tgNickName"));
+        ContactInfoItemDTO ciDTO =
+                new ContactInfoItemDTO(
+                        1,
+                        1,
+                        ContactInfoType.TELEGRAM,
+                        "11",
+                        new TelegramDetails(1, "@tgNickName"));
         dto.setContactInfo(List.of(ciDTO));
         Tourist result = touristMapper.toEntity(dto);
         assertEquals(1, result.getId());

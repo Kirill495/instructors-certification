@@ -1,13 +1,13 @@
 package org.tourism.instructors.api.user;
 
+import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tourism.instructors.api.user.dto.UserDTO;
 import org.tourism.instructors.application.user.UserService;
-
-import static org.tourism.instructors.api.util.CommonAttributes.SUCCESS_MESSAGE_ATTRIBUTE;
 
 @Controller
 @RequestMapping("/admin/users")
@@ -36,7 +36,8 @@ public class UserController {
     @PostMapping("/new")
     public String createUser(@ModelAttribute UserDTO dto, RedirectAttributes redirectAttributes) {
         userService.createUser(dto);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно создан");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно создан");
         return REDIRECT_URL;
     }
 
@@ -47,18 +48,21 @@ public class UserController {
     }
 
     @PostMapping("/{id}/edit")
-    public String updateUser(@PathVariable int id,
-                             @ModelAttribute UserDTO dto,
-                             RedirectAttributes redirectAttributes) {
+    public String updateUser(
+            @PathVariable int id,
+            @ModelAttribute UserDTO dto,
+            RedirectAttributes redirectAttributes) {
         userService.updateUser(id, dto);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно обновлён");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно обновлён");
         return REDIRECT_URL;
     }
 
     @PostMapping("/{id}/delete")
     public String deleteUser(@PathVariable int id, RedirectAttributes redirectAttributes) {
         userService.deleteUser(id);
-        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно удалён");
+        redirectAttributes.addFlashAttribute(
+                SUCCESS_MESSAGE_ATTRIBUTE, "Пользователь успешно удалён");
         return REDIRECT_URL;
     }
 }
