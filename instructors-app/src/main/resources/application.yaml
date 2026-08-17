@@ -27,6 +27,7 @@ spring:
     baseline-on-migrate: true
     default-schema: instructors_grades
     schemas: instructors_grades
+    fail-on-missing-locations: true
 telegram:
   bot:
     token: ${TELEGRAM_BOT_TOKEN}
