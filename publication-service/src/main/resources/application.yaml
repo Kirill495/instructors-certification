@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: publication-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: publication
+    schemas: publication
+    fail-on-missing-locations: true

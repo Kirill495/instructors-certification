@@ -16,9 +16,12 @@ target/
 .factorypath
 
 # Docker files themselves
-app/Dockerfile
+*/Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Log files
+logs
 
 # Secrets and local config (passed via env vars in docker-compose)
 config/
