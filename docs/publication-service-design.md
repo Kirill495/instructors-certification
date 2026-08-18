@@ -64,6 +64,58 @@ protocol, and a separate relay moves outbox rows to Kafka with acknowledgement.
 
 ## Payload
 
+Implemented in `publication-contract` as `ProtocolSnapshot` containing a list of
+`AssignmentSnapshot`. Decided 2026-08-18.
+
+```
+ProtocolSnapshot(version, protocolId, number, date, orderNumber, publishedAt, assignments)
+AssignmentSnapshot(rowNum, lastName, firstName, middleName, grade, kindOfTourism, club,
+                   assignmentDate, validUntil)
+```
+
+Named "snapshot" rather than "event" on purpose: the name has to defend the state-transfer
+decision, or someone will start adding deltas to it.
+
+Nesting the assignments inside the protocol is also deliberate — a flat list of assignments each
+repeating a protocol id would make it possible to publish half a protocol, and the whole
+idempotency scheme rests on that being impossible.
+
+`ProtocolSnapshot` normalizes `assignments` with `List.copyOf` in its compact constructor; a record
+otherwise stores the caller's mutable list by reference. A null list fails fast with an NPE from
+`copyOf`, which is the wanted behaviour at the point the snapshot is built.
+
+### What is excluded, and why
+
+- **No internal ids** — `Tourist.id`, `Grade.id`, `KindOfTourism.id`. External consumers would start
+  referencing them and they could never be changed again. `protocolId` is the exception: it is the
+  idempotency key the consumer deletes by, it is never exposed through the public API, and keeping
+  it in the payload (rather than reading it off the Kafka key) keeps a message a self-contained
+  statement of fact — testable and dumpable without Kafka metadata.
+- **No `certificationId`.** Historical Excel data shows the same person occasionally received a
+  second number by mistake, so the field is not unique in practice. A non-unique field that looks
+  like an identifier is worse in a public registry than no identifier at all.
+- **No date of birth, gender or `contactInfo`.** This is the substance of the boundary.
+- **No `ProtocolStatus`** — only `FINALIZED` is ever published, so the field would be a constant.
+- **No `decisionType`.** The field exists in the entity and the schema but is never read or written
+  anywhere; the original intent was to distinguish a new award from a renewal. Dead fields must not
+  enter a contract — contracts are expensive to change, and it would be frozen there forever.
+
+**Consequence, accepted knowingly:** the registry cannot distinguish namesakes. A record is
+identified only by name, kind of tourism, grade and assignment date, so an external consumer may
+credit one person with another's grade. The registry is a public copy of a paper document, not a
+database about people.
+
+### `validUntil` is nullable and means "no expiry"
+
+`grades.expires_in` is a nullable column and the report query wraps it in `COALESCE(..., 0)`. Today
+every grade has a term (5, 5, 10), so nothing breaks — but a term-less grade would yield
+`assignmentDate.plusYears(0)`, i.e. a credential that expires the day it is issued.
+`ReportService` already carries this latent bug.
+
+So the monolith emits `null` for a grade with no term, the read-model column is nullable, and the
+public API renders it as "бессрочно". `null` here means "no expiry", not "unknown" — it is a value,
+not a gap.
+
 Only `FINALIZED` protocols leave the monolith. `DRAFT` never does.
 
 The payload carries **resolved values**, never foreign keys — the service has no `Grade` or

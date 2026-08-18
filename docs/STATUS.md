@@ -34,10 +34,20 @@ Related: [Publication service design](publication-service-design.md),
   set so this class of breakage fails loudly at startup.
 - Full build green: 340 tests passing.
 
+### `publication-contract`
+
+`ProtocolSnapshot` and `AssignmentSnapshot` written; module builds, spotless and checkstyle clean.
+The payload and the reasoning behind every included and excluded field are in
+[the design doc](publication-service-design.md#payload).
+
+Jacoco does not apply to this module — it is declared only in the root `pluginManagement` and the
+module does not opt in. It will apply to `publication-service` once that module declares it, which
+is intended.
+
 ## Not started
 
-`publication-service` and `publication-contract` contain a pom each and no code. No Kafka, no
-second database.
+`publication-service` contains a pom and no code. No Kafka, no second database, nothing on the
+producer side of the monolith.
 
 ## Plan for the next session
 
@@ -46,11 +56,7 @@ travel monolith → Kafka → consumer → one HTTP response, crudely, before de
 Building the service in full first means designing its storage blind and bending the contract to
 fit afterwards.
 
-1. **`publication-contract` first.** A couple of records. It is the artifact both sides depend on,
-   and writing it forces the decision about what crosses the boundary — which is the personal-data
-   decision the whole split exists for. Shape it after
-   `ProtocolRepository.ReportAssignmentProjection` plus protocol number and date, certification id,
-   and the **computed** expiry date. No FK ids, nothing from `Tourist.contactinfo`.
+1. ~~**`publication-contract` first.**~~ Done — see above.
 2. **`publication-service` skeleton.** Main class, Postgres, its own Flyway schema and history
    table, one read-model table. This also resolves the `Unable to find main class` that
    `spring-boot-maven-plugin` raises on the currently empty module.
