@@ -7,14 +7,10 @@ COPY instructors-app/pom.xml instructors-app/
 COPY publication-service/pom.xml publication-service/
 COPY checkstyle.xml .
 COPY suppressions.xml .
-# Download dependencies first (cached layer)
-#RUN mvn dependency:go-offline -q
-#RUN --mount-type=cache,target=/root/.m2/repository  \
-#    mvn -pl instructors-app -am package -DskipTest
+
 COPY publication-contract/src publication-contract/src
 COPY instructors-app/src instructors-app/src
 
-#RUN MAVEN_OPTS="-Xmx512m" mvn package -pl instructors-app -am -DskipTests -q -Dcheckstyle.skip=true -Dspotless.check.skip=true
 RUN --mount=type=cache,target=/root/.m2/repository MAVEN_OPTS="-Xmx512m" \
     mvn -pl instructors-app -am package -DskipTests  \
     -Dcheckstyle.skip=true -Dspotless.check.skip=true

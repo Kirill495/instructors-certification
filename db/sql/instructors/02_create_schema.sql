@@ -1,5 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS instructors_grades AUTHORIZATION :app_user;
 
+REVOKE ALL ON DATABASE :db_name FROM PUBLIC;
+
 GRANT CONNECT ON DATABASE :db_name TO :app_user;
 GRANT USAGE, CREATE ON SCHEMA instructors_grades TO :app_user;
 
