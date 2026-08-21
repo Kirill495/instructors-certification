@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       DB_APP_USER: ${DB_APP_USER}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sh:/docker-entrypoint-initdb.d/init.sh
@@ -20,7 +22,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: app/Dockerfile
+      dockerfile: instructors-app/Dockerfile
     ports:
       - "8081:8080"
     volumes:
@@ -28,7 +30,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/instructors?currentschema=instructors_grades
   nginx:
     image: nginx:alpine
     ports:
