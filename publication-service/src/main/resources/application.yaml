@@ -3,6 +3,8 @@ spring:
     name: publication-service
   datasource:
     driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: publication
   flyway:
     enabled: true
     locations: classpath:db/migration
