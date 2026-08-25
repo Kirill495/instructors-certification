@@ -14,8 +14,6 @@ services:
       PUB_DB_NAME: ${PUB_DB_NAME}
       PUB_APP_USER: ${PUB_APP_USER}
       PUB_APP_PASSWORD: ${PUB_APP_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,8 +26,6 @@ services:
     build:
       context: .
       dockerfile: instructors-app/Dockerfile
-    ports:
-      - "8081:8080"
     volumes:
       - ./config/secrets.yaml:/app/config/secrets.yaml
     depends_on:
@@ -47,8 +43,6 @@ services:
     build:
       context: .
       dockerfile: publication-service/Dockerfile
-    ports:
-      - "8082:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -68,6 +62,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - app
+      - publication
   kafka:
     image: apache/kafka:4.0.0
     environment:
@@ -85,8 +80,6 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: false
       KAFKA_LOG_DIRS: /var/lib/kafka/data
-    ports:
-      - "29092:29092"
     volumes:
       - kafka_data:/var/lib/kafka/data
 volumes:
