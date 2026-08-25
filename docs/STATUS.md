@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-08-21
+**Last updated**: 2026-08-25
 
 ## Done and committed
 
@@ -70,10 +70,11 @@ The monolith's Dockerfile had been silently broken by the module move — it sti
   app boots as far as needing a database. Standalone `docker run` cannot go further — the JDBC url
   lives in `config/secrets.yaml`, which compose mounts.
 
-### `publication-service` — skeleton in progress
+### `publication-service` — skeleton done, starts and migrates
 
-Written: pom with dependencies, `PublicationServiceApplication`, `application.yaml` (partial),
-`V1__initial_schema.sql`, a Dockerfile. No `ingest` or `registry` code yet.
+pom, `PublicationServiceApplication`, `application.yaml`, `V1__initial_schema.sql`, Dockerfile, and
+the service in `docker-compose.yml` on port 8082. It starts, connects to its own database and Flyway
+creates `publication.published_assignments`. No `ingest` or `registry` code yet.
 
 Schema `publication`, table `published_assignments`, primary key `(protocol_id, row_num)` — the key
 both enforces idempotent re-insert and indexes the `DELETE ... WHERE protocol_id = ?` that every
@@ -123,59 +124,169 @@ reading it. Drop it from `secrets.yaml` and from `SPRING_DATASOURCE_URL`. Collap
 `schema =` into the single `default_schema` is a separate, larger cleanup — 9 files to touch if the
 schema is ever renamed.
 
+### Second database, one Postgres instance (2026-08-22)
+
+Both services now have their own database in the **same** Postgres container. The boundary the design
+calls for is a separate *database* — Postgres cannot join across databases without FDW — and that
+property holds inside one instance. A separate container would add resource and failure isolation,
+which was never the requirement.
+
+`db/` reorganised. Executable init scripts must sit flat in `/docker-entrypoint-initdb.d/` (the
+entrypoint does not recurse into subdirectories) and run in lexicographic order, so only the SQL is
+split per database:
+
+```
+db/initdb/01_instructors.sh   02_publication.sh     -> /docker-entrypoint-initdb.d/
+db/sql/instructors/...        db/sql/publication/...
+```
+
+Each script creates its role, its database, then connects **to that database** to create the schema
+— a schema cannot be created in a database other than the one psql is connected to, so two psql
+invocations are unavoidable. Init scripts run only when the data directory is empty, i.e. only on a
+fresh volume; `down -v` is required to re-run them, and idempotency guards in them are therefore
+decorative.
+
+`REVOKE ALL ON DATABASE ... FROM PUBLIC` added on both databases. `PUBLIC` is not a group but "every
+role", and it is granted `CONNECT` and `TEMP` on every new database by default — so the pre-existing
+`GRANT CONNECT ... TO app_user` was a no-op, and the internet-facing publication service could open a
+session against the monolith's database. It could not read the data (the schema is owned by the other
+role and `PUBLIC` has no `USAGE`), but it could enumerate the catalogs and consume connection slots,
+and any future over-broad `GRANT` would have turned that into a leak.
+
+Credentials now come from `.env` through compose `environment` (`SPRING_DATASOURCE_*`), which is the
+same file the init scripts create those roles from — the password used to exist in two places and had
+to be kept in sync by hand. `publication-service` has no `secrets.yaml` at all. The monolith keeps
+one, deliberately: it also holds application-level secrets, and its datasource credentials stay there
+as the default for running on the host, where compose's environment does not exist.
+
+`.gitattributes` gained `*.sh text eol=lf`. Without it `core.autocrlf` would rewrite the new init
+scripts to CRLF on the next checkout and the db image would fail with `/bin/bash^M: bad interpreter`
+— breakage caused by a checkout, not by an edit.
+
+### Kafka in compose, topic created (2026-08-23)
+
+Single `apache/kafka:4.0.0` container in KRaft combined mode (`broker,controller`) — no ZooKeeper,
+it was removed in Kafka 4.0. Three listeners, and the reason there must be three:
+
+```
+INTERNAL://kafka:9092       for app and publication, inside the compose network
+HOST://localhost:29092      for a client on the Windows host (IDEA, console tools)
+CONTROLLER://…:9093         broker↔controller, never advertised
+```
+
+Kafka answers a metadata request over the listener the client entered through, and returns *that*
+listener's advertised address. One listener therefore cannot serve both audiences: the address would
+be right for containers or for the host, never both. `KAFKA_LISTENERS` binds on `0.0.0.0` (the
+container's eth0 address is assigned dynamically, so it cannot be written down);
+`KAFKA_ADVERTISED_LISTENERS` carries the names clients must dial.
+
+Verified with `kafka-metadata-quorum.sh describe --status`: leader 1, voters
+`[CONTROLLER://kafka:9093]`, metadata log committed — the KRaft log that replaced ZooKeeper is live.
+An empty `--list` with no error is a *good* sign: answering it requires a full metadata round trip.
+
+Auto-creation is off, so the topic is declared as a `NewTopic` bean in the **monolith**
+(`infrastructure/kafka`) — a topic belongs to whoever writes to it, and `cleanup.policy=compact` is a
+design decision that belongs beside the code depending on it. An auto-created topic would silently
+get `cleanup.policy=delete`, which is exactly wrong. Confirmed on the broker:
+`Configs: cleanup.policy=compact`, 1 partition.
+
+Partition count is deliberate, not a default: key→partition mapping changes if partitions are added
+later, and for a compacted topic that leaves stale values stranded in the old partition.
+
+### `registry` — read side done (2026-08-25)
+
+`GET /api/v1/protocols/{number}` → `ProtocolResponse` with a nested list of assignments.
+`ProtocolRegistry` uses `JdbcClient` and groups the flat rows in Java.
+
+The public url is keyed by **number**, not by `protocol_id`: the id is an internal surrogate and must
+not leak into a public contract. Numbers were checked in the real data and are unique, so the method
+returns `Optional`. The response DTOs are separate types from `publication-contract` on purpose —
+the Kafka payload is an internal contract between our own services and can be renegotiated; the HTTP
+response is public and cannot.
+
+Tested with `@JdbcTest` + Testcontainers + `@ServiceConnection`, fixture loaded via
+`@Sql("/test-data.sql")`. The fixture is built to be able to fail: `row_num` is inserted out of order
+(3, 1, 2) so a broken `ORDER BY` is visible, one row has all three nullable columns empty, and a
+second protocol exists so `WHERE` has something to filter. A mocked `JdbcClient` would have proven
+nothing here — the SQL string is the risky part, and it is neither compiled nor type-checked.
+
+Schema resolution ended up as `spring.datasource.hikari.schema: publication` in `application.yaml`.
+The schema is a property of the *application*, identical on a laptop, in a container and in a test —
+so it belongs in the app's own config, not in an environment-specific jdbc url. The
+`?currentSchema=` route worked in compose but left the test with no schema at all.
+
+### Compose split into base and dev (2026-08-24)
+
+`docker-compose.yml` now publishes only nginx's port 80. Everything that exists solely for local work
+— `5432`, `29092`, `8081`, `8082`, `5005` and the JDWP `JAVA_TOOL_OPTIONS` — moved to
+`docker-compose.dev.yml`, opted in via `COMPOSE_FILE` in `.env`. Commenting lines out before a deploy
+was rejected as the mechanism: it is a manual step someone eventually forgets, and the failure is
+silent. This way a forgotten flag breaks *local* debugging, which is noticed immediately.
+
+Published ports bind `0.0.0.0`, so on the VPS they were reachable from the internet; containers never
+needed them, since they reach each other over the compose network.
+
+nginx gained `location /api/` → `publication:8080`. Note the absent trailing slash on `proxy_pass`:
+with it, nginx would strip the matched `/api/` prefix and the controller would 404. nginx also
+resolves upstream names at startup, so `publication` had to be added to its `depends_on` or nginx
+refuses to start.
+
 ## Not started
 
-No Kafka anywhere. No `ingest` or `registry` code. Nothing on the producer side of the monolith.
-`publication-service` is not in `docker-compose.yml` yet.
+No `ingest` code. Nothing on the producer side of the monolith — the topic exists, but nobody writes
+to it yet.
 
 ## Next steps
 
-1. Commit the compose rewiring: `docker-compose.yml`, `instructors-app/pom.xml`, the deletion of
-   `app/`. One commit — it is one logical change, "the monolith build moved into its module".
-2. Finish `publication-service/application.yaml` (datasource), add the second Postgres database to
-   compose, and get the service to start and create `published_assignments` — again verified by
-   watching Flyway apply `V1` to an empty database.
-3. Only then: Kafka in compose, `ingest`, `registry`.
+Half the slice runs: a protocol already travels storage → HTTP. What is missing is everything that
+puts data into that storage.
 
-### Landmine still armed
+1. **`mvn spotless:apply` on `publication-service`.** Its sources were never formatted — every build
+   so far passed `-Dspotless.check.skip=true`, so the gate never ran. Spotless is *not* missing from
+   the module: it lives in the root `<plugins>`, which every module inherits unconditionally, unlike
+   `pluginManagement`. It works and it fails; five files need formatting.
+   Checkstyle has still never run against this module — the build died at spotless first. Expect
+   `<configLocation>checkstyle.xml</configLocation>` to break there, since the path is resolved
+   relative to each module. That debt and its fix are recorded in `CLAUDE.md`.
+2. **Commit** the read side, the compose split and the Kafka wiring.
+3. **`ingest`.** `@KafkaListener` deserialising `ProtocolSnapshot`; `DELETE WHERE protocol_id = ?`
+   then a batch insert, both in one `@Transactional` method; acknowledge the offset only after the
+   commit. At-least-once delivery plus a delete-then-insert body is idempotent by construction, so
+   redelivery is harmless — that is the whole reason the message carries a full snapshot instead of a
+   delta.
+4. **Publish from the monolith**, deliberately naive: a direct `KafkaTemplate.send` on protocol
+   finalisation. The protocol id must go into the **record key**, not just the body — compaction
+   works per key and ignores null-keyed records entirely. The transactional outbox comes only after
+   the slice runs end to end; adding it now would mean debugging two new mechanisms at once.
+   Decide and write down which protocol statuses are publishable: `number` is nullable in the
+   monolith, and a draft without a number would produce a url that cannot be addressed.
 
-`publication-service` declares only `spring-boot-maven-plugin` in its `<build>`. Surefire runs
-anyway, driven by the lifecycle, and still picks up the root `pluginManagement` configuration —
-including `-javaagent:${org.mockito:mockito-core:jar}`. Nothing sets that property there: the module
-declares neither `maven-dependency-plugin` nor mockito. It will detonate on the **first test** in the
-module, with an unhelpful "cannot start JVM" message.
+Out of scope for the slice: authentication, the outbox, tombstones, error handling, retries, DLQ.
 
-The cleaner fix is to move the surefire configuration out of the shared `pluginManagement` and into
-`instructors-app`'s own `<build><plugins>`, where mockito actually exists — rather than adding a
-dependency to `publication-service` purely to satisfy someone else's setting. Do it before writing
-the first test, not after.
+### Landmine defused
 
-## Plan for the next session
+The surefire `-javaagent:${org.mockito:mockito-core:jar}` argLine moved out of the shared
+`pluginManagement` into `instructors-app`'s own `<build><plugins>`, where mockito actually exists.
+Verified through `help:effective-pom`: `publication-service` now inherits surefire with **no**
+configuration at all, so its first test ran instead of failing on an unresolvable property.
 
-Frame the work as **one thin vertical slice**, not "finish the service": get a single protocol to
-travel monolith → Kafka → consumer → one HTTP response, crudely, before deepening any layer.
-Building the service in full first means designing its storage blind and bending the contract to
-fit afterwards.
+Mockito still self-attaches there with a warning (it arrives via `spring-boot-starter-jdbc-test`).
+Harmless today, but when that module gets its first mock the javaagent will have to be configured
+locally — this time with the mockito dependency to go with it.
 
-1. ~~**`publication-contract` first.**~~ Done — see above.
-2. **`publication-service` skeleton.** Main class, Postgres, its own Flyway schema and history
-   table, one read-model table. This also resolves the `Unable to find main class` that
-   `spring-boot-maven-plugin` raises on the currently empty module.
-3. **Kafka consumer.** Delete by key, then insert, in one DB transaction; ack the offset only after
-   the commit.
-4. **Publish from the monolith**, deliberately naive at this point (direct send on finalization).
-   The transactional outbox comes after the slice runs end to end.
-5. **One `GET` endpoint**, no auth yet.
+### Testcontainers version mix is real, not hypothetical
 
-Out of scope for that session: authentication, transactional outbox, tombstone handling, error
-handling.
+A test run logs `Testcontainers version: 2.0.3` while the root pom pins `org.testcontainers:postgresql`
+to 1.20.4. Both are true: 2.x renamed the artifacts (`postgresql` → `testcontainers-postgresql`), so
+the pin no longer shadows what the Boot BOM manages, and the classpath ends up with 1.x modules on a
+2.x core. It works for now. The migration stays its own task.
 
 ## Decide before writing code
 
-- Create the topic with `cleanup.policy=compact` from the start. The design already depends on it,
-  and changing the policy on a live topic is painful.
-- Kafka and the second Postgres database have to go into `docker-compose.yml`, or the slice cannot
-  run at all.
+- ~~The read side needs an agreed url and response shape.~~ Decided — see `registry` above.
 - Jacoco's inherited 50% threshold will bite as soon as the new module has its first class with
   logic. Agreed stance: write tests from the first class rather than exempting the module — a
-  threshold that gets waived stops meaning anything.
+  threshold that gets waived stops meaning anything. See the surefire landmine above: it detonates
+  on that same first test.
+- Deferred cleanups, none urgent: drop the dead `?currentschema=` from the jdbc urls; apply
+  `bind: { create_host_path: false }` to the single-file mounts; migrate testcontainers to 2.x.
