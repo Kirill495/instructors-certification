@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-08-25
+**Last updated**: 2026-09-02
 
 ## Done and committed
 
@@ -231,37 +231,148 @@ with it, nginx would strip the matched `/api/` prefix and the controller would 4
 resolves upstream names at startup, so `publication` had to be added to its `depends_on` or nginx
 refuses to start.
 
+### `ingest` — write side done, verified end to end (2026-09-02)
+
+A message now travels Kafka → deserialisation → validation → registry, and anything malformed lands
+in a dead-letter topic with full diagnostics. Verified on the running stack, not only by reasoning:
+a valid snapshot produced `Записан протокол 101. Строк: 1` and a row in `published_assignments`; a
+snapshot whose key (`102`) disagreed with its payload (`protocolId: 101`) went straight to the DLT
+with `kafka_dlt-exception-cause-fqcn: IncorrectProtocolIdException` and no retries.
+
+**Write is delete-then-insert by `protocol_id` in one transaction**, never an upsert by
+`(protocol_id, row_num)`. Rows do not only change, they disappear — an assignment removed from a
+protocol would leave orphans from the previous, longer version. Full replacement is the only thing
+that makes the row set exactly equal the snapshot, and it is also what makes redelivery harmless, so
+no deduplication or processed-offset table is needed.
+
+**The listener reads `protocolId` from the message key and compares it with the payload.** The key is
+not redundant: a tombstone has a `null` payload, so the key is the only source of the identifier
+there. A mismatch means a producer bug, and it fails loudly rather than corrupting the registry
+quietly.
+
+**The payload `version` is checked and an unknown value throws.** Under compaction messages never
+expire, so a consumer deployed a year from now will still read what is written today. JSON is
+lenient — unknown fields ignored, missing fields nulled — so without the check a changed field
+meaning would be misread silently. `version` is therefore part of the meta-contract: its name and
+type may never change, and the deserialiser must stay lenient about unknown properties, or a v2
+message would fail to parse before anyone could read the version out of it.
+
+#### Error policy is inverted from the usual shape
+
+Default is **retry forever** (`FixedBackOff(5s, UNLIMITED_ATTEMPTS)`); only explicitly listed
+producer bugs (`IncorrectMessageKeyException`, `IncorrectProtocolIdException`) go to the DLT, with no
+retries. The obvious arrangement — a finite number of attempts, then the DLT — would shovel perfectly
+valid snapshots into the DLT during a ten-minute Postgres outage. The rule that fell out of it:
+
+> The DLT holds what is **wrong**, never what merely arrived at a **bad moment**.
+
+That inversion also removed the need for a per-exception `setBackOffFunction`:
+`UnsupportedSnapshotVersionException` falls into the default and blocks the partition until a
+consumer that understands the new version is deployed, at which point the retry succeeds on its own.
+It is one of the few errors where an unbounded retry is a feature rather than a hang.
+
+Deserialisation failures need no entry in the list — `DeserializationException` and `ClassCastException`
+are already in spring-kafka's default fatal set. Note that `ClassCastException` being fatal means a
+*configuration* mistake (wrong deserialiser) sends valid messages to the DLT; the list is worth
+re-reading occasionally.
+
+Classification matched despite the exception arriving wrapped: spring-kafka unwraps
+`ListenerExecutionFailedException` and walks the cause chain (`traverseCauses` is on by default).
+The traversal only descends while the result is still the default, so the **outermost explicit**
+classification wins.
+
+Matching is by exact class, deliberately — a common supertype for "producer bug" was considered and
+rejected in favour of an explicit list. The cost accepted: a new exception added later defaults to
+retry-forever, i.e. a silently stuck partition, so classification must be decided when the exception
+is written.
+
+#### Dead-letter topic
+
+Named **`protocols.snapshots-dlt`**. The default suffix in spring-kafka 4.0.3 is `-dlt`, not `.DLT`
+— confirmed in `DeadLetterPublishingRecoverer`:
+`(cr, e) -> new TopicPartition(cr.topic() + "-dlt", cr.partition())`. Getting this wrong cost an
+evening, so it is written down.
+
+Declared as a `NewTopic` bean in **publication-service**, unlike the main topic which belongs to the
+producer: a DLT is not part of any contract, and the producer must not know the consumer rejects
+things. Plain `cleanup.policy=delete` with an explicit `retention.ms` — compaction would let a second
+failure for the same `protocolId` erase the record of the first, which is exactly the history the DLT
+exists to keep, and retention is also the only mechanism that ever removes the personal data sitting
+in those payloads.
+
+Values are serialised **by type** (`DelegatingByTypeSerializer`): a parsed `ProtocolSnapshot` as JSON,
+unparseable input as raw `byte[]`. Both branches have now fired in practice. The `byte[]` branch is
+the important one — running the original bytes through a JSON serialiser would base64 them and
+destroy the only evidence about a poison message.
+
+`failIfSendResultIsError` (true by default) proved itself during the wrong-topic-name incident: the
+DLT publish failed, the recoverer threw, the offset did not advance, and the record was retried
+instead of lost. "Reached the DLT" and "offset advanced" are one event.
+
+#### Jackson 2 and Jackson 3 coexist — use the Jackson 3 serialisers
+
+Boot 4 uses Jackson 3 (`tools.jackson`), where `java.time` support is built in. spring-kafka 4.0.3
+still ships the legacy `JsonSerializer` / `JsonDeserializer` on Jackson 2 (`com.fasterxml`), and
+`jackson-datatype-jsr310` is not on the classpath because Boot has no use for it. The result is a
+`InvalidDefinitionException: Java 8 date/time type java.time.LocalDate not supported by default` on
+the first message with a date.
+
+Use `JacksonJsonSerializer` / `JacksonJsonDeserializer` instead — same package, Jackson 3 underneath,
+and **the same `spring.json.*` property names**, so the switch is one line in the yaml and one in the
+producer config. Adding the Jackson 2 module was rejected: two Jackson generations with independent
+date settings in one application will diverge eventually.
+
+#### Known consequence: a stuck partition is silent
+
+Retries are logged at DEBUG (`SeekUtils`), so a message caught in the unbounded retry loop produces
+no ERROR and no WARN at default levels. The only signal is a growing consumer lag:
+`kafka-consumer-groups.sh --describe --group publication-service` — `LAG` climbing while
+`CURRENT-OFFSET` stands still. In production this is the metric to alert on.
+
 ## Not started
 
-No `ingest` code. Nothing on the producer side of the monolith — the topic exists, but nobody writes
-to it yet.
+Nothing publishes to the topic yet. The producer side of the monolith is **in progress and known
+broken**: `ProtocolProducerServiceImpl` sends a `ProtocolSnapshot` through a `KafkaTemplate<String,
+ProtocolSnapshot>`, while `instructors-app/application.yaml` still declares
+`value-serializer: StringSerializer`. Generics erase, so this compiles and fails at runtime with a
+`ClassCastException` inside the serialiser. It needs `JacksonJsonSerializer`, mirroring the consumer
+side above.
+
+No tests for `ingest` at all — everything above was verified by hand against the running stack.
 
 ## Next steps
 
-Half the slice runs: a protocol already travels storage → HTTP. What is missing is everything that
-puts data into that storage.
+Both ends of the storage exist now: a protocol travels Kafka → storage → HTTP. What is missing is a
+producer that puts anything into Kafka, and any automated proof that the write side works.
 
-1. **`mvn spotless:apply` on `publication-service`.** Its sources were never formatted — every build
-   so far passed `-Dspotless.check.skip=true`, so the gate never ran. Spotless is *not* missing from
-   the module: it lives in the root `<plugins>`, which every module inherits unconditionally, unlike
-   `pluginManagement`. It works and it fails; five files need formatting.
-   Checkstyle has still never run against this module — the build died at spotless first. Expect
+1. **`mvn spotless:apply` on `publication-service`.** Currently red — `DltProducerConfig.java` has
+   format violations. Spotless is *not* missing from the module: it lives in the root `<plugins>`,
+   which every module inherits unconditionally, unlike `pluginManagement`.
+   Checkstyle has still never run against this module — the build dies at spotless first. Expect
    `<configLocation>checkstyle.xml</configLocation>` to break there, since the path is resolved
    relative to each module. That debt and its fix are recorded in `CLAUDE.md`.
-2. **Commit** the read side, the compose split and the Kafka wiring.
-3. **`ingest`.** `@KafkaListener` deserialising `ProtocolSnapshot`; `DELETE WHERE protocol_id = ?`
-   then a batch insert, both in one `@Transactional` method; acknowledge the offset only after the
-   commit. At-least-once delivery plus a delete-then-insert body is idempotent by construction, so
-   redelivery is harmless — that is the whole reason the message carries a full snapshot instead of a
-   delta.
-4. **Publish from the monolith**, deliberately naive: a direct `KafkaTemplate.send` on protocol
+2. **Commit** the `ingest` work.
+3. **Tests for `ingest`.** Everything so far was checked by hand with a console producer, which does
+   not survive the next refactor. The cases that actually catch things, in order of value:
+   a tombstone leaves nothing behind; a smaller snapshot applied over a larger one leaves no orphan
+   rows; a neighbouring protocol is untouched in every case; an unknown `version` throws *and writes
+   nothing* (the second assertion is the one that proves the check runs before the service call);
+   a poison message does **not** look like a tombstone and must not delete anything; dates survive a
+   round trip. Applying the same snapshot twice mostly documents intent.
+   The risky part is the SQL and the transaction boundary, so most of this belongs on
+   `ProtocolIngestService` under `@JdbcTest` with Testcontainers — no Kafka. One integration test
+   with a Kafka container covers the wiring and deserialisation. In a test the unknown-version case
+   is safe: its own group, its own container, no partition anyone cares about.
+4. **Fix and finish the producer in the monolith** — see *Not started* above for the broken
+   serialiser. Deliberately naive to begin with: a direct `KafkaTemplate.send` on protocol
    finalisation. The protocol id must go into the **record key**, not just the body — compaction
    works per key and ignores null-keyed records entirely. The transactional outbox comes only after
    the slice runs end to end; adding it now would mean debugging two new mechanisms at once.
    Decide and write down which protocol statuses are publishable: `number` is nullable in the
    monolith, and a draft without a number would produce a url that cannot be addressed.
 
-Out of scope for the slice: authentication, the outbox, tombstones, error handling, retries, DLQ.
+Out of scope for the slice: authentication, the outbox, tombstone *emission* (the consumer handles
+them; nothing produces them yet).
 
 ### Landmine defused
 
