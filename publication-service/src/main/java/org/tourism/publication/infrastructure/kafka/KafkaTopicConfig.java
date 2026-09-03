@@ -10,13 +10,13 @@ import org.tourism.publication.TopicName;
 @Configuration
 public class KafkaTopicConfig {
 
-  @Bean
-  NewTopic dltTopic() {
-    return TopicBuilder.name(TopicName.PROTOCOL_SNAPSHOT_DLT)
-        .partitions(1)
-        .replicas(1)
-        .config(TopicConfig.CLEANUP_POLICY_CONFIG, "delete")
-        .config(TopicConfig.RETENTION_MS_CONFIG, "86400000")
-        .build();
-  }
+    @Bean
+    NewTopic dltTopic() {
+        return TopicBuilder.name(TopicName.PROTOCOL_SNAPSHOT_DLT)
+                .partitions(1)
+                .replicas(1)
+                .config(TopicConfig.CLEANUP_POLICY_CONFIG, "delete")
+                .config(TopicConfig.RETENTION_MS_CONFIG, "86400000")
+                .build();
+    }
 }

@@ -16,52 +16,59 @@ import org.tourism.publication.contract.ProtocolSnapshot;
 @RequiredArgsConstructor
 public class ProtocolIngestService {
 
-  private final JdbcClient jdbcClient;
-  private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final JdbcClient jdbcClient;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public void apply(int protocolId, ProtocolSnapshot protocolSnapshot) {
-    removeInner(protocolId);
+    public void apply(int protocolId, ProtocolSnapshot protocolSnapshot) {
+        removeInner(protocolId);
 
-    SqlParameterSource[] batch =
-        protocolSnapshot.assignments().stream()
-            .map(
-                a ->
-                    new MapSqlParameterSource()
-                        .addValue("protocol_id", protocolId)
-                        .addValue("protocol_date", protocolSnapshot.date())
-                        .addValue("order_number", protocolSnapshot.orderNumber())
-                        .addValue("protocol_number", protocolSnapshot.number())
-                        .addValue("row_num", a.rowNum())
-                        .addValue("last_name", a.lastName())
-                        .addValue("first_name", a.firstName())
-                        .addValue("middle_name", a.middleName())
-                        .addValue("grade", a.grade())
-                        .addValue("kind_of_tourism", a.kindOfTourism())
-                        .addValue("club", a.club())
-                        .addValue("assignment_date", a.assignmentDate())
-                        .addValue("valid_until", a.validUntil()))
-            .toArray(SqlParameterSource[]::new);
-    String sql =
-        """
+        SqlParameterSource[] batch =
+                protocolSnapshot.assignments().stream()
+                        .map(
+                                a ->
+                                        new MapSqlParameterSource()
+                                                .addValue("protocol_id", protocolId)
+                                                .addValue("protocol_date", protocolSnapshot.date())
+                                                .addValue(
+                                                        "order_number",
+                                                        protocolSnapshot.orderNumber())
+                                                .addValue(
+                                                        "protocol_number",
+                                                        protocolSnapshot.number())
+                                                .addValue("row_num", a.rowNum())
+                                                .addValue("last_name", a.lastName())
+                                                .addValue("first_name", a.firstName())
+                                                .addValue("middle_name", a.middleName())
+                                                .addValue("grade", a.grade())
+                                                .addValue("kind_of_tourism", a.kindOfTourism())
+                                                .addValue("club", a.club())
+                                                .addValue("assignment_date", a.assignmentDate())
+                                                .addValue("valid_until", a.validUntil()))
+                        .toArray(SqlParameterSource[]::new);
+        String sql =
+                """
         INSERT INTO published_assignments (protocol_id, protocol_date, order_number, protocol_number, row_num, last_name, first_name, middle_name, grade, kind_of_tourism, club, assignment_date, valid_until)
         VALUES (:protocol_id, :protocol_date, :order_number, :protocol_number, :row_num, :last_name, :first_name, :middle_name, :grade, :kind_of_tourism, :club, :assignment_date, :valid_until)
         """;
-    jdbcTemplate.batchUpdate(sql, batch);
-    log.info("Записан протокол {}. Строк: {}", protocolId, protocolSnapshot.assignments().size());
-  }
+        jdbcTemplate.batchUpdate(sql, batch);
+        log.info(
+                "Записан протокол {}. Строк: {}",
+                protocolId,
+                protocolSnapshot.assignments().size());
+    }
 
-  public void remove(int protocolId) {
-    removeInner(protocolId);
-    log.info("Удален протокол {}", protocolId);
-  }
+    public void remove(int protocolId) {
+        removeInner(protocolId);
+        log.info("Удален протокол {}", protocolId);
+    }
 
-  private void removeInner(int protocolId) {
-    jdbcClient
-        .sql(
-            """
+    private void removeInner(int protocolId) {
+        jdbcClient
+                .sql(
+                        """
                 DELETE FROM published_assignments WHERE protocol_id = :protocol_id
                     """)
-        .param("protocol_id", protocolId)
-        .update();
-  }
+                .param("protocol_id", protocolId)
+                .update();
+    }
 }

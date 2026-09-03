@@ -153,6 +153,5 @@ public class ProtocolServiceImpl implements ProtocolService {
     private void saveProtocolInner(ProtocolFormDTO protocolFormDTO) {
         Protocol protocol = protocolMapper.toEntity(protocolFormDTO);
         protocolRepository.save(protocol);
-
     }
 }

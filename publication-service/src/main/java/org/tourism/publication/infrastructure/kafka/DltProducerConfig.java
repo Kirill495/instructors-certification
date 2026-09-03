@@ -25,28 +25,28 @@ import org.tourism.publication.contract.ProtocolSnapshot;
 @Configuration
 public class DltProducerConfig {
 
-  @Bean
-  public ProducerFactory<String, Object> dltProducerFactory(KafkaProperties kafkaProperties) {
-    Map<Class<?>, Serializer<?>> delegates =
-        Map.of(
-            byte[].class, new ByteArraySerializer(),
-            ProtocolSnapshot.class, new JacksonJsonSerializer<>());
+    @Bean
+    public ProducerFactory<String, Object> dltProducerFactory(KafkaProperties kafkaProperties) {
+        Map<Class<?>, Serializer<?>> delegates =
+                Map.of(
+                        byte[].class, new ByteArraySerializer(),
+                        ProtocolSnapshot.class, new JacksonJsonSerializer<>());
 
-    return new DefaultKafkaProducerFactory<>(
-        kafkaProperties.buildProducerProperties(),
-        new StringSerializer(),
-        new DelegatingByTypeSerializer(delegates));
-  }
+        return new DefaultKafkaProducerFactory<>(
+                kafkaProperties.buildProducerProperties(),
+                new StringSerializer(),
+                new DelegatingByTypeSerializer(delegates));
+    }
 
-  @Bean
-  public KafkaTemplate<String, Object> dltKafkaTemplate(
-      ProducerFactory<String, Object> dltProducerFactory) {
-    return new KafkaTemplate<>(dltProducerFactory);
-  }
+    @Bean
+    public KafkaTemplate<String, Object> dltKafkaTemplate(
+            ProducerFactory<String, Object> dltProducerFactory) {
+        return new KafkaTemplate<>(dltProducerFactory);
+    }
 
-  @Bean
-  public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(
-      KafkaTemplate<String, Object> dltKafkaTemplate) {
-    return new DeadLetterPublishingRecoverer(dltKafkaTemplate);
-  }
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(
+            KafkaTemplate<String, Object> dltKafkaTemplate) {
+        return new DeadLetterPublishingRecoverer(dltKafkaTemplate);
+    }
 }
