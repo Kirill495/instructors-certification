@@ -255,16 +255,10 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--debug"
 - For test failures: check mocking setup, transaction handling in tests
 
 ## Current Known Issues / TODOs
-- Testcontainers pinned to 1.20.4. Boot 4 brings testcontainers-bom 2.0.3 with renamed
-  artifacts (`postgresql` -> `testcontainers-postgresql`, `junit-jupiter` ->
-  `testcontainers-junit-jupiter`). Migration deferred to its own task.
 - `checkstyle.xml` still contains layout rules that overlap with spotless
   (`EmptyLineSeparator`, `OperatorWrap`, `SeparatorWrap`, `WhitespaceAround`, ...). They will
   keep colliding one by one. Rule of thumb: if `spotless:apply` can fix it, checkstyle should
   not check it. Cleanup deliberately deferred.
-- `<configLocation>checkstyle.xml</configLocation>` is a path relative to each module. If it
-  breaks in a new module, move `checkstyle.xml` and `suppressions.xml` into a `build-tools`
-  module and attach it to the plugin as a dependency so the path becomes a classpath resource.
 
 ---
 

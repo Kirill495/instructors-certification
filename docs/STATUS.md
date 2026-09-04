@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-02
+**Last updated**: 2026-09-04
 
 ## Done and committed
 
@@ -329,6 +329,96 @@ no ERROR and no WARN at default levels. The only signal is a growing consumer la
 `kafka-consumer-groups.sh --describe --group publication-service` — `LAG` climbing while
 `CURRENT-OFFSET` stands still. In production this is the metric to alert on.
 
+### `ingest` under test on three levels (2026-09-04)
+
+16 tests in the module, all green. The split is deliberate and the timings show why:
+
+```
+ProtocolSnapshotListenerTest              8   0.3 s   plain JUnit + Mockito, no Spring
+ProtocolIngestServiceTest                 4   4.9 s   @JdbcTest + Testcontainers, no Kafka
+ProtocolSnapshotListenerIntegrationTest   3   6.9 s   @SpringBootTest + Postgres + Kafka
+ProtocolRegistryTest                      1   2.0 s
+```
+
+Each level tests what only it can, and mocking policy follows from that. In `ProtocolIngestService`
+a mocked `JdbcClient` would prove nothing — the risk lives in an SQL string that neither the compiler
+nor the type system checks — so that one needs a real database. In the listener the risk is branching
+and validation, and `ProtocolIngestService` is a boundary worth not crossing, so a mock is right
+there. Same project, opposite decisions, one criterion: where does the risk actually sit.
+
+The listener tests assert `verifyNoInteractions(service)` on every throwing path. That is the half
+people skip: `assertThrows` proves an exception was raised, not that it was raised *before* the
+service was called. Without it the checks could migrate below `service.apply(...)` and every test
+would stay green while bad data reached the registry.
+
+An unknown `version` and a mismatched key are covered together in one case, pinning the order of the
+checks: until the version is confirmed, `protocolId` from the payload is arbitrary bytes.
+
+#### The integration test earned its keep immediately
+
+It found a defect that manual testing structurally could not: `DltProducerConfig` built its
+`ProducerFactory` from `kafkaProperties.buildProducerProperties()` alone, so the DLT producer dialled
+the default `localhost:9092` instead of the broker.
+
+`@ServiceConnection` does not set the `spring.kafka.bootstrap-servers` *property* — it registers a
+`KafkaConnectionDetails` **bean**. Boot's own factories consult that bean; a hand-built factory reads
+only properties. In compose the two agree, because `SPRING_KAFKA_BOOTSTRAP_SERVERS` is a real
+environment variable — so the defect existed all along and was invisible, since the only environment
+exercising it happened to use the one mechanism the code understood.
+
+Fixed by injecting `KafkaConnectionDetails` and overriding `BOOTSTRAP_SERVERS_CONFIG` on top of the
+properties map. The bean always exists: without `@ServiceConnection`, Boot auto-configures
+`PropertiesKafkaConnectionDetails` over the same properties. **Rule: `KafkaProperties` is "what the
+config says", `KafkaConnectionDetails` is "where to actually connect". Building a client by hand, ask
+the latter.** The same applies to Boot's Docker Compose support and cloud service bindings, which
+deliver the address the same way.
+
+Worth noting how the failure presented: the DLT publish blocked for `max.block.ms`, threw,
+the offset did not advance, and the handler retried forever — at DEBUG. Both tests simply timed out
+with nothing anywhere. That is the "stuck partition is silent" consequence above, live. It also
+failed *loudly* only by luck: had anything been listening on `localhost:9092` — the compose stack, a
+stale container — the producer would have connected to the **wrong broker** with no error at all. A
+default pointing at a plausible address is more dangerous than one pointing at nothing.
+
+#### Test design decisions worth keeping
+
+- **Negative assertions need a happens-after marker.** "The rows are unchanged" is true before the
+  listener even wakes up. The DLT record is used as that marker: awaiting it proves processing
+  finished, and asserting it proves the message was preserved rather than lost. One mechanism, both
+  jobs.
+- **The poison-message and tombstone tests are a pair.** After `ErrorHandlingDeserializer`, a
+  malformed payload arrives as `value == null` — indistinguishable in shape from a tombstone. One
+  test says "null deletes", the other says "unparseable bytes do not". Separately each admits an
+  implementation that confuses them; together they prove the two are told apart. The seeded row
+  matters: without it the poison test would assert that an empty table stayed empty.
+- **The payload is a JSON literal, not a serialised object.** Serialising with the same Jackson that
+  deserialises would test a round trip of our own configuration. The literal pins the wire format,
+  which is what actually broke. Dates are asserted by value, too — parsing that *succeeded* is not
+  parsing that is *correct*.
+- Failed deserialisation goes to the DLT with no retries because `DeserializationException` is in
+  spring-kafka's default fatal list. The test asserts the `kafka_dlt-exception-fqcn` header equals
+  it — otherwise the test stays green when a message reaches the DLT for an unrelated reason. It also
+  asserts the DLT value equals the original bytes, which is the only check of the `byte[]` branch of
+  `DelegatingByTypeSerializer`.
+
+#### Testcontainers migrated to 2.x
+
+`postgresql` → `testcontainers-postgresql`, `junit-jupiter` → `testcontainers-junit-jupiter`, plus
+`testcontainers-kafka`; the `1.20.4` pin is gone from the root `dependencyManagement` and versions now
+come from the Boot BOM. Deferred since the split, it stopped being deferrable the moment a third
+testcontainers artifact had to join a knowingly inconsistent classpath.
+
+Two things to know. Packages did not move (`org.testcontainers.containers.GenericContainer` is still
+there), so existing imports mostly survived. But `PostgreSQLContainer` is **no longer generic** in
+2.x — it declares its own self-type (`extends JdbcDatabaseContainer<PostgreSQLContainer>`), so
+`PostgreSQLContainer<?>` no longer compiles.
+
+The migration also produced the third `'dependencies.dependency.version' is missing` of this project,
+and from the same cause every time: an artifact is declared that no `dependencyManagement` entry
+covers. Here the management entries were renamed while the declarations in **both** modules kept the
+old names. The diagnosis is always `help:effective-pom` — if the artifact has no `<version>` there,
+the search is over.
+
 ## Not started
 
 Nothing publishes to the topic yet. The producer side of the monolith is **in progress and known
@@ -336,43 +426,43 @@ broken**: `ProtocolProducerServiceImpl` sends a `ProtocolSnapshot` through a `Ka
 ProtocolSnapshot>`, while `instructors-app/application.yaml` still declares
 `value-serializer: StringSerializer`. Generics erase, so this compiles and fails at runtime with a
 `ClassCastException` inside the serialiser. It needs `JacksonJsonSerializer`, mirroring the consumer
-side above.
+side.
 
-No tests for `ingest` at all — everything above was verified by hand against the running stack.
+`instructors-app` also uses Mockito in 24 test files without declaring it — `dependency:analyze`
+reports it as *used undeclared*. Same debt that was just paid off in `publication-service`.
 
 ## Next steps
 
-Both ends of the storage exist now: a protocol travels Kafka → storage → HTTP. What is missing is a
-producer that puts anything into Kafka, and any automated proof that the write side works.
+The consumer side is finished and covered. What is missing is a producer that puts anything into
+Kafka at all.
 
-1. **`mvn spotless:apply` on `publication-service`.** Currently red — `DltProducerConfig.java` has
-   format violations. Spotless is *not* missing from the module: it lives in the root `<plugins>`,
-   which every module inherits unconditionally, unlike `pluginManagement`.
-   Checkstyle has still never run against this module — the build dies at spotless first. Expect
-   `<configLocation>checkstyle.xml</configLocation>` to break there, since the path is resolved
-   relative to each module. That debt and its fix are recorded in `CLAUDE.md`.
-2. **Commit** the `ingest` work.
-3. **Tests for `ingest`.** Everything so far was checked by hand with a console producer, which does
-   not survive the next refactor. The cases that actually catch things, in order of value:
-   a tombstone leaves nothing behind; a smaller snapshot applied over a larger one leaves no orphan
-   rows; a neighbouring protocol is untouched in every case; an unknown `version` throws *and writes
-   nothing* (the second assertion is the one that proves the check runs before the service call);
-   a poison message does **not** look like a tombstone and must not delete anything; dates survive a
-   round trip. Applying the same snapshot twice mostly documents intent.
-   The risky part is the SQL and the transaction boundary, so most of this belongs on
-   `ProtocolIngestService` under `@JdbcTest` with Testcontainers — no Kafka. One integration test
-   with a Kafka container covers the wiring and deserialisation. In a test the unknown-version case
-   is safe: its own group, its own container, no partition anyone cares about.
-4. **Fix and finish the producer in the monolith** — see *Not started* above for the broken
+1. **`mvn spotless:apply` on `publication-service`.** Red on two files: `DltProducerConfig.java` and
+   `ProtocolSnapshotListenerIntegrationTest.java`. Also drop the now-dead
+   `org.apache.commons.lang3.stream.Streams` import from the integration test.
+2. **Commit** the `ingest` work together with its tests.
+3. **Fix and finish the producer in the monolith** — see *Not started* above for the broken
    serialiser. Deliberately naive to begin with: a direct `KafkaTemplate.send` on protocol
    finalisation. The protocol id must go into the **record key**, not just the body — compaction
    works per key and ignores null-keyed records entirely. The transactional outbox comes only after
    the slice runs end to end; adding it now would mean debugging two new mechanisms at once.
    Decide and write down which protocol statuses are publishable: `number` is nullable in the
    monolith, and a draft without a number would produce a url that cannot be addressed.
+   Note that the monolith will need the same `KafkaConnectionDetails` discipline if it ever builds a
+   producer factory by hand rather than taking Boot's.
 
 Out of scope for the slice: authentication, the outbox, tombstone *emission* (the consumer handles
 them; nothing produces them yet).
+
+### Checkstyle in `publication-service`: the feared breakage did not happen
+
+Run on its own, `checkstyle:check` reports `0 Checkstyle violations` and succeeds. The worry recorded
+here and in `CLAUDE.md` — that `<configLocation>checkstyle.xml</configLocation>` resolves relative to
+each module and would break in a new one — **did not materialise**; the plugin finds the config. It
+was invisible until now only because the build died at spotless first.
+
+One caveat: `includeTestSourceDirectory` is not set, so checkstyle scans `src/main` only. That is why
+the dead `Streams` import in the integration test survived even though `UnusedImports` is enabled —
+the rule exists but is not pointed at test sources.
 
 ### Landmine defused
 
@@ -385,13 +475,6 @@ Mockito still self-attaches there with a warning (it arrives via `spring-boot-st
 Harmless today, but when that module gets its first mock the javaagent will have to be configured
 locally — this time with the mockito dependency to go with it.
 
-### Testcontainers version mix is real, not hypothetical
-
-A test run logs `Testcontainers version: 2.0.3` while the root pom pins `org.testcontainers:postgresql`
-to 1.20.4. Both are true: 2.x renamed the artifacts (`postgresql` → `testcontainers-postgresql`), so
-the pin no longer shadows what the Boot BOM manages, and the classpath ends up with 1.x modules on a
-2.x core. It works for now. The migration stays its own task.
-
 ## Decide before writing code
 
 - ~~The read side needs an agreed url and response shape.~~ Decided — see `registry` above.
@@ -399,5 +482,7 @@ the pin no longer shadows what the Boot BOM manages, and the classpath ends up w
   logic. Agreed stance: write tests from the first class rather than exempting the module — a
   threshold that gets waived stops meaning anything. See the surefire landmine above: it detonates
   on that same first test.
+- ~~Migrate testcontainers to 2.x.~~ Done — see above.
 - Deferred cleanups, none urgent: drop the dead `?currentschema=` from the jdbc urls; apply
-  `bind: { create_host_path: false }` to the single-file mounts; migrate testcontainers to 2.x.
+  `bind: { create_host_path: false }` to the single-file mounts; set `includeTestSourceDirectory` on
+  checkstyle so its rules reach test sources; declare Mockito explicitly in `instructors-app`.
