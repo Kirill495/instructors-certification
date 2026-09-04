@@ -2,6 +2,9 @@ package org.tourism.publication.ingest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -15,10 +18,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.tourism.publication.contract.AssignmentSnapshot;
 import org.tourism.publication.contract.ProtocolSnapshot;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
 
 @JdbcTest
 @Sql("/test-data.sql")
