@@ -1,9 +1,11 @@
 package org.tourism.publication.infrastructure.kafka;
 
 import java.util.Map;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,16 +28,19 @@ import org.tourism.publication.contract.ProtocolSnapshot;
 public class DltProducerConfig {
 
     @Bean
-    public ProducerFactory<String, Object> dltProducerFactory(KafkaProperties kafkaProperties) {
+    public ProducerFactory<String, Object> dltProducerFactory(
+            KafkaProperties kafkaProperties, KafkaConnectionDetails connectionDetails) {
         Map<Class<?>, Serializer<?>> delegates =
                 Map.of(
                         byte[].class, new ByteArraySerializer(),
                         ProtocolSnapshot.class, new JacksonJsonSerializer<>());
 
+        Map<String, Object> props = kafkaProperties.buildProducerProperties();
+        props.put(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                connectionDetails.getProducer().getBootstrapServers());
         return new DefaultKafkaProducerFactory<>(
-                kafkaProperties.buildProducerProperties(),
-                new StringSerializer(),
-                new DelegatingByTypeSerializer(delegates));
+                props, new StringSerializer(), new DelegatingByTypeSerializer(delegates));
     }
 
     @Bean
