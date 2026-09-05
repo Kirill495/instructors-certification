@@ -12,6 +12,8 @@ spring:
     schemas: publication
     fail-on-missing-locations: true
   kafka:
+    listener:
+      ack-mode: batch
     consumer:
       group-id: publication-service
       auto-offset-reset: earliest
