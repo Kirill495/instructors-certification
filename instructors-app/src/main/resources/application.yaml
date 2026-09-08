@@ -28,6 +28,12 @@ spring:
     default-schema: instructors_grades
     schemas: instructors_grades
     fail-on-missing-locations: true
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 telegram:
   bot:
     token: ${TELEGRAM_BOT_TOKEN}

@@ -14,6 +14,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              commons-io запрашивают трое: telegrambots - 2.15.1, commons-compress - 2.16.1,
+              POI - 2.18.0. По правилу "ближайший выигрывает" побеждала 2.15.1 от telegrambots,
+              и commons-compress падал с NoSuchMethodError на FileTimes.toUnixTime.
+              Закрепляем максимум из запрошенного: в пределах 2.x commons-io обратно совместим,
+              поэтому старшая версия устраивает всех, а младшая молча понижает POI.
+              Проверять после обновления зависимостей: mvn dependency:tree -Dverbose
+            -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.18.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.aspectj</groupId>
@@ -99,6 +117,11 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
@@ -106,6 +129,11 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

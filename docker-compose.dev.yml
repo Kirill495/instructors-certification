@@ -10,6 +10,9 @@ services:
       - "5004:5005"
     environment:
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,filesystem:/app/devdata
+    volumes:
+      - ./instructors-app/src/test/resources/db/migration:/app/devdata:ro
 
   publication:
     ports:

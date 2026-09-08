@@ -1,4 +1,8 @@
 
+delete from instructors_grades.protocols_content;
+delete from instructors_grades.protocols;
+delete from instructors_grades.tourists;
+
 insert into instructors_grades.tourists(id, first_name, last_name, middle_name, gender, date_of_birth, certification_id) values
 (1, 'Алексей', 'Толстой', 'Николаевич', 'MALE', '1883-01-10', '1000'),
 (2, 'Владимир', 'Набоков', 'Владимирович', 'MALE', '1899-04-22', '1001'),
@@ -9,6 +13,11 @@ insert into instructors_grades.protocols(id, number, date, order_number, status)
 (1, '100', '1990-01-01', '100', 'FINALIZED'),
 (2, '101', '1990-02-01', '101', 'FINALIZED');
 
-insert into instructors_grades.protocols_content(protocol_id, row_num, tourist_id, kind_of_tourism, grade, certification_id, decision_type) values
-(1, 1, 1, 1, 1, '1000', 'Присвоение'),
-(1, 2, 2, 1, 1, '1001', 'Присвоение')
+insert into instructors_grades.protocols_content(protocol_id, row_num, tourist_id, kind_of_tourism, grade,
+                                                 certification_id, decision_type)
+values (1, 1, 1, 1, 1, '1000', 'Присвоение'),
+       (1, 2, 2, 1, 1, '1001', 'Присвоение');
+
+
+SELECT setval(pg_get_serial_sequence('instructors_grades.tourists', 'id'), (SELECT MAX(id) FROM instructors_grades.tourists));
+SELECT setval(pg_get_serial_sequence('instructors_grades.protocols', 'id'), (SELECT MAX(id) FROM instructors_grades.protocols));

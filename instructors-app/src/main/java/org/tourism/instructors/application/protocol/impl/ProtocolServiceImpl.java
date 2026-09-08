@@ -4,18 +4,23 @@ import java.util.Comparator;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.*;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
 import org.tourism.instructors.application.protocol.ProtocolService;
+import org.tourism.instructors.application.protocol.events.ProtocolPublished;
+import org.tourism.instructors.application.protocol.events.ProtocolUnpublished;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
+import org.tourism.instructors.application.protocol.mapper.ProtocolSnapshotMapper;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
 import org.tourism.instructors.domain.protocol.ProtocolStatus;
 import org.tourism.instructors.domain.protocol.repository.ProtocolRepository;
+import org.tourism.publication.contract.ProtocolSnapshot;
 
 @Service
 @Transactional(readOnly = true)
@@ -23,11 +28,18 @@ public class ProtocolServiceImpl implements ProtocolService {
 
     private final ProtocolRepository protocolRepository;
     private final ProtocolMapper protocolMapper;
+    private final ProtocolSnapshotMapper protocolSnapshotMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public ProtocolServiceImpl(
-            ProtocolRepository protocolRepository, ProtocolMapper protocolMapper) {
+            ProtocolRepository protocolRepository,
+            ProtocolMapper protocolMapper,
+            ProtocolSnapshotMapper protocolSnapshotMapper,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.protocolRepository = protocolRepository;
         this.protocolMapper = protocolMapper;
+        this.protocolSnapshotMapper = protocolSnapshotMapper;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Override
@@ -148,10 +160,31 @@ public class ProtocolServiceImpl implements ProtocolService {
                         .findById(protocolId)
                         .orElseThrow(() -> new ProtocolNotFoundException(protocolId));
         protocolRepository.delete(protocol);
+        publishProtocolDeleted(protocol);
     }
 
     private void saveProtocolInner(ProtocolFormDTO protocolFormDTO) {
         Protocol protocol = protocolMapper.toEntity(protocolFormDTO);
         protocolRepository.save(protocol);
+        publishProtocolUpdated(protocol);
+    }
+
+    private void publishProtocolDeleted(Protocol protocol) {
+        if (protocol.getStatus() == ProtocolStatus.FINALIZED) {
+            applicationEventPublisher.publishEvent(new ProtocolUnpublished(protocol.getId()));
+        }
+    }
+
+    private void publishProtocolUpdated(Protocol protocol) {
+        if (protocol.getStatus() == ProtocolStatus.FINALIZED) {
+            Protocol pUpdated =
+                    protocolRepository
+                            .getProtocolWithContentByIDs(List.of(protocol.getId()), Sort.unsorted())
+                            .getFirst();
+            ProtocolSnapshot snapshot = protocolSnapshotMapper.toSnapshot(pUpdated);
+            applicationEventPublisher.publishEvent(new ProtocolPublished(snapshot));
+        } else {
+            applicationEventPublisher.publishEvent(new ProtocolUnpublished(protocol.getId()));
+        }
     }
 }

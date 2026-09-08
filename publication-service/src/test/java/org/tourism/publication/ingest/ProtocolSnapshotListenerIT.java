@@ -41,7 +41,7 @@ import org.tourism.publication.contract.TopicName;
 
 @SpringBootTest
 @Testcontainers
-class ProtocolSnapshotListenerIntegrationTest {
+class ProtocolSnapshotListenerIT {
 
     @Container @ServiceConnection
     static KafkaContainer kafkaContainer = new KafkaContainer("apache/kafka:4.0.0");

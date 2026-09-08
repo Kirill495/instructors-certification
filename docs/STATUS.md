@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-04
+**Last updated**: 2026-09-07
 
 ## Done and committed
 
@@ -419,39 +419,167 @@ covers. Here the management entries were renamed while the declarations in **bot
 old names. The diagnosis is always `help:effective-pom` — if the artifact has no `<version>` there,
 the search is over.
 
+### Producer side in the monolith — the slice runs end to end (2026-09-07)
+
+A protocol now travels the whole path: finalised in the UI → Kafka → `published_assignments` →
+`GET /pub/api/v1/protocols/{number}`. **Verified by hand on the running compose stack**, all four
+transitions: finalise → appears; edit a finalised protocol → updates; un-finalise → disappears;
+delete → disappears.
+
+Pieces added: `ProtocolSnapshotMapper`, a `Clock` bean, two domain events, `ProtocolPublicationListener`,
+and `sendTombstone` on the producer.
+
+#### Publish after commit, map before it
+
+The snapshot is built **inside** the transaction and sent **after** it commits. Both halves are
+forced:
+
+- inside, because `protocolContents`, `tourist`, `grade`, `kindOfTourism` are all `LAZY` — after the
+  commit there is no session left to resolve them;
+- after, because sending inside the transaction can publish a protocol whose commit then fails.
+
+The joint is an application event carrying the finished `ProtocolSnapshot`, consumed by
+`@TransactionalEventListener(phase = AFTER_COMMIT)`. Spring holds the event until the commit and then
+runs the listener on the same thread, outside the transaction. A rollback drops it silently.
+
+Events are their own types (`ProtocolPublished`, `ProtocolUnpublished`) rather than `ProtocolSnapshot`
+and `int`. Dispatch is by parameter type, so an `int` listener would mean "react to any integer
+published anywhere", and reusing the contract DTO as a domain event would make every future
+`ProtocolSnapshot` publication send to Kafka by accident.
+
+#### The write path's object graph is not a valid source for the payload
+
+`ProtocolContentMapper.toEntity` maps `tourist.id` from a form field, so MapStruct constructs a
+`Tourist` with **only the id set**. Enough for the insert — Hibernate needs the foreign key — but
+`getLastName()` on it returns `null`, with no query and no exception.
+
+So `publishProtocolUpdated` re-reads the protocol through
+`getProtocolWithContentByIDs`, which `LEFT JOIN FETCH`es both `protocolContents` and `tourist`. One
+query; `Grade` and `KindOfTourism` come from the L2 cache (ehcache, `@Cache` on both), so there is no
+N+1 — it is 1, not 1+3N.
+
+The general shape worth keeping: **an entity graph assembled for writing carries identifiers, not
+data.** Building an outbound payload from it produces a silently empty message.
+
+#### Mapper decisions
+
+- **Hand-written, not MapStruct.** Three fields out of sixteen match by name; the rest are renames
+  (`order` → `orderNumber`), dereferences (`grade.title`), embedded-key access (`id.rowNum`) and
+  computations. MapStruct's one advantage does not apply, and an explicit constructor call keeps the
+  field list auditable — which matters because the payload is the security boundary.
+- **`assignmentDate` = `protocol.date`.** There is no such column on `ProtocolContent`; the protocol's
+  date is the date the grade was awarded. A semantic decision, not a mapping detail.
+- **`expiresInYears == 0` → `validUntil = null`**, per the contract's own javadoc: null means an
+  indefinite grade. Without the branch a permanent grade would expire on the day it was issued —
+  a correct-looking date, noticed a year later if at all.
+- **`publishedAt` comes from an injected `Clock`.** Deriving it from `protocol.date` was tried and
+  rejected: it duplicated a field already in the payload, gave identical values to protocols
+  published months apart, and did not change on re-publication, so a consumer could not tell which
+  snapshot was newer. `Clock` keeps the mapper a pure function and `Clock.fixed` keeps the
+  exact-JSON test deterministic. The bean lives in its own `ClockConfig` (it was briefly in
+  `WebConfig`, which would drag MVC into every narrow test context) and uses `systemDefaultZone()`,
+  because a shared clock will eventually be used for `LocalDate.now(clock)` and UTC would give
+  yesterday's date after 03:00 Moscow time.
+
+#### Four cases, and why the previous status is not needed
+
+| Event | Published |
+|---|---|
+| saved as `FINALIZED` | snapshot |
+| saved as `DRAFT` | tombstone |
+| deleted | tombstone |
+
+The second row covers un-finalisation, the third was missing at first — a deleted protocol would have
+stayed in the public registry forever, which the design doc calls the worst kind of failure.
+
+Nothing reads the old status, because a tombstone for a never-published protocol deletes zero rows.
+The same idempotency the whole design rests on removes the need for a read-before-write.
+
+**`number` may be null and that is accepted.** Such a protocol reaches the registry but
+`findProtocolByNumber` cannot address it — present and invisible. Recorded as a decision so it is not
+mistaken for a defect later.
+
+#### Producer-side contract test
+
+`ProtocolProducerServiceIT` sends a fixed snapshot through the real `ProtocolProducerService` and
+reads the raw bytes back, asserting the **whole body** against a JSON literal, the key, and the
+absence of a `__TypeId__` header.
+
+The literal is derived from the serialiser's actual output, not written from memory — `Instant` turns
+out to be an ISO string rather than an epoch decimal, and field order follows the record's component
+order. Asserting the entire body, not selected fields, is what turns the design doc's rule "only the
+listed fields cross the boundary" from discipline into mechanics: add a field to `ProtocolSnapshot`
+and this test plus the consumer-side literal both go red.
+
+Context is narrow (`@SpringBootTest(classes = {ProtocolProducerServiceImpl.class, KafkaTopicConfig.class})`
+plus `@ImportAutoConfiguration(KafkaAutoConfiguration.class)`), so it needs neither a database nor the
+Telegram bot mocks, and it goes red only when the producer or its config breaks. `application.yaml`
+is still read, so the serialiser settings under test do apply.
+
+#### Blind spot: nothing tests the after-commit path
+
+Every write-calling test in `ProtocolServiceIT` is `@Transactional` and therefore rolls back, so
+`AFTER_COMMIT` listeners never fire there. Those tests structurally cannot cover publication.
+
+`@MockitoBean ProtocolProducerService` was added anyway, as a guard rather than a fix: correctness
+currently rests on every writing test carrying `@Transactional`, and removing one would silently turn
+a test into a real Kafka send blocking for `max.block.ms`.
+
+Covering the path for real needs a non-transactional test with manual cleanup, asserting
+`verify(producer).sendProtocol(...)`. Mocking the producer rather than `ApplicationEventPublisher` is
+deliberate: mock at the process boundary, not at internal wiring — the publisher is implemented by
+the `ApplicationContext` itself, and replacing it would silence every event in the context while
+cutting the chain before the interesting part.
+
+#### Incidental fixes
+
+- **`commons-io` pinned to 2.18.0** in `instructors-app`. Three consumers ask for it — telegrambots
+  2.15.1, commons-compress 2.16.1, POI 2.18.0 — and nearest-wins gave 2.15.1, so Testcontainers
+  crashed with `NoSuchMethodError: FileTimes.toUnixTime`. Pin the **highest** version requested, not
+  the lowest that stops the crash: the lowest silently downgrades whoever asked for more and lines up
+  the next failure of the same kind.
+- **`spring.kafka.admin.auto-create: false`** in the test profile. Adding Kafka to the monolith made
+  `KafkaAdmin` try to create topics at every context start, flooding unrelated tests with rebootstrap
+  attempts against `localhost:9092`. A reminder that a new dependency changes every test booting the
+  full context.
+- **nginx: `/api/` → `/pub/`** with a trailing slash on `proxy_pass`, so `/pub/api/v1/protocols/15`
+  reaches the service as `/api/v1/protocols/15` and `/api/` stays with the monolith. The trailing
+  slash is right *here* precisely because the external prefix differs from the application's path.
+- **Local dev data** loads through Flyway: `SPRING_FLYWAY_LOCATIONS` gains a `filesystem:/app/devdata`
+  entry in `docker-compose.dev.yml`, which mounts the fixture read-only. The file never enters the war,
+  so it cannot leak into production, and it is opted into by the same `COMPOSE_FILE` mechanism as the
+  debug ports. Renamed `V999__` → `R__dev_data.sql`: a versioned 999 would make every later real
+  migration out-of-order and Flyway would refuse it. Being repeatable, it must be idempotent —
+  it deletes before inserting — and it calls `setval` on the sequences, without which explicit ids
+  leave the sequence behind and the first record created through the UI collides.
+
 ## Not started
 
-Nothing publishes to the topic yet. The producer side of the monolith is **in progress and known
-broken**: `ProtocolProducerServiceImpl` sends a `ProtocolSnapshot` through a `KafkaTemplate<String,
-ProtocolSnapshot>`, while `instructors-app/application.yaml` still declares
-`value-serializer: StringSerializer`. Generics erase, so this compiles and fails at runtime with a
-`ClassCastException` inside the serialiser. It needs `JacksonJsonSerializer`, mirroring the consumer
-side.
+**The transactional outbox.** The remaining half of the dual-write problem is open by design: if the
+commit succeeds and the send fails, the protocol is finalised but unpublished. Today the only trace is
+an ERROR from the producer's `whenComplete`.
 
 `instructors-app` also uses Mockito in 24 test files without declaring it — `dependency:analyze`
 reports it as *used undeclared*. Same debt that was just paid off in `publication-service`.
 
 ## Next steps
 
-The consumer side is finished and covered. What is missing is a producer that puts anything into
-Kafka at all.
+The slice is closed: a protocol travels from the monolith to the public HTTP endpoint, and every
+piece except the after-commit hop has an automated test.
 
-1. **`mvn spotless:apply` on `publication-service`.** Red on two files: `DltProducerConfig.java` and
-   `ProtocolSnapshotListenerIntegrationTest.java`. Also drop the now-dead
-   `org.apache.commons.lang3.stream.Streams` import from the integration test.
-2. **Commit** the `ingest` work together with its tests.
-3. **Fix and finish the producer in the monolith** — see *Not started* above for the broken
-   serialiser. Deliberately naive to begin with: a direct `KafkaTemplate.send` on protocol
-   finalisation. The protocol id must go into the **record key**, not just the body — compaction
-   works per key and ignores null-keyed records entirely. The transactional outbox comes only after
-   the slice runs end to end; adding it now would mean debugging two new mechanisms at once.
-   Decide and write down which protocol statuses are publishable: `number` is nullable in the
-   monolith, and a draft without a number would produce a url that cannot be addressed.
-   Note that the monolith will need the same `KafkaConnectionDetails` discipline if it ever builds a
-   producer factory by hand rather than taking Boot's.
-
-Out of scope for the slice: authentication, the outbox, tombstone *emission* (the consumer handles
-them; nothing produces them yet).
+1. **`mvn spotless:apply` and a full `verify` on both modules**, then **commit** the producer side.
+   The formatting gate has not run against the new monolith sources yet.
+2. **Cover the after-commit path.** See *Blind spot* above: a non-transactional test that saves a
+   `FINALIZED` protocol and asserts `verify(producer).sendProtocol(...)`, plus the `DRAFT` and delete
+   cases asserting `sendTombstone`. This is the one part of the slice verified only by hand.
+3. **Transactional outbox.** The monolith writes an outbox row in the same transaction as the
+   protocol; a relay moves rows to Kafka with acknowledgement. What survives from today's code: the
+   mapper, the snapshot being built inside the transaction, the four publication cases, the topic,
+   key and serialiser configuration, and both contract tests. What is replaced is the
+   `@TransactionalEventListener` — roughly ten lines. Doing it now was rejected deliberately: two new
+   mechanisms at once means a lost protocol cannot be attributed to either.
+4. **Then**: authentication on the public API (API keys first — see the design doc), and deciding
+   whether `instructors-app` should stop declaring Mockito transitively.
 
 ### Checkstyle in `publication-service`: the feared breakage did not happen
 

@@ -1,7 +1,5 @@
 package org.tourism.instructors.application.protocol.events;
 
-public class ProtocolPublished extends RuntimeException {
-  public ProtocolPublished(String message) {
-    super(message);
-  }
-}
+import org.tourism.publication.contract.ProtocolSnapshot;
+
+public record ProtocolPublished(ProtocolSnapshot snapshot) {}

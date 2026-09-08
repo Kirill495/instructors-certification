@@ -27,7 +27,7 @@ import org.tourism.publication.registry.dto.ProtocolResponse;
             "logging.level.org.springframework.jdbc.core.JdbcTemplate=DEBUG",
             "logging.level.org.springframework.jdbc.core.StatementCreatorUtils=TRACE"
         })
-class ProtocolRegistryTest {
+class ProtocolRegistryIT {
 
     @Container @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");

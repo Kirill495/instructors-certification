@@ -25,8 +25,11 @@ public class IngestRetryListener implements RetryListener {
     @Override
     public void recoveryFailed(
             ConsumerRecord<?, ?> record, @Nullable Exception original, Exception failure) {
-        log.error("Ошибка при восстановлении записи messageKey={}. Исходная ошибка={}",
-                record.key(), original, failure);
+        log.error(
+                "Ошибка при восстановлении записи messageKey={}. Исходная ошибка={}",
+                record.key(),
+                original,
+                failure);
     }
 
     @Override

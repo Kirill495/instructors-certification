@@ -4,4 +4,6 @@ import org.tourism.publication.contract.ProtocolSnapshot;
 
 public interface ProtocolProducerService {
     void sendProtocol(ProtocolSnapshot protocolSnapshot);
+
+    void sendTombstone(int id);
 }

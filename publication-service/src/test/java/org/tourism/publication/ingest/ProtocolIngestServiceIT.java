@@ -24,7 +24,7 @@ import org.tourism.publication.contract.ProtocolSnapshot;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(ProtocolIngestService.class)
 @Testcontainers
-class ProtocolIngestServiceTest {
+class ProtocolIngestServiceIT {
 
     @Container @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");

@@ -47,6 +47,7 @@ class ProtocolServiceIT {
 
     @MockitoBean TouristRegistrationBot bot;
     @MockitoBean BotInitializer botInitializer;
+    @MockitoBean ProtocolProducerService producerService;
 
     @Autowired ProtocolService protocolService;
     @Autowired GradeRepository gradeRepository;

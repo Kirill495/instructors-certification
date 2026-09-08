@@ -1,9 +1,12 @@
 spring:
   jpa:
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        format_sql: false
+        format_sql: true
+  kafka:
+    admin:
+      auto-create: false
 app:
   admin:
     login: admin
