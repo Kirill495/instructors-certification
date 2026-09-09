@@ -1,9 +1,8 @@
 package org.tourism.instructors.application.protocol;
 
-import org.tourism.publication.contract.ProtocolSnapshot;
+import org.tourism.instructors.application.protocol.exception.ProtocolPublishException;
 
 public interface ProtocolProducerService {
-    void sendProtocol(ProtocolSnapshot protocolSnapshot);
 
-    void sendTombstone(int id);
+    void send(String key, String payload) throws ProtocolPublishException;
 }

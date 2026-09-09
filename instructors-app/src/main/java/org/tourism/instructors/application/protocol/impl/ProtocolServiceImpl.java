@@ -4,17 +4,15 @@ import java.util.Comparator;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tourism.instructors.api.protocol.dto.*;
 import org.tourism.instructors.api.protocol.mapper.ProtocolMapper;
 import org.tourism.instructors.application.protocol.ProtocolService;
-import org.tourism.instructors.application.protocol.events.ProtocolPublished;
-import org.tourism.instructors.application.protocol.events.ProtocolUnpublished;
 import org.tourism.instructors.application.protocol.exception.ProtocolNotFoundException;
 import org.tourism.instructors.application.protocol.mapper.ProtocolSnapshotMapper;
+import org.tourism.instructors.application.protocol.outbox.ProtocolOutboxWriter;
 import org.tourism.instructors.domain.pending.PendingTourist;
 import org.tourism.instructors.domain.protocol.Protocol;
 import org.tourism.instructors.domain.protocol.ProtocolContent;
@@ -29,17 +27,17 @@ public class ProtocolServiceImpl implements ProtocolService {
     private final ProtocolRepository protocolRepository;
     private final ProtocolMapper protocolMapper;
     private final ProtocolSnapshotMapper protocolSnapshotMapper;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ProtocolOutboxWriter protocolOutboxWriter;
 
     public ProtocolServiceImpl(
             ProtocolRepository protocolRepository,
             ProtocolMapper protocolMapper,
             ProtocolSnapshotMapper protocolSnapshotMapper,
-            ApplicationEventPublisher applicationEventPublisher) {
+            ProtocolOutboxWriter protocolOutboxWriter) {
         this.protocolRepository = protocolRepository;
         this.protocolMapper = protocolMapper;
         this.protocolSnapshotMapper = protocolSnapshotMapper;
-        this.applicationEventPublisher = applicationEventPublisher;
+        this.protocolOutboxWriter = protocolOutboxWriter;
     }
 
     @Override
@@ -171,7 +169,7 @@ public class ProtocolServiceImpl implements ProtocolService {
 
     private void publishProtocolDeleted(Protocol protocol) {
         if (protocol.getStatus() == ProtocolStatus.FINALIZED) {
-            applicationEventPublisher.publishEvent(new ProtocolUnpublished(protocol.getId()));
+            protocolOutboxWriter.enqueueTombstone(String.valueOf(protocol.getId()));
         }
     }
 
@@ -182,9 +180,9 @@ public class ProtocolServiceImpl implements ProtocolService {
                             .getProtocolWithContentByIDs(List.of(protocol.getId()), Sort.unsorted())
                             .getFirst();
             ProtocolSnapshot snapshot = protocolSnapshotMapper.toSnapshot(pUpdated);
-            applicationEventPublisher.publishEvent(new ProtocolPublished(snapshot));
+            protocolOutboxWriter.enqueue(String.valueOf(protocol.getId()), snapshot);
         } else {
-            applicationEventPublisher.publishEvent(new ProtocolUnpublished(protocol.getId()));
+            protocolOutboxWriter.enqueueTombstone(String.valueOf(protocol.getId()));
         }
     }
 }
