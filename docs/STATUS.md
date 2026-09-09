@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-07
+**Last updated**: 2026-09-10
 
 ## Done and committed
 
@@ -553,33 +553,151 @@ cutting the chain before the interesting part.
   it deletes before inserting — and it calls `setval` on the sequences, without which explicit ids
   leave the sequence behind and the first record created through the UI collides.
 
+### Transactional outbox — the dual-write hole is closed (2026-09-10)
+
+`ProtocolServiceImpl` now writes a row into `published_protocols_outbox` **in the same transaction as
+the protocol**, and a scheduled relay drains it to Kafka. "The protocol is finalised" and "the message
+is queued" became one atomic fact, so *finalised but never published* is no longer reachable: if the
+process dies between commit and send, the row is still there and the relay picks it up on restart.
+
+The estimate held. Deleted: `ProtocolPublished`, `ProtocolUnpublished`, `ProtocolPublicationListener`
+— about ten lines of wiring. Survived untouched: `ProtocolSnapshotMapper`, building the snapshot
+inside the transaction, the four publication cases, the topic/key configuration and both contract
+tests.
+
+#### The write must be a direct call, not an application event
+
+`@TransactionalEventListener(AFTER_COMMIT)` fires **after** the commit, so a listener writing the
+outbox row would open a *new* transaction — restoring exactly the hole being closed, with an extra
+layer on top. `BEFORE_COMMIT` would work, but then correctness rests on one word in an annotation:
+change it to the more familiar `AFTER_COMMIT` and the guarantee disappears silently.
+
+The decoupling argument does not apply either — `ProtocolServiceImpl` already imports
+`ProtocolSnapshot` and calls the mapper. The events existed to defer work past the commit; with an
+outbox there is nothing to defer.
+
+#### Payload is serialised at write time and never rebuilt
+
+Storing `protocol_id` and re-deriving the snapshot at send time would be wrong, and the design doc
+already says why: between commit and send someone may rename a grade in the catalogue, and the
+rebuilt payload would carry the new wording — retroactively rewriting an issued credential.
+
+**Which mapper produces those bytes matters more than it looks.** They are the wire format, pinned
+character-for-character by the contract tests. Boot's autoconfigured `ObjectMapper` is tuned for HTTP
+and may differ on dates; `JacksonMapperUtils.enhancedJsonMapper()` is the exact mapper spring-kafka
+builds for `JacksonJsonSerializer`, so using it removes the question instead of answering it. Proof
+that it worked: the serialisation path moved out of the Kafka client entirely and the byte-exact
+assertions stayed green.
+
+Consequently the producer's value serialiser went back to `StringSerializer` — the relay sends the
+stored string verbatim, with no second pass through Jackson.
+
+#### Producer: synchronous, throwing, one method
+
+`send(String key, @Nullable String payload)` blocks on `.get(5s)` and throws `ProtocolPublishException`.
+
+Returning a `CompletableFuture` was rejected: there is exactly one caller and it always has to wait —
+without the result it cannot decide whether to set `sent_at`. Merging producer and relay was rejected
+for the opposite reason: one knows the transport, the other the drain policy, and they change for
+different reasons.
+
+The pre-outbox `whenComplete` logging had to go, and not only for tidiness: a `void` method that
+logs the failure asynchronously **can never report it to the caller**, so a `try/catch` in the relay
+would have caught nothing. Tombstones collapsed into the same method — at transport level a tombstone
+is just a send with a null value; the two-method split belonged to the domain layer, which no longer
+exists here.
+
+#### Relay
+
+`@Scheduled(fixedDelay = 1000)`, single-threaded, `ORDER BY id`, synchronous send per row, `sent_at`
+written immediately after each success, `attempts` incremented only on failure, and **on failure the
+pass stops rather than skipping to the next row**.
+
+`fixedDelay` rather than `fixedRate` is load-bearing: `fixedRate` can start the next pass before the
+previous finished, and two relays running at once break ordering — which is the one property the
+whole design rests on, since an older snapshot arriving after a newer one silently overwrites it.
+
+The relay is guarded by `@ConditionalOnProperty("outbox.relay.enabled", matchIfMissing = true)` and
+switched off in the test profile — otherwise every `@SpringBootTest` would drain the outbox
+mid-assertion. `matchIfMissing` is deliberately `true`: forgetting to disable it in a test is noticed
+in one run, forgetting to enable it in production would silently publish nothing.
+
+**Constraint to remember: the relay assumes a single application instance.** Two instances would
+interleave rows and destroy ordering. `FOR UPDATE SKIP LOCKED` is the usual answer but does not
+preserve order either. Anyone scaling the monolith horizontally must solve this first.
+
+#### Rejected: skipping rows after N attempts
+
+An `attempts < threshold` filter in the relay's query was tried and removed. It looks like a safety
+valve and is in fact silent data loss.
+
+With one-second ticks and a five-second send timeout, ten attempts is about **a minute of Kafka being
+unavailable** — less than a container restart. After that the row leaves the query permanently, does
+not come back when the broker returns, and needs a manual `UPDATE ... SET attempts = 0`. One ERROR
+line, then silence.
+
+The filter also guards against a case that cannot really occur here: the payload is an
+already-validated string and `send` fails only for transport reasons, which hit every row equally —
+so skipping the head of the queue buys no progress. `attempts` remains, used only to escalate log
+level.
+
+#### Two API facts found the hard way
+
+- **pgjdbc does not accept `java.time.Instant`.** Its `PgPreparedStatement` handles `LocalDate`,
+  `LocalDateTime`, `LocalTime`, `OffsetDateTime` and `OffsetTime` — `Instant` appears nowhere, and an
+  explicit `Types.TIMESTAMP_WITH_TIMEZONE` hint does not help, because the problem is the conversion,
+  not the target type. `sent_at` is now set by the database's `now()`, matching `created_at`.
+- **A narrow `@SpringBootTest(classes = …)` context cannot host this test.** Besides missing the
+  `DataSource`, it excludes the application class — so `@EnableScheduling` never applies and the relay
+  bean is created but never ticks. The symptom would be a timeout with nothing in the log.
+
+#### Tests, and two ways they lied
+
+`ProtocolOutboxWriterIT` (3) proves the row is transactional — written inside a `TransactionTemplate`
+marked rollback-only, then asserted absent. That test only means something as a **pair** with the
+commit case: alone it would pass even if `enqueue` did nothing at all.
+
+`ProtocolPublicationIT` (2) covers the chain end to end — writer → relay → topic — and asserts
+ordering of two messages under one key, which is the property the single-threaded synchronous relay
+exists to provide.
+
+Both bugs met while writing them are worth remembering:
+
+- The test copied the relay's `WHERE sent_at IS NULL` into its own helper. In the relay that filter
+  selects unsent rows; in the test it inverted the assertion — asking for rows *not yet sent* and then
+  requiring that they *had* been sent. **Do not copy queries out of the code under test**: the test
+  then verifies that a copy matches the original rather than that the system behaves.
+- Both tests used the same message key. The outbox table can be truncated between tests, but the Kafka
+  topic cannot — a fresh consumer group with `earliest` reads the previous test's messages too, and
+  `findFirst()` by key picks whichever came first. Distinct keys per test, not just a clean table.
+
 ## Not started
 
-**The transactional outbox.** The remaining half of the dual-write problem is open by design: if the
-commit succeeds and the send fails, the protocol is finalised but unpublished. Today the only trace is
-an ERROR from the producer's `whenComplete`.
-
-`instructors-app` also uses Mockito in 24 test files without declaring it — `dependency:analyze`
-reports it as *used undeclared*. Same debt that was just paid off in `publication-service`.
+`instructors-app` uses Mockito in 24 test files without declaring it — `dependency:analyze` reports it
+as *used undeclared*. Same debt that was paid off in `publication-service`.
 
 ## Next steps
 
-The slice is closed: a protocol travels from the monolith to the public HTTP endpoint, and every
-piece except the after-commit hop has an automated test.
+The slice is closed and there is no known way to lose a publication. `mvn clean verify` on the whole
+reactor is green in about two minutes: 374 tests across four modules.
 
-1. **`mvn spotless:apply` and a full `verify` on both modules**, then **commit** the producer side.
-   The formatting gate has not run against the new monolith sources yet.
-2. **Cover the after-commit path.** See *Blind spot* above: a non-transactional test that saves a
-   `FINALIZED` protocol and asserts `verify(producer).sendProtocol(...)`, plus the `DRAFT` and delete
-   cases asserting `sendTombstone`. This is the one part of the slice verified only by hand.
-3. **Transactional outbox.** The monolith writes an outbox row in the same transaction as the
-   protocol; a relay moves rows to Kafka with acknowledgement. What survives from today's code: the
-   mapper, the snapshot being built inside the transaction, the four publication cases, the topic,
-   key and serialiser configuration, and both contract tests. What is replaced is the
-   `@TransactionalEventListener` — roughly ten lines. Doing it now was rejected deliberately: two new
-   mechanisms at once means a lost protocol cannot be attributed to either.
-4. **Then**: authentication on the public API (API keys first — see the design doc), and deciding
-   whether `instructors-app` should stop declaring Mockito transitively.
+```
+instructors-app       surefire  340      failsafe  18
+publication-service   surefire    8      failsafe   8
+```
+
+1. **`mvn spotless:apply`, then commit the outbox.** Formatting is red on
+   `ProtocolPublicationIT.java`; checkstyle reports 0 violations in every module. After that a plain
+   `mvn verify` with no skip flags should pass end to end, which is the state worth committing.
+2. **Outbox housekeeping.** Sent rows are kept deliberately (answering "was protocol 42 published, and
+   when" is worth more than a tidy table while the mechanism is young), but nothing deletes them yet —
+   a scheduled cleanup by age is needed before the table becomes the biggest one in the schema.
+3. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
+   clear model of who the client is, what it may do and how to revoke it. OAuth2 client credentials
+   earn their complexity once there are several clients.
+4. **Deferred debts**, none urgent: declare Mockito in `instructors-app`; set
+   `includeTestSourceDirectory` so checkstyle reaches test sources; drop the dead `?currentschema=`
+   from the jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts.
 
 ### Checkstyle in `publication-service`: the feared breakage did not happen
 
