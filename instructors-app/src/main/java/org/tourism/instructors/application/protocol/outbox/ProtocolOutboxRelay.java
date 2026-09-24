@@ -13,7 +13,10 @@ import org.tourism.instructors.application.protocol.ProtocolProducerService;
 import org.tourism.instructors.application.protocol.exception.ProtocolPublishException;
 
 @Slf4j
-@ConditionalOnProperty(name = "outbox.relay.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "protocols.outbox.relay.enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 @Component
 @RequiredArgsConstructor
 public class ProtocolOutboxRelay {

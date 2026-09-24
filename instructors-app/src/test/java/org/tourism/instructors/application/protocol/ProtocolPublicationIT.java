@@ -21,7 +21,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.poi.ss.usermodel.Row;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +40,7 @@ import org.tourism.publication.contract.TopicName;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(properties = "outbox.relay.enabled=true")
+@TestPropertySource(properties = "protocols.outbox.relay.enabled=true")
 @Testcontainers
 public class ProtocolPublicationIT {
 
