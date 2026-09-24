@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-10
+**Last updated**: 2026-09-24
 
 ## Done and committed
 
@@ -617,7 +617,8 @@ pass stops rather than skipping to the next row**.
 previous finished, and two relays running at once break ordering — which is the one property the
 whole design rests on, since an older snapshot arriving after a newer one silently overwrites it.
 
-The relay is guarded by `@ConditionalOnProperty("outbox.relay.enabled", matchIfMissing = true)` and
+The relay is guarded by `@ConditionalOnProperty("protocols.outbox.relay.enabled", matchIfMissing =
+true)` — the property was renamed from `outbox.relay.enabled` when the cleanup landed, see below — and
 switched off in the test profile — otherwise every `@SpringBootTest` would drain the outbox
 mid-assertion. `matchIfMissing` is deliberately `true`: forgetting to disable it in a test is noticed
 in one run, forgetting to enable it in production would silently publish nothing.
@@ -671,6 +672,124 @@ Both bugs met while writing them are worth remembering:
   topic cannot — a fresh consumer group with `earliest` reads the previous test's messages too, and
   `findFirst()` by key picks whichever came first. Distinct keys per test, not just a clean table.
 
+## Done, pending commit
+
+### Outbox retention cleanup (2026-09-24)
+
+`ProtocolOutboxCleaner` deletes sent outbox rows older than a configurable window, on a cron schedule.
+`CleanUpProperties` (`@ConfigurationProperties("protocols.outbox")`) carries `retention-days`; the cron
+expression is read straight from `${protocols.outbox.cleanup-cron}` in `@Scheduled`.
+
+```sql
+DELETE FROM instructors_grades.published_protocols_outbox
+WHERE sent_at IS NOT NULL
+  AND sent_at < now() - make_interval(days => :retention_days)
+```
+
+#### Decisions
+
+- **Only rows with a non-null `sent_at` are removed.** Rows still unsent — including the poison ones
+  the relay abandoned past `ATTEMPTS_THRESHOLD` — are never deleted here. They are the only record that
+  something failed, and nothing yet moves them to a dead-letter table or alerts on their count. That is
+  the remaining hole in the outbox lifecycle, promoted to Next steps.
+- **The boundary is exclusive.** `<`, not `<=`, so a row exactly `retention-days` old survives one more
+  run. Both sides of that edge are covered by a test.
+- **No index for this predicate, on purpose.** `idx_outbox_unsent` is partial on `sent_at IS NULL` and
+  cannot serve the cleanup, so the nightly delete is a sequential scan. An index on `sent_at` would be
+  paid on every outbox insert to speed up one statement a day.
+- **The deleted row count is logged.** `update()` returns it; without that line there is no way to tell
+  a working cleanup from one that silently matches nothing.
+- **Bad config fails at startup, not at 01:00.** `@Validated` + `@Positive` on `retentionDays` means
+  `retention-days: 0` aborts the context. A plain `int` with no validation would bind to `0` and the
+  first run would delete every sent row in the table.
+- **`cleanup-cron` is deliberately not a component of `CleanUpProperties`.** `@Scheduled` resolves
+  placeholders itself; binding the same key a second time into a field nobody reads is one more place to
+  forget when the key is renamed. The cost is recorded under metadata below.
+- **The relay and the cleaner now share one prefix.** `@ConditionalOnProperty` on `ProtocolOutboxRelay`
+  moved from `outbox.relay.enabled` to `protocols.outbox.relay.enabled`, with `application-test.yaml`
+  and `ProtocolPublicationIT` following. Two config roots for one subsystem was a rename waiting to
+  bite.
+
+#### `@ConfigurationProperties` on a record does not survive `@Validated`
+
+Three failures in a row, each with a different cause:
+
+1. **`@Validated` on the record component instead of the type.** It compiles — the annotation targets
+   `METHOD` and `PARAMETER`, so it lands on the accessor and the constructor parameter. But Boot looks
+   for it on the **type**: `ConfigurationPropertiesBinder` adds the JSR-303 validator only when
+   `target.getAnnotation(Validated.class) != null`, and `Bindable` carries type annotations. Validation
+   was simply off, with nothing to show for it.
+2. **`@Validated` on the type, with a record.** `Cannot subclass final class CleanUpProperties`. Method
+   validation wants an AOP proxy, `spring.aop.proxy-target-class=true` selects CGLIB, CGLIB proxies by
+   subclassing, records are `final`. JDK proxies are no escape — a record implements no interface.
+3. So `CleanUpProperties` became an ordinary class (`@Getter` + `@RequiredArgsConstructor`; a single
+   parameterised constructor, so Boot still uses constructor binding). The alternative that keeps the
+   record is a check in the compact constructor: the binder calls the canonical constructor, so it
+   fails at startup all the same, with no AOP involved.
+
+A fourth failure came from mixing mechanisms — `@Value("retention-days")` left on the field next to
+`@ConfigurationProperties`. `@Value` without `${…}` is a literal, and field injection wins the race:
+`Failed to convert value of type 'java.lang.String' to required type 'int'; For input string:
+"retention-days"`. The two are competing ways to fill the same field; pick one.
+
+#### Tests, and a negative test that passed for the wrong reason
+
+`ProtocolOutboxCleanerIT` (2) covers the SQL against a real Postgres: one method for the mixed
+population (old sent / never sent / just sent), one for the boundary at ±1 minute. Kept as two
+multi-assertion methods on purpose — the combination of states in one table is what production looks
+like.
+
+The first version of the mixed-population test had three rows but only **two** states: two of them had
+`sent_at IS NULL`. An implementation that dropped the age condition and deleted everything with a
+non-null `sent_at` would have passed it. The "sent, but recently" row is what makes the test mean
+anything.
+
+`ProtocolOutboxCleanerTest` (2) checks the properties binding with `ApplicationContextRunner`, no
+container: `retention-days=0` must abort the context, `retention-days=1` must bind to `1`. Two traps on
+the way:
+
+- `withUserConfiguration(CleanUpProperties.class)` registers the class as an **ordinary bean**. The
+  `@ConfigurationProperties` infrastructure is absent from a bare runner, so Spring autowired the
+  constructor instead of binding it: `No qualifying bean of type 'int' available`. Both tests failed
+  identically — and the negative one **reported success**, because `hasFailed()` was satisfied by the
+  wrong failure. A negative test is only trustworthy next to a positive one. Fixed with a nested
+  `@EnableConfigurationProperties(CleanUpProperties.class)` configuration class.
+- `hasMessageContaining` inspects only the top exception's own message. The field name lives two levels
+  down in `BindValidationException`; the top `ConfigurationPropertiesBindException` says nothing but
+  "Could not bind properties … prefix=protocols.outbox". Assert through `rootCause()` (or
+  `hasStackTraceContaining`) and pin the exception type, not just a substring.
+
+Testcontainers 2.0 detail worth recording: `org.testcontainers.postgresql.PostgreSQLContainer` is
+**not** generic — the self-type is fixed inside. The generic `PostgreSQLContainer<SELF>` is the older
+`org.testcontainers.containers` one.
+
+#### `spring-boot-configuration-processor` was on the classpath and doing nothing
+
+Adding it to `<dependencies>` is the usual recipe and here it was inert: once
+`<annotationProcessorPaths>` is configured, the plugin passes javac an explicit `-processorpath`, which
+**disables processor discovery on the classpath entirely**. The list becomes closed — MapStruct, Lombok,
+their binding, and nothing else. No error, no warning, just no metadata.
+
+It also needs an explicit `<version>`: paths in that block are resolved by the plugin's own code, which
+in `maven-compiler-plugin` 3.11.0 does not consult `dependencyManagement` — hence `version can neither
+be null, empty nor blank`, and hence the explicit versions already sitting on the Lombok and MapStruct
+entries. `${project.parent.version}` is a trap here: the block is inherited, so in `instructors-app` it
+resolves to the aggregator's `0.0.1-SNAPSHOT` rather than Boot's version. A `spring-boot.version`
+property in the root pom is the plain fix. From 3.13.0 there is an opt-in
+`annotationProcessorPathsUseDepMgmt` (default `false`) that would remove the duplication.
+
+`target/classes/META-INF/spring-configuration-metadata.json` is now generated and holds
+`protocols.outbox.retention-days`. It does **not** hold `cleanup-cron`, and cannot: placeholder keys
+never reach the binder, so the processor has nothing to describe. The IDE will keep flagging that one
+key as unresolved — expected, not a defect.
+
+#### Verification
+
+`mvnw -pl instructors-app -am spotless:check` is green across all three modules, so the formatting debt
+on `ProtocolPublicationIT.java` recorded earlier is paid. Tests reported green locally; a full
+`mvn clean verify` on the reactor has not been re-run since these changes, so the counts under Next
+steps are from the previous session.
+
 ## Not started
 
 `instructors-app` uses Mockito in 24 test files without declaring it — `dependency:analyze` reports it
@@ -678,26 +797,30 @@ as *used undeclared*. Same debt that was paid off in `publication-service`.
 
 ## Next steps
 
-The slice is closed and there is no known way to lose a publication. `mvn clean verify` on the whole
-reactor is green in about two minutes: 374 tests across four modules.
+The slice is closed and there is no known way to lose a publication. Retention cleanup now bounds the
+table's growth. The counts below are from the previous session — a full `mvn clean verify` has not been
+re-run since the cleanup landed:
 
 ```
 instructors-app       surefire  340      failsafe  18
 publication-service   surefire    8      failsafe   8
 ```
 
-1. **`mvn spotless:apply`, then commit the outbox.** Formatting is red on
-   `ProtocolPublicationIT.java`; checkstyle reports 0 violations in every module. After that a plain
-   `mvn verify` with no skip flags should pass end to end, which is the state worth committing.
-2. **Outbox housekeeping.** Sent rows are kept deliberately (answering "was protocol 42 published, and
-   when" is worth more than a tidy table while the mechanism is young), but nothing deletes them yet —
-   a scheduled cleanup by age is needed before the table becomes the biggest one in the schema.
+1. **Run `mvn clean verify` with no skip flags, then commit the working tree**, split by area rather
+   than as one lump: the build change (configuration processor), the relay property rename, and the
+   cleanup with its tests are three independent stories.
+2. **Poison rows.** The cleaner deliberately never touches rows with `sent_at IS NULL`, so rows the
+   relay abandoned past `ATTEMPTS_THRESHOLD` accumulate forever with nothing watching them. Cheapest
+   useful step is a metric or a log line on their count; a dead-letter table is the fuller answer.
+   Decide which before the first one appears in production.
 3. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
    clear model of who the client is, what it may do and how to revoke it. OAuth2 client credentials
    earn their complexity once there are several clients.
 4. **Deferred debts**, none urgent: declare Mockito in `instructors-app`; set
    `includeTestSourceDirectory` so checkstyle reaches test sources; drop the dead `?currentschema=`
-   from the jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts.
+   from the jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts;
+   add `additional-spring-configuration-metadata.json` for `cleanup-cron` if the unresolved-key
+   warning in the IDE starts to annoy.
 
 ### Checkstyle in `publication-service`: the feared breakage did not happen
 
