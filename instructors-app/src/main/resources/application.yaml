@@ -34,6 +34,11 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
         spring.json.add.type.headers: false
+
+protocols:
+  outbox:
+    retention-days: 30
+    cleanup-cron: "0 0 1 * * *"
 telegram:
   bot:
     token: ${TELEGRAM_BOT_TOKEN}
