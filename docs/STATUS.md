@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-24
+**Last updated**: 2026-09-25
 
 ## Done and committed
 
@@ -672,8 +672,6 @@ Both bugs met while writing them are worth remembering:
   topic cannot — a fresh consumer group with `earliest` reads the previous test's messages too, and
   `findFirst()` by key picks whichever came first. Distinct keys per test, not just a clean table.
 
-## Done, pending commit
-
 ### Outbox retention cleanup (2026-09-24)
 
 `ProtocolOutboxCleaner` deletes sent outbox rows older than a configurable window, on a cron schedule.
@@ -785,42 +783,143 @@ key as unresolved — expected, not a defect.
 
 #### Verification
 
-`mvnw -pl instructors-app -am spotless:check` is green across all three modules, so the formatting debt
-on `ProtocolPublicationIT.java` recorded earlier is paid. Tests reported green locally; a full
-`mvn clean verify` on the reactor has not been re-run since these changes, so the counts under Next
-steps are from the previous session.
+The formatting debt on `ProtocolPublicationIT.java` recorded earlier is paid — `spotless:check` is green
+across every module. Committed as `260ba4c`, `d8d9f0b`, `1b255ee`, `ff0653d`.
+
+### Poison rows: the relay no longer blocks the queue (2026-09-25)
+
+Option B from the dead-letter discussion: a `dead_at` marker in the outbox table rather than a separate
+DLQ table. Migration `V7` adds `dead_at timestamptz` and `error_message`, `readRows` filters on
+`dead_at IS NULL`, and the retention cleaner needs no change — its `sent_at IS NOT NULL` never matched
+those rows anyway.
+
+#### The bug this fixes was worse than "rows accumulate"
+
+`ATTEMPTS_THRESHOLD` only ever escalated the log level. It touched neither the query nor the control
+flow, and the loop did `break` on the first failure. So a row that could **never** be sent stayed first
+by `id` for ever, and everything behind it was never published either — head-of-line blocking, not
+merely a growing table.
+
+The reasoning recorded above for that `break` ("`send` fails only for transport reasons, which hit every
+row equally") was right about transport and incomplete about everything else. `RecordTooLargeException`
+— a protocol with enough assignments to exceed `max.request.size` — is permanent, row-specific, and
+reachable. So are authorization errors and `InvalidTopicException`.
+
+#### Deadness is decided by exception type, not by an attempt count
+
+The first attempt at a fix used `attempts >= ATTEMPTS_THRESHOLD` as the death signal. That **loses
+data**: there is no backoff, `fixedDelay` is one second, so a 15-second broker restart burns the whole
+ten-attempt budget on a perfectly healthy row and buries it. It traded a recoverable stall for
+unrecoverable loss — the wrong direction for a service whose entire point is that publications do not
+vanish.
+
+`attempts` cannot distinguish "the broker is down" from "this row is poison". Only the exception can.
+`ProtocolPublishException` is now `abstract` with two subclasses, and `ProtocolProducerServiceImpl`
+decides between them on `e.getCause() instanceof RetriableException` — Kafka's own marker interface for
+what is worth repeating. The classification lives in the producer because that is the only class that
+should know Kafka internals; the relay reads two `catch` blocks and nothing else.
+
+`ATTEMPTS_THRESHOLD` is back to its original job: log level only. "The broker has been down for three
+days" is a question for monitoring, not for a counter that deletes work.
+
+#### `break` belongs to the retryable branch
+
+Getting these backwards costs asymmetrically, and it was gotten backwards once:
+
+- **retryable** means every remaining row will fail identically → `break`. Without it a broker outage
+  walks all 100 rows of the batch, each blocking on `.get(5, SECONDS)`, turning one tick into ~500
+  seconds and logging all 100 at ERROR once they cross the threshold.
+- **permanent** means only this row is bad → carry on. A dead row should cost the rest of its tick,
+  nothing more.
+
+A second reason for `break` on retryable: `InterruptedException` re-sets the interrupt flag, so during
+shutdown every later `.get()` in the same tick throws instantly and would otherwise run the counter up
+on the entire batch in microseconds.
+
+#### Tests
+
+`ProtocolOutboxRelayIT` (3), and the shape matters: **each case needs two rows in the table**. With one
+row `break` and its absence look identical — a single-row test would have passed against the exact bug
+being fixed. The cases are permanent-then-next-row-sent, retryable-then-next-row-untouched, and
+dead-row-not-selected-at-all.
+
+The relay is built by hand (`new ProtocolOutboxRelay(producer, jdbcClient)`) rather than taken from the
+context. Enabling the bean would also start its one-second schedule, and the background ticks race the
+test; constructing it directly keeps `relay.enabled=false` intact and the test deterministic.
+
+#### Two build debts closed, one lesson about where they hide
+
+The Mockito javaagent was configured for surefire in `instructors-app` only. `ProtocolOutboxRelayIT` was
+the project's first mock under **failsafe**, which surfaced the other half of the landmine recorded
+below. Both plugins in both modules now carry the agent, and `mockito-core` is declared explicitly
+instead of arriving through `spring-boot-starter-test`.
+
+The mechanism is worth writing down because it looks like magic and is not: `${groupId:artifactId:type}`
+is **not** a surefire feature. It is an ordinary Maven property, colons and all, set by
+`maven-dependency-plugin`'s `properties` goal. In the root pom that plugin sits in `<pluginManagement>`,
+which configures but does **not activate** — `instructors-app` listed it under `<build><plugins>`,
+`publication-service` did not. So the placeholder reached the JVM verbatim there and the fork died with
+`Error occurred during initialization of VM`. Same cause made jacoco inert in that module: no `.exec`
+file was ever produced, and the 50% threshold everyone assumed was guarding it was guarding nothing.
+
+Both plugins are now activated in `publication-service`. Coverage is measured there for the first time
+and **passes** on the tests that were already written.
+
+A smaller lesson: `ProtocolOutboxRelayIT` shipped with `import static org.junit.jupiter.api.Assertions.*`
+and nothing objected. Spotless does not expand star imports, and checkstyle's `AvoidStarImport` never
+looked at the file — `includeTestSourceDirectory` is still unset. That deferred debt has a concrete cost
+now, not a hypothetical one.
 
 ## Not started
 
-`instructors-app` uses Mockito in 24 test files without declaring it — `dependency:analyze` reports it
-as *used undeclared*. Same debt that was paid off in `publication-service`.
+Observability. Neither module has `actuator` or `micrometer` — for two processes joined by a queue that
+means consumer lag, outbox depth and a non-empty DLT are invisible except by reading logs. This moved
+from "nice to have" to "needed" the moment rows started being marked dead: nothing removes them, and
+nothing watches them.
 
 ## Next steps
 
-The slice is closed and there is no known way to lose a publication. Retention cleanup now bounds the
-table's growth. The counts below are from the previous session — a full `mvn clean verify` has not been
-re-run since the cleanup landed:
+**The split as architecture is finished.** Every mechanism in the design doc is implemented and under
+test: separate database and Flyway, state transfer with the protocol id as message key, tombstones,
+compaction, the transactional outbox, an idempotent consumer, the public read endpoint, retention, and
+now dead-row handling. There is no "remove it from the monolith" stage — all nineteen monolith
+controllers are internal, so the registry was added rather than moved. What remains is hardening and the
+public-facing authentication.
+
+`mvn verify` on the whole reactor is green, with no model warnings and no Mockito self-attach warning
+anywhere. Coverage checks pass in both modules:
 
 ```
-instructors-app       surefire  340      failsafe  18
-publication-service   surefire    8      failsafe   8
+instructors-app       surefire 342      failsafe 23
+publication-service   surefire   8      failsafe   8      → 381 tests
 ```
 
-1. **Run `mvn clean verify` with no skip flags, then commit the working tree**, split by area rather
-   than as one lump: the build change (configuration processor), the relay property rename, and the
-   cleanup with its tests are three independent stories.
-2. **Poison rows.** The cleaner deliberately never touches rows with `sent_at IS NULL`, so rows the
-   relay abandoned past `ATTEMPTS_THRESHOLD` accumulate forever with nothing watching them. Cheapest
-   useful step is a metric or a log line on their count; a dead-letter table is the fuller answer.
-   Decide which before the first one appears in production.
-3. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
-   clear model of who the client is, what it may do and how to revoke it. OAuth2 client credentials
-   earn their complexity once there are several clients.
-4. **Deferred debts**, none urgent: declare Mockito in `instructors-app`; set
-   `includeTestSourceDirectory` so checkstyle reaches test sources; drop the dead `?currentschema=`
-   from the jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts;
-   add `additional-spring-configuration-metadata.json` for `cleanup-cron` if the unresolved-key
-   warning in the IDE starts to annoy.
+Ordered by what would hurt most if left alone:
+
+1. **Observability.** `actuator` + `micrometer`, then the three signals that matter: consumer lag, a
+   non-empty DLT (always an incident), and outbox rows with `sent_at IS NULL` older than ~15 minutes.
+   That last one is deliberately time-based: `attempts` crosses any threshold within seconds of a brief
+   broker hiccup, so it cannot tell an outage from a stuck row. Do this **before** authentication —
+   while there are no external clients the cost of being blind is zero, and on the day the first one
+   arrives it is at its highest. Dead rows in particular are now produced, never cleaned, and watched by
+   nobody.
+2. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
+   clear model of who the client is, what it may do and how to revoke it. Keys live in the service's own
+   database — reading the monolith's `User` table is exactly the coupling the split removed. OAuth2
+   client credentials earn their complexity once there are several clients.
+3. **Decide how durable the topic really is.** The design argues that a compacted topic makes the
+   service database a cache that can be dropped and rebuilt, which is what excuses it from backups. But
+   `replicas(1)` on a single broker means that source of truth lives on one disk with no copy. Either
+   run RF ≥ 3 with `min.insync.replicas=2` in production, or accept that the service database needs
+   backing up after all. Replication factor, unlike partition count, can still be changed later — a
+   reassignment is tedious but does not break per-key ordering.
+4. **Deferred debts.** Set `includeTestSourceDirectory` so checkstyle reaches test sources — this one
+   has already cost something, see the star import above. Then: drop the dead `?currentschema=` from the
+   jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts; add
+   `additional-spring-configuration-metadata.json` for `cleanup-cron` if the unresolved-key warning in
+   the IDE starts to annoy. A dedicated DLQ table remains the fuller answer to dead rows, worth building
+   when the first real one appears and not before — it needs its own retention policy, which is the
+   opposite of the outbox's: dead rows are incidents, not noise.
 
 ### Checkstyle in `publication-service`: the feared breakage did not happen
 
@@ -844,14 +943,28 @@ Mockito still self-attaches there with a warning (it arrives via `spring-boot-st
 Harmless today, but when that module gets its first mock the javaagent will have to be configured
 locally — this time with the mockito dependency to go with it.
 
+**Fully defused 2026-09-25.** Both modules now configure the agent on surefire *and* failsafe, and both
+declare `mockito-core`. Two corrections to the account above. First, failsafe needed it in
+`publication-service` too, even though no integration test there mentions Mockito: every `@SpringBootTest`
+drags in `MockitoTestExecutionListener`, which initialises the inline mock maker whether or not mocks
+were declared. Second, moving the argLine into a module is not enough on its own —
+`maven-dependency-plugin` has to be activated in that module as well, or `${org.mockito:mockito-core:jar}`
+never becomes a property and reaches the JVM as a literal.
+
 ## Decide before writing code
 
 - ~~The read side needs an agreed url and response shape.~~ Decided — see `registry` above.
-- Jacoco's inherited 50% threshold will bite as soon as the new module has its first class with
-  logic. Agreed stance: write tests from the first class rather than exempting the module — a
-  threshold that gets waived stops meaning anything. See the surefire landmine above: it detonates
-  on that same first test.
+- ~~Jacoco's inherited 50% threshold will bite as soon as the new module has its first class with
+  logic.~~ Settled 2026-09-25, and not the way it was expected to be. The threshold never bit because
+  jacoco was never *active* in `publication-service`: the plugin sat in the root `<pluginManagement>`
+  and only `instructors-app` listed it under `<build><plugins>`, so not one `.exec` file was produced
+  there. Now activated — and the agreed stance paid off on its own: the tests written from the first
+  class clear 50% with nothing waived.
 - ~~Migrate testcontainers to 2.x.~~ Done — see above.
+- How durable the topic has to be — RF ≥ 3 with `min.insync.replicas=2`, or backups for the service
+  database. See Next steps; the design's "the topic is the backup" argument does not hold at
+  `replicas(1)`.
 - Deferred cleanups, none urgent: drop the dead `?currentschema=` from the jdbc urls; apply
   `bind: { create_host_path: false }` to the single-file mounts; set `includeTestSourceDirectory` on
-  checkstyle so its rules reach test sources; declare Mockito explicitly in `instructors-app`.
+  checkstyle so its rules reach test sources. ~~Declare Mockito explicitly in `instructors-app`.~~ Done
+  2026-09-25.
