@@ -1,6 +1,7 @@
 package org.tourism.instructors.application.protocol.exception;
 
-public class ProtocolPublishException extends RuntimeException {
+public abstract sealed class ProtocolPublishException extends RuntimeException
+        permits ProtocolPublishPermanentException, ProtocolPublishRetryableException {
 
     public ProtocolPublishException(Throwable cause) {
         super(cause);

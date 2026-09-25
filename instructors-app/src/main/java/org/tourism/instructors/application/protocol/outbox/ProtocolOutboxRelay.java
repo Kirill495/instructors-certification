@@ -1,7 +1,6 @@
 package org.tourism.instructors.application.protocol.outbox;
 
 import java.sql.Types;
-import java.time.Clock;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +9,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.tourism.instructors.application.protocol.ProtocolProducerService;
-import org.tourism.instructors.application.protocol.exception.ProtocolPublishException;
+import org.tourism.instructors.application.protocol.exception.ProtocolPublishPermanentException;
+import org.tourism.instructors.application.protocol.exception.ProtocolPublishRetryableException;
 
 @Slf4j
 @ConditionalOnProperty(
@@ -25,7 +25,6 @@ public class ProtocolOutboxRelay {
 
     private final ProtocolProducerService protocolProducerService;
     private final JdbcClient jdbcClient;
-    private final Clock clock;
 
     @Scheduled(fixedDelayString = "1000")
     public void send() {
@@ -35,9 +34,11 @@ public class ProtocolOutboxRelay {
             try {
                 protocolProducerService.send(row.messageKey(), row.payload());
                 markSent(row);
-            } catch (ProtocolPublishException e) {
+            } catch (ProtocolPublishRetryableException e) {
                 markFailed(row, e);
                 break;
+            } catch (ProtocolPublishPermanentException e) {
+                markPermanentFail(row, e);
             }
         }
     }
@@ -46,22 +47,58 @@ public class ProtocolOutboxRelay {
         List<Row> rows =
                 jdbcClient
                         .sql(
-"""
-SELECT id, message_key, payload, attempts FROM instructors_grades.published_protocols_outbox WHERE sent_at is null order by id
-""")
+                                """
+            SELECT
+                id, message_key, payload, attempts
+            FROM
+                instructors_grades.published_protocols_outbox
+            WHERE
+                sent_at IS NULL
+                AND dead_at IS NULL
+            ORDER BY
+                id
+            """)
                         .withMaxRows(100)
                         .query(Row.class)
                         .list();
         return rows;
     }
 
-    private void markFailed(Row row, Exception e) {
+    private void markPermanentFail(Row row, ProtocolPublishPermanentException e) {
         int currentAttempt = row.attempts() + 1;
         jdbcClient
                 .sql(
-"""
-UPDATE instructors_grades.published_protocols_outbox SET attempts = :attempts WHERE id = :id
-""")
+                        """
+                UPDATE instructors_grades.published_protocols_outbox
+                SET
+                    attempts = :attempts,
+                    dead_at = now(),
+                    error_message = :error_message
+                WHERE
+                    id = :id
+                """)
+                .param("id", row.id, Types.BIGINT)
+                .param("attempts", currentAttempt, Types.INTEGER)
+                .param("error_message", e.getMessage())
+                .update();
+        log.error(
+                "Невосстановимая ошибка при отправке протокола id={}, messageKey={}.",
+                row.id(),
+                row.messageKey(),
+                e);
+    }
+
+    private void markFailed(Row row, ProtocolPublishRetryableException e) {
+        int currentAttempt = row.attempts() + 1;
+        jdbcClient
+                .sql(
+                        """
+                UPDATE instructors_grades.published_protocols_outbox
+                SET
+                    attempts = :attempts
+                WHERE
+                    id = :id
+                """)
                 .param("id", row.id, Types.BIGINT)
                 .param("attempts", currentAttempt, Types.INTEGER)
                 .update();
@@ -72,7 +109,7 @@ UPDATE instructors_grades.published_protocols_outbox SET attempts = :attempts WH
                     row.messageKey(),
                     currentAttempt,
                     e);
-        } else if (currentAttempt >= ATTEMPTS_THRESHOLD) {
+        } else {
             log.error(
                     "Ошибка при отправке протокола id={}, messageKey={}, попытка={}. "
                             + "Достигнут максимальный порог повторных попыток",
