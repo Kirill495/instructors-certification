@@ -161,30 +161,15 @@
 					<version>${javoco.version}</version>
 					<executions>
 						<execution>
-							<id>check</id>
-							<goals>
-								<goal>check</goal>
-							</goals>
-							<configuration>
-								<dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
-								<rules>
-									<rule>
-										<element>BUNDLE</element>
-										<limits>
-											<limit>
-												<counter>INSTRUCTION</counter>
-												<value>COVEREDRATIO</value>
-												<minimum>0.50</minimum>
-											</limit>
-										</limits>
-									</rule>
-								</rules>
-							</configuration>
-						</execution>
-
-						<execution>
 							<goals>
 								<goal>prepare-agent</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>report</id>
+							<phase>test</phase>
+							<goals>
+								<goal>report</goal>
 							</goals>
 						</execution>
 						<execution>
@@ -199,15 +184,8 @@
 							</configuration>
 						</execution>
 						<execution>
-							<id>report</id>
-							<phase>test</phase>
-							<goals>
-								<goal>report</goal>
-							</goals>
-						</execution>
-						<execution>
 							<id>report-integration</id>
-							<phase>verify</phase>
+							<phase>post-integration-test</phase>
 							<goals>
 								<goal>report-integration</goal>
 							</goals>
@@ -217,7 +195,7 @@
 						</execution>
 						<execution>
 							<id>merge-results</id>
-							<phase>verify</phase>
+							<phase>post-integration-test</phase>
 							<goals>
 								<goal>merge</goal>
 							</goals>
@@ -243,6 +221,28 @@
 							<configuration>
 								<dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
 								<outputDirectory>${project.reporting.outputDirectory}/jacoco-merged</outputDirectory>
+							</configuration>
+						</execution>
+						<execution>
+							<id>check</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>check</goal>
+							</goals>
+							<configuration>
+								<dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+								<rules>
+									<rule>
+										<element>BUNDLE</element>
+										<limits>
+											<limit>
+												<counter>INSTRUCTION</counter>
+												<value>COVEREDRATIO</value>
+												<minimum>0.50</minimum>
+											</limit>
+										</limits>
+									</rule>
+								</rules>
 							</configuration>
 						</execution>
 					</executions>
