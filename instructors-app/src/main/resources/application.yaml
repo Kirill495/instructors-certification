@@ -21,6 +21,7 @@ spring:
           use_second_level_cache: true
           region.factory_class: jcache
       org.hibernate.envers.default_schema: instructors_grades
+    open-in-view: false
   flyway:
     enabled: true
     locations: classpath:db/migration
