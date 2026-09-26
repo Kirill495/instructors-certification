@@ -329,6 +329,46 @@ no ERROR and no WARN at default levels. The only signal is a growing consumer la
 `kafka-consumer-groups.sh --describe --group publication-service` — `LAG` climbing while
 `CURRENT-OFFSET` stands still. In production this is the metric to alert on.
 
+#### Offsets are committed per poll batch — and `enable-auto-commit` must stay off
+
+`spring.kafka.listener.ack-mode: batch`. The container commits offsets once, after every record
+returned by a single `poll()` has been processed. Three different "batches" meet in this service and are
+worth keeping apart:
+
+| What | Boundary | Set by |
+|------|----------|--------|
+| Offset commit | all records of one `poll()` | `ack-mode: batch` |
+| Database transaction | **one snapshot** | `@Transactional` on `ProtocolIngestService` |
+| JDBC statement batch | all rows of one protocol | `jdbcTemplate.batchUpdate` |
+
+Note that the commit boundary is wider than the transaction boundary. The listener takes a single
+`ConsumerRecord`, not a `List` — this is **not** a batch listener, records arrive one at a time and each
+is applied in its own transaction. If the fourth record of ten fails, the first three are already
+committed in the database while no offset has been committed yet, so a restart replays all ten. That is
+safe only because the consumer is idempotent by construction — delete-by-key, then insert. Re-reading a
+snapshot that was already applied produces the same state. This is the same property that makes
+at-least-once delivery harmless, now doing a second job.
+
+**`spring.kafka.consumer.enable-auto-commit=true` must never be set.** The guarantee the design rests on
+is "acknowledge the offset only after the database transaction commits", and auto-commit breaks it
+outright: the Kafka client then commits on a timer, with no idea whether the record was processed. An
+offset can be committed for a snapshot whose transaction later rolled back — and since nothing ever
+re-reads it, the registry silently diverges from the monolith for that protocol. For an attestation
+registry that is the worst failure mode: not an outage, a quiet lie.
+
+Two details that make this easy to get wrong:
+
+- **The safety comes from leaving the property unset, not from setting it to `false`.** Spring Kafka's
+  `ListenerConsumer` forces `enable.auto.commit=false` when the property is absent from the consumer
+  configuration. Absence is the working configuration.
+- **Setting it to `true` is not rejected here.** With a manual ack mode the container throws at startup.
+  With `ack-mode: batch` it does not — the container simply stops managing offsets and `ack-mode` becomes
+  dead configuration. No error, no warning, and the yaml still *looks* like it says what it used to say.
+
+It would also disable the retry path: `DefaultErrorHandler` with
+`FixedBackOff(DEFAULT_INTERVAL, UNLIMITED_ATTEMPTS)` works by not advancing the committed offset while it
+retries. Auto-commit moves the offset out from under it.
+
 ### `ingest` under test on three levels (2026-09-04)
 
 16 tests in the module, all green. The split is deliberate and the timings show why:
