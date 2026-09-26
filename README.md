@@ -71,7 +71,7 @@ outbox** — монолит пишет строку в outbox в той же т�
 - **Обмен сообщениями:** Apache Kafka (Spring for Apache Kafka)
 - **Шаблонизатор:** Thymeleaf (только монолит)
 - **База данных:** PostgreSQL + Flyway, по одной базе на сервис
-- **Кэш:** Spring Cache + Ehcache (JCache)
+- **Кэш:** второй уровень Hibernate — Ehcache через JCache (абстракция Spring Cache не используется)
 - **Аудит:** Hibernate Envers (история изменений сущностей)
 - **Telegram-бот:** TelegramBots 6.9.7.1
 - **Сборка:** Maven (multi-module), Spotless (google-java-format, AOSP), Checkstyle, JaCoCo
@@ -175,6 +175,8 @@ docker compose up --build
 
 `verify` прогоняет интеграционные тесты через Testcontainers, поэтому **нужен запущенный Docker**.
 Порог покрытия — 50% инструкций на модуль (JaCoCo, по объединённым данным unit- и IT-прогонов).
+Отчёты складываются в `target/site/`: `jacoco` — только unit-тесты, `jacoco-it` — только интеграционные,
+`jacoco-merged` — объединённый, именно по нему и проверяется порог.
 
 Правила многомодульной сборки и способы убедиться, что граница между модулями не размылась, —
 в [docs/multi-module-conventions.md](docs/multi-module-conventions.md).

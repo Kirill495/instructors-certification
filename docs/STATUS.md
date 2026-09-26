@@ -5,7 +5,7 @@ Current state of the monolith-to-services split and the ordered plan for the nex
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Last updated**: 2026-09-25
+**Last updated**: 2026-09-26
 
 ## Done and committed
 
@@ -870,6 +870,73 @@ and nothing objected. Spotless does not expand star imports, and checkstyle's `A
 looked at the file — `includeTestSourceDirectory` is still unset. That deferred debt has a concrete cost
 now, not a hypothetical one.
 
+### The coverage gate was green and measuring nothing (2026-09-26)
+
+`jacoco:check` had been reporting "All coverage checks have been met" for as long as anyone had looked,
+and it was not checking this build. Both `check` and `merge-results` were bound to `verify`, and within
+one phase the order comes from the order of declaration in the POM — `check` was declared first. So it
+read a `jacoco-merged.exec` that the *previous* build had left behind.
+
+Two ways that goes wrong, and both had been happening:
+
+- on a build without `clean`, the gate judges stale data. That is how it passed while
+  `publication-service` was reported at `0.13` one run later: the file it had approved was a different
+  file from the one the failing run produced;
+- on `mvn clean verify` there is no merged file at all when `check` runs, and jacoco logs
+  `Skipping JaCoCo execution due to missing execution data file.` at **INFO** and passes. A gate that
+  silently abstains looks exactly like a gate that agrees.
+
+Fixed by expressing the dependency through phases rather than through line order: `merge-results` on
+`post-integration-test`, `report-merged` and `check` on `verify`. Merging is now guaranteed to precede
+both by the lifecycle, not by where the XML block happens to sit.
+
+The same mistake bit `report-merged` on the way — it was declared above `merge-results` while both sat
+on `post-integration-test`, so the merged HTML report was skipped and `target/site/jacoco-merged` never
+appeared. Two rounds of the identical error is the signal worth keeping: **an ordering constraint
+expressed as XML sequence is not expressed at all.**
+
+First numbers ever produced by the gate on data from its own build:
+
+| Module | Instructions covered | Total | Ratio |
+|--------|---------------------|-------|-------|
+| `instructors-app` | 6750 | 7679 | 87.9% |
+| `publication-service` | 515 | 566 | 91.0% |
+
+The 50% threshold clears comfortably in both. Worth noting what this vindicates: the stance recorded
+above — write tests from the first class rather than waive the threshold — was never actually enforced by
+the build. Had the threshold been "temporarily" lowered when it looked inconvenient, nobody would have
+found out that it did not need to be.
+
+### Second-level cache was configured and switched off by omission (2026-09-26)
+
+`ehcache.xml` declared all three regions (`Grade` and `KindOfTourism` with a 1-hour TTL, `User` with a
+30-minute TTI, 100 entries each) and Hibernate never read it. `hibernate.javax.cache.provider`,
+`use_second_level_cache` and `region.factory_class` were set; `hibernate.javax.cache.uri` was not. Without
+it `EhcacheCachingProvider` builds a CacheManager from its own default —
+`urn:X-ehcache:jsr107-default-config`, which declares no caches — so Hibernate asked for each region,
+found nothing, and the provider created it with provider defaults: **unbounded heap, no expiry**.
+
+That is what the three `HHH90001006` warnings were saying. The usual reading of that warning is "you
+forgot to declare the region"; here it was the opposite, and the consequence was real rather than
+cosmetic. `User` in particular would have been cached for the lifetime of the process.
+
+One detail worth keeping: the value is `ehcache.xml`, **not** `classpath:ehcache.xml`. Hibernate passes
+the string through to JCache, which resolves it as a resource name; the `classpath:` form fails with
+`Couldn't load URI from classpath:ehcache.xml` because no such URL protocol exists. Verification that it
+took effect is two lines in the log — zero `HHH90001006`, and `CacheManager=file:/…/ehcache.xml` instead
+of the `urn:X-ehcache` default.
+
+`spring.jpa.open-in-view` is now explicitly `false`. It was on by default, which kept the EntityManager
+open through view rendering — lazy loads from templates, connections held for the length of HTML
+generation, and queries running outside any transaction. It turned out to cost nothing here: controllers
+hand DTOs to Thymeleaf rather than entities, so no lazy access happened during rendering and the full
+test suite stayed green.
+
+While checking that, one more documentation defect surfaced: the stack list claimed "Spring Cache +
+Ehcache". There is no Spring Cache in the project — no `@EnableCaching`, no `@Cacheable`, no
+`CacheManager` bean, no `spring.cache.*`. Ehcache serves only as Hibernate's second-level provider.
+README corrected.
+
 ## Not started
 
 Observability. Neither module has `actuator` or `micrometer` — for two processes joined by a queue that
@@ -886,8 +953,9 @@ now dead-row handling. There is no "remove it from the monolith" stage — all n
 controllers are internal, so the registry was added rather than moved. What remains is hardening and the
 public-facing authentication.
 
-`mvn verify` on the whole reactor is green, with no model warnings and no Mockito self-attach warning
-anywhere. Coverage checks pass in both modules:
+`mvn clean verify` on the whole reactor is green, with no model warnings, no Mockito self-attach warning
+and no skipped jacoco step anywhere. Coverage clears the 50% threshold in both modules on freshly merged
+data — 87.9% and 91.0%, see the coverage-gate section above:
 
 ```
 instructors-app       surefire 342      failsafe 23
@@ -958,8 +1026,9 @@ never becomes a property and reaches the JVM as a literal.
   logic.~~ Settled 2026-09-25, and not the way it was expected to be. The threshold never bit because
   jacoco was never *active* in `publication-service`: the plugin sat in the root `<pluginManagement>`
   and only `instructors-app` listed it under `<build><plugins>`, so not one `.exec` file was produced
-  there. Now activated — and the agreed stance paid off on its own: the tests written from the first
-  class clear 50% with nothing waived.
+  there. Activating it was still not enough — see the coverage-gate section below for the second half
+  of the story. The agreed stance paid off on its own in the end: the tests written from the first class
+  clear the threshold with nothing waived.
 - ~~Migrate testcontainers to 2.x.~~ Done — see above.
 - How durable the topic has to be — RF ≥ 3 with `min.insync.replicas=2`, or backups for the service
   database. See Next steps; the design's "the topic is the backup" argument does not hold at
