@@ -2,6 +2,7 @@ package org.tourism.instructors.api.tourist;
 
 import static org.tourism.instructors.api.util.CommonAttributes.ERROR_MESSAGE_ATTRIBUTE;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,13 +12,10 @@ import org.tourism.instructors.application.tourist.exception.TouristCannotBeDele
 import org.tourism.instructors.application.tourist.exception.TouristNotFoundException;
 
 @ControllerAdvice(assignableTypes = TouristController.class)
+@RequiredArgsConstructor
 public class TouristExceptionHandler {
 
     private final TouristService touristService;
-
-    public TouristExceptionHandler(TouristService touristService) {
-        this.touristService = touristService;
-    }
 
     @ExceptionHandler(TouristCannotBeDeletedException.class)
     public String handleDeletionNotAllowed(TouristCannotBeDeletedException exception, Model model) {
