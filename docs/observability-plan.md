@@ -60,11 +60,19 @@ something that was already there.
 **Trap.** Only `health` is exposed over HTTP by default. `/actuator/prometheus` answers `404` and it
 looks as though the registry failed to load. `management.endpoints.web.exposure.include` fixes it.
 
-**Verify, do not assume**: that the endpoint id is still `prometheus`. Micrometer 1.13 rewrote this
-registry onto the new Prometheus Java client; the id is believed unchanged but has not been checked
-on this stack.
+**Verified 2026-09-27.** The endpoint id is still `prometheus` on this stack — Micrometer 1.13 rewrote
+the registry onto the new Prometheus Java client, but the id did not move. Boot resolved
+`micrometer-registry-prometheus` and `micrometer-core` to **1.16.3** from its BOM, and
+`spring-boot-starter-actuator` to `4.0.3-SNAPSHOT`.
 
 **Deliverable**: a list of the metrics that arrive for free.
+
+**Done.** `include: health, info, prometheus` in both modules; the log confirms
+`Exposing 3 endpoints beneath base path '/actuator'`.
+
+One diagnostic worth keeping: probe with `-w "%{http_code}\n"` or `-i`, never bare `curl`. A `302` to
+the login form has an empty body, so a plain `curl` prints nothing at all and looks identical to a
+server that is not listening. Half an hour was spent on exactly that.
 
 ## Stage 1 — where metrics are exposed
 
@@ -85,16 +93,100 @@ child context** for the management endpoints, which breaks the usual ways of rea
 `@SpringBootTest`. The standard answer is to put the endpoints back on the main port in
 `application-test.yaml`.
 
+**Done 2026-09-27**, port `7001` in both services, published only in the dev overlay (`7001` for the
+monolith, `7002` for publication, matching the existing `8081`/`8082` convention). `/pub/actuator/**`
+through nginx went from `200` to `404`: the endpoint that was serving metrics to anyone who could
+reach nginx is now unreachable from outside.
+
+Two findings, both answering questions this section could not answer in advance:
+
+1. **Spring Security does reach the management child context.** With a custom `SecurityFilterChain`
+   present, `ManagementWebSecurityAutoConfiguration` backs off (`@ConditionalOnDefaultWebSecurity`),
+   so the monolith's catch-all `webFilterChain` — which has no `securityMatcher` — covered
+   `/actuator/**` on port 7001 as well, and every endpoint answered `302` to the login form. That
+   would have meant no monolith metrics at all: Prometheus treats a redirect to an HTML page as a
+   failed scrape and records `up = 0`.
+
+   Fixed with an `@Order(0)` chain: `securityMatcher(EndpointRequest.toAnyEndpoint())`, then
+   `requestMatchers(EndpointRequest.to("health", "info", "prometheus")).permitAll()` followed by
+   `anyRequest().authenticated()`, plus `STATELESS` sessions and `csrf` disabled.
+
+   Two reasons for that shape rather than the obvious one. `EndpointRequest` over a literal
+   `"/actuator/**"` because the base path is configurable and a hardcoded string silently stops
+   matching if `management.endpoints.web.base-path` is ever changed — leaving actuator behind the
+   login form again with nothing to show for it. And naming the three endpoints, rather than
+   `permitAll` on `toAnyEndpoint()`, so that **two independent locks** guard the rest: exposure
+   decides what exists, security decides who may call it. Otherwise the `include` list is the only
+   thing between the network and `heapdump`.
+
+2. **`EndpointRequest` matchers are port-aware.** `AbstractRequestMatcher` consults
+   `ManagementPortType`; when the management port differs, the matcher declines on the main-port
+   context. So `permitAll` is not a hole on 8080, where nginx points, even if actuator were ever
+   mapped back onto the application port.
+
+`EndpointRequest.toAnyEndpoint()` does **not** cover the `/actuator` discovery page. The evidence was
+the redirect itself: `Location: http://localhost:7001/login;jsessionid=…` — only `webFilterChain`
+configures `formLogin`, and a chain with `SessionCreationPolicy.STATELESS` cannot mint a session, so
+the request was never selected into the actuator chain. `EndpointRequest.toLinks()` is the matcher for
+that page.
+
+Opening it takes both places, which is the lesson: adding `toLinks()` to `requestMatchers` alone is
+dead code, because `securityMatcher` decides what enters the chain at all. The working form wraps both
+matchers in an `OrRequestMatcher` in `securityMatcher`, then permits links inside. The two levels are
+easy to conflate — `securityMatcher` is navigation, `requestMatchers` is authorization.
+
+Worth having rather than essential: the page lists URLs and nothing else, but it answers "what is
+actually exposed here" in one request instead of from memory.
+
 ## Stage 2 — health as the compose contract
 
 Today only `db` has a `healthcheck`, via `pg_isready`. `app` and `publication` have none, so
 `depends_on` can only wait for start, not for readiness.
 
-`/actuator/health` supplies this ready-made, assembling indicators from the classpath: `DataSource`,
-Flyway, Kafka. It matters most for `publication`, which currently looks alive even when it cannot
-reach the broker.
+`/actuator/health` supplies this ready-made — nothing to write. But **check which indicators actually
+exist before relying on one.** Verified against the Boot 4 jars, which split auto-configuration into
+per-technology modules:
 
-Ordering with stage 1: the healthcheck must call the management port, not 8080.
+| Indicator | Module | Present |
+|---|---|---|
+| `db` — `DataSourceHealthIndicator` | `spring-boot-jdbc` | yes |
+| `diskSpace`, `ping`, `ssl` | `spring-boot-health` | yes |
+| `livenessState`, `readinessState` | `spring-boot-health` | yes |
+| **Kafka** | `spring-boot-kafka` | **no** |
+| **Flyway** | `spring-boot-flyway` | **no** |
+
+An earlier draft of this document claimed health would assemble Kafka and Flyway indicators. It does
+not: a search across every `spring-boot-*` and `spring-kafka` jar finds neither. So `/actuator/health`
+reports `UP` on `publication` with a dead broker, and the signal that matters most for that service is
+not supplied.
+
+That is a decision, not just a gap. A custom Kafka indicator is little code
+(`AdminClient.describeCluster()` with an explicit timeout), but consider what `DOWN` would mean:
+`depends_on: service_healthy` would stop admitting nginx, while **the read API keeps working without
+Kafka** — `ProtocolRegistry` serves from the service's own database. A working service would be taken
+out of rotation because something it needs only for ingest is unavailable. So broker unavailability
+belongs in metrics and alerts (stages 3a and 6), not in the default health group. If an indicator is
+added anyway, put it in a separate health group, with a timeout shorter than the healthcheck's — an
+indicator that calls an external system without one turns the health probe into a hang.
+
+Flyway needs nothing: a failed migration stops startup outright, and `fail-on-missing-locations: true`
+is already set. That failure shows up as a missing container, not as a health status.
+
+**Use the full `/actuator/health`, not the readiness group.** By default `readiness` contains only
+`readinessState`, an in-process flag from `ApplicationAvailability` — `db` is not in it, so
+`/actuator/health/readiness` answers `UP` against a dead database. The ungrouped endpoint includes
+`db` and `diskSpace`.
+
+Ordering with stage 1: the healthcheck must call the management port, not 8080. Doing it the other way
+round produces a **false-positive** check — `curl -f` fails only on codes ≥ 400, so the `302` to the
+login form counts as success, and Docker would report the monolith healthy whatever state it is in.
+
+`curl` and `wget` are both present in `eclipse-temurin:21-jre` (checked). A move to an alpine or
+distroless base would break the healthcheck command itself, with the symptom of a permanently
+`unhealthy` but perfectly working container.
+
+Set `start_period` — without it Docker counts failures from the first second, and Boot with Hibernate
+and Flyway takes long enough to reach `unhealthy` before its first successful reply.
 
 ## Stage 3a — consumer lag, for free
 
@@ -167,6 +259,53 @@ graphs an expression, which is enough for three signals.
 Without a scraper, lag cannot be read at all: a single value does not distinguish "behind and
 catching up" from "behind and diverging". The same applies to the DLT counter, whose whole meaning is
 its delta.
+
+## Recreating a container: nginx caches upstream addresses
+
+Hit twice while doing stage 1, and it will be hit again the moment the Prometheus container joins the
+compose file. Worth knowing before it costs an evening.
+
+`nginx.conf` names its upstreams literally:
+
+```
+proxy_pass http://app:8080;
+```
+
+With no variable and no `resolver`, nginx resolves that name **once, when it loads the configuration**,
+and caches the address for the life of the process. Rebuild `app` and `publication` — with
+`docker compose up -d --build app publication`, which is the right command, since `down` would restart
+Kafka and force a consumer-group rebalance for nothing — and the new containers come up with new
+addresses while nginx keeps the old ones.
+
+The failure is nastier than the `502` one would expect. On 2026-09-27 the two containers **exchanged**
+addresses on recreation, so nginx was still pointing each route at the address the *other* service now
+held:
+
+```
+:80/           404   {"status":404,"error":"Not Found","path":"/"}   ← publication answering
+:80/login      404                                                   ← publication has no /login
+:80/pub/       302 → http://localhost/login                          ← the monolith
+:80/pub/login  200                                                   ← the monolith's login page
+```
+
+Docker's DNS was correct the whole time (`getent hosts app publication` inside the nginx container
+resolved both correctly); only nginx's cache was stale. The routes were silently swapped, every
+response was a plausible HTTP code, and `404` on `/` reads exactly like a routing mistake in a file
+that had not been touched.
+
+The fix is one command:
+
+```
+docker compose exec nginx nginx -s reload
+```
+
+Make it a habit after recreating anything nginx proxies to. In PowerShell that is two commands on two
+lines — `&&` is not a pipeline operator there.
+
+The permanent fix is a variable in `proxy_pass` plus `resolver 127.0.0.11 valid=10s;`, the address of
+Docker's embedded DNS, which re-resolves per request with a short cache. Deliberately not done: with a
+variable nginx stops normalising the URI, so `location /pub/` would have to spell the path out, and
+that is a change to routing in exchange for remembering one command.
 
 ## Stage 6 — alert rules, which is the actual point
 
