@@ -3,9 +3,10 @@
 Current state of the monolith-to-services split and the ordered plan for the next work session.
 
 Related: [Publication service design](publication-service-design.md),
-[Multi-module conventions](multi-module-conventions.md).
+[Multi-module conventions](multi-module-conventions.md),
+[Observability plan](observability-plan.md).
 
-**Last updated**: 2026-09-26
+**Last updated**: 2026-09-27
 
 ## Done and committed
 
@@ -1004,12 +1005,13 @@ publication-service   surefire   8      failsafe   8      → 381 tests
 
 Ordered by what would hurt most if left alone:
 
-1. **Observability.** `actuator` + `micrometer`, then the three signals that matter: consumer lag, a
+1. **Observability.** In progress — the full plan, with its decisions and traps, now lives in
+   [Observability plan](observability-plan.md). In short: three signals matter — consumer lag, a
    non-empty DLT (always an incident), and outbox rows with `sent_at IS NULL` older than ~15 minutes.
    That last one is deliberately time-based: `attempts` crosses any threshold within seconds of a brief
-   broker hiccup, so it cannot tell an outage from a stuck row. Do this **before** authentication —
-   while there are no external clients the cost of being blind is zero, and on the day the first one
-   arrives it is at its highest. Dead rows in particular are now produced, never cleaned, and watched by
+   broker hiccup, so it cannot tell an outage from a stuck row. Done **before** authentication — while
+   there are no external clients the cost of being blind is zero, and on the day the first one arrives
+   it is at its highest. Dead rows in particular are now produced, never cleaned, and watched by
    nobody.
 2. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
    clear model of who the client is, what it may do and how to revoke it. Keys live in the service's own

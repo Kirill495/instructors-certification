@@ -328,3 +328,5 @@ API-ключи в заголовке, ключи хранятся в базе с
   нагрузки.
 - [docs/multi-module-conventions.md](docs/multi-module-conventions.md) — правила многомодульной
   сборки и как проверить, что граница между модулями не размылась.
+- [docs/observability-plan.md](docs/observability-plan.md) — план по метрикам и здоровью сервисов:
+  actuator, micrometer, три сигнала (лаг консьюмера, непустой DLT, зависшие записи outbox).
