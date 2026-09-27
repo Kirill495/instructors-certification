@@ -38,6 +38,13 @@ services:
       SPRING_DATASOURCE_USERNAME: ${INSTR_APP_USER}
       SPRING_DATASOURCE_PASSWORD: ${INSTR_APP_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7001/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+      start_interval: 2s
 
   publication:
     build:
@@ -53,6 +60,13 @@ services:
       SPRING_DATASOURCE_USERNAME: ${PUB_APP_USER}
       SPRING_DATASOURCE_PASSWORD: ${PUB_APP_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7001/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+      start_interval: 2s
 
   nginx:
     image: nginx:alpine
