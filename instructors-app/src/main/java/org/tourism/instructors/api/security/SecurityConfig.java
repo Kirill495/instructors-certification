@@ -1,5 +1,6 @@
 package org.tourism.instructors.api.security;
 
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -10,10 +11,31 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Bean
+    @Order(0)
+    public SecurityFilterChain actuatorFilterChain(HttpSecurity http) {
+        http.securityMatcher(new OrRequestMatcher(EndpointRequest.toAnyEndpoint(), EndpointRequest.toLinks()))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(EndpointRequest.toLinks())
+                                        .permitAll()
+                                        .requestMatchers(
+                                                EndpointRequest.to("health", "info", "prometheus"))
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable);
+
+        return http.build();
+    }
 
     @Bean
     @Order(1)
