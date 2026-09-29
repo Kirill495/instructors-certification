@@ -20,7 +20,9 @@ public class SecurityConfig {
     @Bean
     @Order(0)
     public SecurityFilterChain actuatorFilterChain(HttpSecurity http) {
-        http.securityMatcher(new OrRequestMatcher(EndpointRequest.toAnyEndpoint(), EndpointRequest.toLinks()))
+        http.securityMatcher(
+                        new OrRequestMatcher(
+                                EndpointRequest.toAnyEndpoint(), EndpointRequest.toLinks()))
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers(EndpointRequest.toLinks())
