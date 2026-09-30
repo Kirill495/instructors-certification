@@ -26,3 +26,7 @@ services:
   kafka:
     ports:
       - "29092:29092"
+
+  prometheus:
+    ports:
+      - "7070:9090"

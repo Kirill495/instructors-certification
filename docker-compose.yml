@@ -27,7 +27,12 @@ services:
       context: .
       dockerfile: instructors-app/Dockerfile
     volumes:
-      - ./config/secrets.yaml:/app/config/secrets.yaml
+      - type: bind
+        source: ./config/secrets.yaml
+        target: /app/config/secrets.yaml
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       db:
         condition: service_healthy
@@ -73,7 +78,12 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - type: bind
+        source: ./nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       - app
       - publication
@@ -96,6 +106,22 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka_data:/var/lib/kafka/data
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - prometheus_data:/prometheus
+      - type: bind
+        source: ./prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+        bind:
+          create_host_path: false
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
 volumes:
   postgres_data:
   kafka_data:
+  prometheus_data:
