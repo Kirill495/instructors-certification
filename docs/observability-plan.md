@@ -188,6 +188,76 @@ distroless base would break the healthcheck command itself, with the symptom of 
 Set `start_period` — without it Docker counts failures from the first second, and Boot with Hibernate
 and Flyway takes long enough to reach `unhealthy` before its first successful reply.
 
+**Done 2026-09-27.** Both services report `(healthy)`; `nginx` now waits for readiness rather than for
+container creation, so the `502`s in the first seconds after `up` are gone. The effective check, read
+back from the running container:
+
+```
+CMD-SHELL curl -f http://localhost:7001/actuator/health
+Interval 30s   Timeout 3s   Retries 3   StartPeriod 40s   StartInterval 2s
+```
+
+### `start_period` and `start_interval` are different axes
+
+They are complementary, not alternatives, and the second one is easy to miss.
+
+- **`start_period`** is an amnesty window, not a deadline: failures inside it do not count towards
+  `retries` and the container reports `starting`. A success inside it ends the window immediately. Once
+  it expires, failures start counting, so the real limit of patience is
+  `start_period + retries × interval` — here 40 + 3×30 = **130 s**.
+- **`start_interval`** is how often the check runs *while inside* that window; outside it, `interval`
+  applies. It needs Docker 25.0 / API 1.44 (this machine is on 25.0.3, API 1.44 — available, only just).
+
+Without it the two frequencies are one, forcing a bad trade: `interval: 30s` learns of readiness up to
+half a minute late, while `interval: 5s` polls a healthy service forever — 17 280 checks a day, each one
+an HTTP request that runs the `db` indicator and therefore a validation query. `start_interval` splits
+them: poll fast while starting, slowly once up.
+
+An `unhealthy` container is **not** restarted by Docker on its own. The consequence is quieter than a
+restart loop: `depends_on: condition: service_healthy` simply never unblocks and `nginx` never starts.
+
+### Sizing it from measurement, not from guesswork
+
+`Started … in N seconds` turned out to be **absent from the logs of both services** — and so are the
+other two `StartupInfoLogger` lines, `Starting … using Java …` and `No active profile set`. All three
+sit behind one `logStartupInfo` flag, which looks switched off, but nothing in the project sets
+`spring.main.log-startup-info`, there is no logback config, and the banner does print. Boot 4 still has
+`logStarting`, `logStarted` and `process running for` in `StartupInfoLogger`, so the messages were not
+renamed. Cause unidentified; cosmetic, and worth one experiment if it ever matters — set the property
+explicitly to `true` and see whether all three come back.
+
+Measure the interval that actually matters instead: container start to the management port accepting
+connections.
+
+| Service | Container start | Port 7001 up | Delay |
+|---|---|---|---|
+| `app` | 10:20:16.525 | 10:20:27.475 | **10.95 s** |
+| `publication` | 10:20:16.678 | 10:20:23.922 | **7.24 s** |
+
+So `publication` is faster, but by a factor of 1.5, not an order of magnitude — an initial guess of
+`start_period: 5s` for it was under the real figure. Against 40 s the margins are 3.6× and 5.5×, and
+`start_interval: 2s` means health is established around second 9 and second 13 instead of at second 30.
+
+The precise record is Docker's own, though it keeps only the **last five** checks, so it has to be read
+soon after `up`:
+
+```
+docker inspect -f '{{range .State.Health.Log}}{{.Start}} {{.ExitCode}}{{"\n"}}{{end}}' <id>
+```
+
+### Two traps that cost time here
+
+**`CMD SHELL` instead of `CMD-SHELL`.** A missing hyphen, and Compose refuses to parse the file at all:
+`healthcheck.test must start either by "CMD", "CMD-SHELL" or "NONE"`. Not a warning about one service —
+`ps`, `logs` and `up` all fail identically, which makes it look like something far worse than a typo.
+`docker compose config` validates the merged files in a second and would have caught it without
+touching a container. Worth running whenever the compose files change, dev overlay included.
+
+**Logs redirected from PowerShell are UTF-16.** `>` and `*>` write UTF-16 LE with a BOM (`ff fe`, then
+`a \0 p \0 p \0`), and every line-based search over such a file finds nothing, because the bytes do not
+match an ASCII pattern. Use `| Out-File -Encoding utf8`. And grep is not required on Windows:
+`Select-String` in PowerShell, `findstr` in cmd.
+
 ## Stage 3a — consumer lag, for free
 
 From the conditions report in an earlier build log:
@@ -198,9 +268,76 @@ KafkaMetricsAutoConfiguration:
   'io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics'
 ```
 
-That class ships with `micrometer-core`, which is now on the classpath. No work beyond finding
-`kafka_consumer_fetch_manager_records_lag_max` in the output and confirming the tags distinguish
-topics.
+That class ships with `micrometer-core`, which is now on the classpath.
+
+**Done 2026-09-27**, and it arrived with four corrections to the assumption above. The metrics live on
+`publication` only — the consumer is there, not in the monolith — so this is port **7002** on the host.
+Of roughly 200 series, **143** are `kafka_consumer_*`.
+
+### Use `records_lag`, not `records_lag_max`
+
+The metric this document originally named is unusable here:
+
+```
+kafka_consumer_fetch_manager_records_lag{…,partition="0",topic="protocols.snapshots"}      0.0
+kafka_consumer_fetch_manager_records_lag_avg{…,partition="0",topic="protocols.snapshots"}  NaN
+kafka_consumer_fetch_manager_records_lag_max{…,partition="0",topic="protocols.snapshots"}  NaN
+```
+
+`records-lag` is the **latest** per-partition lag, a plain value. `records-lag-avg` and `records-lag-max`
+are computed over a **sampled window**, and with no fetch carrying records inside that window they
+report `NaN`. In this system that is the normal state: snapshots are published only when a protocol
+changes, so the windowed variants are `NaN` almost always.
+
+This is a trap with no symptom. PromQL comparisons against `NaN` are always false, so
+`records_lag_max > N` **never fires** — and an alert that cannot fire looks exactly like an alert that
+never needed to. `NaN` is not zero, and here it does not even mean "no lag", it means "no sample".
+
+### Lag alone cannot see a stuck consumer — two companions that can
+
+Recorded in STATUS.md as "a stuck partition is silent". Lag does not close it: if the listener thread
+hangs, `records_lag` keeps reporting its last value while the real backlog grows. Two metrics in the
+same dump do close it:
+
+| Metric | Value observed | What it detects |
+|---|---|---|
+| `kafka_consumer_coordinator_assigned_partitions` | `1.0` | drops to `0` when the consumer leaves the group or rebalances forever |
+| `kafka_consumer_last_poll_seconds_ago` | `0.0` | grows without bound when the poll loop is stuck |
+
+The second is the direct detector for the silent-stuck-partition case, and it costs nothing. Alert on
+these two rather than on lag alone.
+
+Also present and worth knowing: `kafka_consumer_time_between_poll_avg` reads `5000.7` ms, which is
+Spring Kafka's `ContainerProperties` default poll timeout of 5 s showing through on an idle consumer —
+not a problem, but it explains a number that otherwise looks alarming.
+
+### Every topic-labelled series is duplicated
+
+```
+topic="protocols.snapshots"   ← the real name
+topic="protocols_snapshots"   ← periods replaced, deprecated per the metric's own HELP text
+```
+
+The Kafka client emits both for any topic name containing a period. Match on the real name in every
+rule: an aggregation such as `sum()` over the family double-counts, and the deprecated variant will
+eventually disappear and take a silently-matching rule with it.
+
+### Bonus: the startup time that was missing from the logs
+
+`application_started_time_seconds` **6.879** and `application_ready_time_seconds` **6.887**, tagged
+`main_application_class="org.tourism.publication.PublicationServiceApplication"`. That is the figure
+hunted for in stage 2 through the absent `Started …` log line — available as a metric all along, and it
+agrees with the 7.24 s measured from container start (the difference is JVM launch before Spring
+begins). Note also that `main_application_class` is populated, so whatever suppresses those three log
+lines, it is not a null `mainApplicationClass`.
+
+### One metric that will matter in stage 3b
+
+`spring_kafka_listener_seconds{name="…KafkaListenerEndpointContainer#0-0",result,exception}` times the
+listener and tags the outcome. It is **not** a substitute for the DLT counter — a retryable failure
+increments `result="failure"` on every attempt, and the backoff is unlimited, so the count says
+"something is failing", not "a message was given up on". But as an early warning it is free and it moves
+long before anything reaches the DLT.
 
 ## Stage 3b — a counter for messages sent to the DLT
 
@@ -211,6 +348,48 @@ interface, so a counting decorator is a few lines.
 A counter resets on restart. That is not a defect to work around but a property to build the alert
 on: the rule is `increase(...[1h]) > 0`, not `value > 0`. Pull-based collection over monotonic
 counters is designed for exactly this.
+
+**Done 2026-09-28**, but not at that seam, and only after a prerequisite bug fix.
+
+### The seam is `IngestRetryListener`, not a decorator round the recoverer
+
+`RetryListener.recovered(record, ex)` fires **after** a successful hand-off to the DLT, so it counts
+what happened rather than what was attempted; a decorator round the recoverer counts attempts.
+`IngestRetryListener` already existed and already logged this exact event, so the metric went next to
+the log rather than into a new class. It also came with `recoveryFailed(...)` for free — the more
+urgent incident of the two, since a record that never reached the DLT is parked nowhere.
+
+One name, `publication.ingest.dlt.records`, with tags `result` (`sent`/`failed`) and `exception` (the
+simple class name). Tag keys match `spring_kafka_listener_seconds{exception,result}`, so the two
+metrics can be compared in one query. `record.key()` is deliberately **not** a tag: it is a protocol
+id, which would mint a time series per protocol.
+
+Because `exception` is only known at call time, the counter is registered **lazily, on first
+increment**. It therefore does not exist at all until the first record is dead-lettered. An alert on
+`increase(...)` copes with an absent series (no data, no alert); a dashboard panel shows "No data"
+rather than a truthful zero. That is the price of a dynamic tag, and it is predictable.
+
+### First the queue had to stop swallowing the main failure mode
+
+`UnsupportedSnapshotVersionException` was thrown by the listener but **not** registered in
+`addNotRetryableExceptions`. `DefaultErrorHandler` classifies a plain `RuntimeException` as retryable,
+and with `FixedBackOff(DEFAULT_INTERVAL, UNLIMITED_ATTEMPTS)` that means redelivery forever and a
+partition blocked for good. A version mismatch is the most likely failure during a contract change —
+precisely what the version field exists for — and it would never have reached the DLT, so the new
+counter would have read `0` while the consumer sat wedged. Fixed before the counter was written;
+writing the metric first would have produced a metric that is silent on its main case.
+
+### Three Micrometer lessons paid for in bugs
+
+1. **`registry.counter(name, tags…)` takes alternating key/value varargs.** One string
+   `"result:sent"` is an odd argument count and throws from `Tags.of`.
+2. **It returns the `Counter`; nothing happens without `.increment()`.** The meter registers at `0`
+   and stays there — a metric that is present, looks healthy and measures nothing.
+3. **Resolving the counter per call is correct here, not sloppy.** The `exception` tag is only known
+   at call time, so the usual "register meters once in the constructor" advice does not apply;
+   `counter(...)` is a find-or-create over a concurrent map, which is what Micrometer expects.
+
+`Counter` has no weak-reference hazard — that one belongs to `Gauge` alone.
 
 ## Stage 3c — two gauges over the outbox
 
@@ -237,19 +416,116 @@ Three things that catch people here:
    to counters and a unit suffix. Writing Prometheus style by hand yields a double translation and a
    name matching no convention. `baseUnit("rows")` is not decoration — it reaches the final name.
 
+**Done 2026-09-28**, and the shape changed on the way: the 15-minute threshold left the metric.
+
+Three gauges under two names — `protocols.outbox.rows{state="pending"|"dead"}` and
+`protocols.outbox.oldest.pending.age` with `baseUnit("seconds")`. Counting rows *older than fifteen
+minutes* would compile the alerting policy into Java: changing it to five would mean a rebuild and a
+deploy, and the metric could never answer "how old is the backlog", only "how many crossed a line
+chosen at compile time". Exporting the age leaves the threshold in the Prometheus rule, where a change
+is a config reload. Age is also the stronger signal — three rows fifteen minutes old and three rows six
+hours old are the same count and very different incidents.
+
+The component is `ProtocolOutboxMetrics`, deliberately **not** part of `ProtocolOutboxRelay`. The relay
+carries `@ConditionalOnProperty("protocols.outbox.relay.enabled")`, so a gauge living inside it would
+vanish exactly when the relay is switched off — the moment the queue starts growing and the metric
+matters most. An observation must not share a kill switch with the thing it observes.
+
+One `@Scheduled` refresh every five minutes into an immutable record, rather than a query per scrape.
+The trade is predictable load instead of load proportional to the number of scrapers, at the cost of up
+to five minutes of staleness — which stacks with `for:` in the alert rule, so a fifteen-minute
+threshold detects at roughly twenty-five minutes. Three separate scheduled tasks were collapsed into
+one: the default `spring.task.scheduling.pool.size` is **1**, shared with the relay's one-second tick.
+
+Four bugs worth remembering, all silent:
+
+1. **`metricsData::pendingRows` is a bound method reference.** It captures the record instance that
+   exists when the reference is created, and `refreshMetrics()` reassigns the field — so every gauge
+   reported `0` forever. `() -> field.method()` reads the field per call; `field::method` does not.
+2. **`DefaultGauge` holds `WeakReference<T>`, and with `Gauge.builder(String, Supplier<T>)` the
+   supplier *is* `T`.** An inline lambda or method reference has no other owner and can be collected,
+   after which the gauge reports `NaN`. `Gauge.builder(name, this, m -> m.field.value())` fixes both
+   bugs at once: `this` is a Spring bean, held strongly by the context.
+3. **`FILTER` is part of the aggregate call syntax.** `EXTRACT(EPOCH FROM now() - min(x)) FILTER (…)`
+   is a syntax error; the clause belongs on `min(x)`, inside `EXTRACT`. All three aggregates must also
+   use the *same* predicate, or one row of output contradicts itself.
+4. **`timestamptz - timestamptz` is an `interval`, and `min()` over no rows is `NULL`.** Hence
+   `EXTRACT(EPOCH FROM …)` and `COALESCE(…, 0)`.
+
+The field is `volatile`: the scheduler thread writes it and the scrape thread reads it. An immutable
+record is half of safe publication; `volatile` is the other half.
+
 ## Stage 4 — tests
 
-The patterns already exist in the repository and transfer almost verbatim.
+**Done 2026-09-29.** `ProtocolOutboxMetricsIT` (four cases), `IngestRetryListenerTest` (three), and two
+tests in `ProtocolSnapshotListenerIT`. The plan's "the 15-minute boundary gets the same ±1 minute
+treatment as the retention boundary" is **obsolete, not skipped** — the threshold moved into the alert
+rule, so there is no boundary in the code to test.
 
-- **Gauges**: as in `ProtocolOutboxCleanerIT` — Testcontainers, `TRUNCATE` in `@BeforeEach`, insert
-  rows in several states, inject `MeterRegistry`, assert the value. The 15-minute boundary gets the
-  same ±1 minute treatment as the retention boundary.
-- **DLT counter**: in an existing ingest test, publish a message that cannot be retried —
-  `IncorrectMessageKeyException` and `IncorrectProtocolIdException` are already registered as
-  non-retryable — and assert the increment.
+### A test must be built so that the known-wrong version gives a different answer
 
-Coverage is not the constraint (87.9% and 91.0% against a 50% gate), but SQL inside a gauge with no
-test is SQL nobody has checked.
+The first draft of the gauge IT put every row at the same `created_at`, which made `min(created_at)`
+identical with or without the `dead_at`/`sent_at` filters: it passed against the broken SQL. Staggering
+the rows — dead an hour old, sent ninety seconds old, live unsent ten seconds old — makes each missing
+predicate produce its own recognisable number: 3600, 90, 10.
+
+Confirmed by mutation: removing `dead_at IS NULL` from the age filter fails two tests with
+`получено 3600`; restoring it turns them green. A test nobody has watched fail is a test of unknown
+value.
+
+Counts per state are deliberately different (2 pending / 1 dead). With equal counts, swapping the
+`state` tags between the two `Gauge.builder` calls — the likeliest copy-paste error there — stays
+invisible.
+
+### `(int) Double.NaN` is `0`
+
+Truncating a gauge value to `int` erases the one signal that separates "no data" from "zero", so a
+collected gauge source reads as an honest zero. Check `Double.isNaN` **before** the cast.
+`assertNotNull` on a `double` is a no-op: the primitive boxes to a never-null `Double`.
+
+### Prefer `@Autowired` over hand-building the bean
+
+An earlier draft constructed `ProtocolOutboxMetrics` itself with a `SimpleMeterRegistry` and called
+`register()` by hand. That leaves `@Component` and `@PostConstruct` unverified — delete either and every
+test stays green while production exports nothing. Injecting the bean and the context's registry costs
+nothing and closes the gap. There is no scheduler race to dodge here, unlike `ProtocolOutboxRelayIT`: a
+`fixedRate` of five minutes fires once at startup and not again inside the test's lifetime.
+
+### Kafka ITs share mutable state that nothing resets
+
+Three mechanisms keep the outbox ITs deterministic: a fresh container, `TRUNCATE` in `@BeforeEach`, and
+`protocols.outbox.relay.enabled: false` in the test profile. In `ProtocolSnapshotListenerIT` only the
+second applies, and only to the database. The DLT topic and the `MeterRegistry` live for the whole class
+and cannot be cleared — a consumer with a fresh group and `auto.offset.reset=earliest` sees everything
+ever written to the topic.
+
+Both symptoms of that came from one root: two DLT tests using the message key `101`, so `findFirst()`
+over the earliest-reading consumer returned **the other test's record** — 17 bytes of `это не json`
+where 332 were expected — or none at all, depending on order. Isolation here is a matter of
+construction, not cleanup: **a unique key per test**, and **relative** assertions on counters
+(`after == before + 1`, never `== 1`, since the registry is shared and both tests increment).
+
+The baseline for such a delta cannot be read inside `untilAsserted`. The lambda runs repeatedly, so the
+expected value moves with the actual one and the condition becomes unsatisfiable by construction — it
+never goes green rather than going flaky. Everything inside `untilAsserted` must be re-evaluable; the
+snapshot of "before" is the one thing that must live outside it.
+
+### The two DLT paths differ in three ways, so their assertions do not transfer
+
+| | Deserialization failure | Business-rule failure |
+|---|---|---|
+| DLT value | the original raw bytes | the parsed `ProtocolSnapshot`, **re-serialised** |
+| `DLT_EXCEPTION_FQCN` | `DeserializationException` | `ListenerExecutionFailedException` |
+| Business exception | — | `DLT_EXCEPTION_CAUSE_FQCN` (the root cause) |
+
+`DltProducerConfig`'s own javadoc states the first row; the second and third follow from
+`DeadLetterPublishingRecoverer.addExceptionInfoHeaders`, which writes `exception.getClass()` to one
+header and `ErrorHandlingUtils.findRootCause(exception).getClass()` to the other. Copying a byte-array
+comparison from the deserialization test into the version test is therefore wrong in principle, even
+though it happened to be off by exactly the text block's trailing newline.
+
+Coverage is not the constraint (87.9% and 91.0% against a 50% gate), but SQL inside a gauge with no test
+is SQL nobody has checked.
 
 ## Stage 5 — Prometheus in compose
 
@@ -259,6 +535,53 @@ graphs an expression, which is enough for three signals.
 Without a scraper, lag cannot be read at all: a single value does not distinguish "behind and
 catching up" from "behind and diverging". The same applies to the DLT counter, whose whole meaning is
 its delta.
+
+**Done 2026-09-30.** `prom/prometheus:v2.54.1`, config bind-mounted read-only, TSDB on a named volume
+at `/prometheus`, UI published only in the dev overlay as `7070:9090`, no `depends_on`. Verified
+end-to-end: `/api/v1/status/config` reports our two jobs, both targets `health: up` with an empty
+`lastError`, and `up`, `protocols_outbox_rows{state="pending"|"dead"}` and
+`protocols_outbox_oldest_pending_age_seconds` all return series. 354 metric names in total, three of
+them written by hand.
+
+`job` and `instance` are attached by **Prometheus**, not by the application — `job` from `job_name`,
+`instance` from the target address. That is why they are absent from `/actuator/prometheus` yet
+available to filter on in every rule.
+
+### `command:` replaces the image's `CMD`; it does not extend it
+
+`prom/prometheus` ships `CMD` with four flags, including `--config.file=/etc/prometheus/prometheus.yml`
+and `--storage.tsdb.path=/prometheus`. Setting `command:` for one flag of our own dropped all four.
+`ENTRYPOINT` is *not* replaced, so the binary still launched and complained about a flag — a symptom
+that says nothing about the lost paths. Losing `--config.file` is the expensive one: the built-in
+default is `prometheus.yml` relative to the image's WORKDIR of `/prometheus`, which does not exist, and
+the error then sends you to check a bind mount that was never broken. `--storage.tsdb.path` defaults to
+`data/`, which lands inside the mounted volume by luck.
+
+Read the image's `CMD` before overriding it — `docker image inspect <image> -f '{{json .Config.Cmd}}'`
+— and re-list whatever of it you still need. The two console-template flags are legacy and safe to
+drop. This is the same shape as `management.endpoints.web.exposure.include`: the list replaces, it does
+not add.
+
+### `docker compose config` validates the model, not the commands
+
+It passed cleanly over two different mistyped flags (`--web.enable--lifecycle`, then
+`-storage.tsdb.path`). It checks schema, volume and network references and variable substitution —
+never flag names, never whether the image exists. Prometheus reports a single-dash long flag as
+`unknown short flag '-s'`, naming a letter you never typed, so the message does not point at the typo.
+
+Run the first start **without** `-d`. `up -d` prints `Created / Starting / Started` for a container that
+lived under a second, and `docker compose ps` hides exited containers unless given `-a`.
+
+### Stale-DNS is an nginx problem, not a Prometheus one
+
+nginx resolves a static `proxy_pass` host once at configuration parse time and caches the address for
+the life of the process. Prometheus keeps the hostname in `static_configs` and resolves at dial time, so
+recreating `app` or `publication` costs one failed scrape and then recovers by itself. Reloading
+Prometheus after a rebuild is unnecessary; reloading nginx is mandatory.
+
+Its own config, being bind-mounted, reloads with `docker compose kill -s HUP prometheus` — the same
+signal `nginx -s reload` sends. `POST /-/reload` needs `--web.enable-lifecycle`, which also exposes
+`POST /-/quit`; on a port published to `0.0.0.0` that is a shutdown switch for anyone on the network.
 
 ## Recreating a container: nginx caches upstream addresses
 
@@ -335,11 +658,29 @@ Telegram is unusually little work here.
 ## Commit boundaries
 
 ```
-[Build]      actuator + micrometer in both modules          (done, uncommitted)
-[Config]     management port, exposed endpoints, health
-[Infra]      compose healthchecks for app and publication
-[Monitoring] DLT counter + test
-[Monitoring] outbox gauges + tests
-[Infra]      prometheus container and alert rules
+[Config]     actuator + micrometer in both modules          committed  9ad8c81
+[Config]     management port, exposed endpoints, security   committed  4ceb95c
+[Infra]      compose healthchecks for app and publication   done
+[Monitoring] DLT counter + non-retryable fix + tests        done
+[Monitoring] outbox gauges + tests                          done
+[Infra]      prometheus container, create_host_path debt     done
+[Infra]      alert rules                                     stage 6
 [Docs]       STATUS.md, README
 ```
+
+## Where this stands
+
+| Stage | State |
+|---|---|
+| 0 — inventory of free metrics | done 2026-09-27 |
+| 1 — management port, exposure, security | done 2026-09-27 |
+| 2 — compose healthchecks | done 2026-09-27 |
+| 3a — consumer lag | done 2026-09-27; no code, but four corrections to the plan |
+| 3b — DLT counter | done 2026-09-28, after fixing an infinite retry that hid its main case |
+| 3c — outbox gauges | done 2026-09-28; the 15-minute threshold moved into the alert rule |
+| 4 — tests for 3b and 3c | done 2026-09-29; gauge tests verified by mutation |
+| 5 — Prometheus container | done 2026-09-30; both targets up, custom metrics stored |
+| 6 — alert rules | next, and the one that makes the rest useful |
+
+Nothing in stages 0–2 required application code beyond one Spring Security filter chain: the rest was
+configuration. Stage 3a is the last free one — from 3b onwards it is code and tests.
