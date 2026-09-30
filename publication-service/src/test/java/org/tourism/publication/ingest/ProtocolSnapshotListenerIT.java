@@ -249,7 +249,8 @@ class ProtocolSnapshotListenerIT {
     }
 
     private int fetchCounterBefore() {
-        // обернуто в try-catch т.к. meterRegistry.counters() бросает исключение если не находит ни одного счетчика
+        // обернуто в try-catch т.к. meterRegistry.counters() бросает исключение если не находит ни
+        // одного счетчика
         try {
             return (int) fetchCounterValue();
         } catch (MeterNotFoundException ignored) {
