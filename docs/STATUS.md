@@ -6,7 +6,7 @@ Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md),
 [Observability plan](observability-plan.md).
 
-**Last updated**: 2026-09-30
+**Last updated**: 2026-10-02
 
 ## Done and committed
 
@@ -1025,20 +1025,28 @@ publication-service   surefire   8      failsafe   8      → 381 tests
 
 Ordered by what would hurt most if left alone:
 
-1. **Observability.** In progress — **stages 0–5 of six done** as of 2026-09-30. Actuator and micrometer
-   in both services; endpoints on their own `management.server.port: 7001` behind an `@Order(0)` filter
-   chain; compose healthchecks driving `depends_on`; a DLT counter in `IngestRetryListener`; three gauges
-   over the outbox in `ProtocolOutboxMetrics`; and a Prometheus container scraping both services, with
-   `up`, `protocols_outbox_rows` and the Kafka consumer lag all stored and queryable. Only **stage 6,
-   the alert rules**, remains — and it is the stage that turns a page of numbers into observability.
-   The full plan, with its decisions, measurements and traps, lives in
-   [Observability plan](observability-plan.md). In short: three signals matter — consumer lag, a
-   non-empty DLT (always an incident), and outbox rows with `sent_at IS NULL` older than ~15 minutes.
-   That last one is deliberately time-based: `attempts` crosses any threshold within seconds of a brief
-   broker hiccup, so it cannot tell an outage from a stuck row. Done **before** authentication — while
-   there are no external clients the cost of being blind is zero, and on the day the first one arrives
-   it is at its highest. Dead rows in particular are now produced, never cleaned, and watched by
-   nobody.
+1. ~~**Observability.**~~ **Done 2026-10-02, all six stages.** Actuator and micrometer in both services;
+   endpoints on their own `management.server.port: 7001` behind an `@Order(0)` filter chain; compose
+   healthchecks driving `depends_on`; a DLT counter in `IngestRetryListener`; three gauges over the
+   outbox in `ProtocolOutboxMetrics`; a Prometheus container scraping both services; and eight alert
+   rules in three groups. The three signals the plan set out to get are in place — consumer lag, a
+   non-empty DLT, and outbox rows that are not draining — plus four that were not in the original plan
+   and turned out to matter more: `up == 0`, a failed hand-off to the DLT, a stalled poll loop, and a
+   consumer holding no partitions. Those last two close the "a stuck partition is silent" gap recorded
+   below, which lag alone cannot see.
+
+   The outbox staleness signal is deliberately time-based rather than attempt-based: `attempts` crosses
+   any threshold within seconds of a brief broker hiccup, so it cannot tell an outage from a stuck row.
+   The 15-minute threshold itself lives in the Prometheus rule, not in Java — changing it is a config
+   reload, not a deploy.
+
+   Two rules remain unproven by provocation (`DeadOutboxRows`, `OutboxNotDraining`); everything else was
+   verified against the running stack. The full account — every decision, measurement and trap, including
+   six silent bugs in the metrics code and the exact limits of `promtool` and `docker compose config` —
+   is in [Observability plan](observability-plan.md).
+
+   Done **before** authentication on purpose: while there are no external clients the cost of being blind
+   is zero, and on the day the first one arrives it is at its highest.
 2. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
    clear model of who the client is, what it may do and how to revoke it. Keys live in the service's own
    database — reading the monolith's `User` table is exactly the coupling the split removed. Fix the

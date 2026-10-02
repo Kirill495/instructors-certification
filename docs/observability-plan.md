@@ -645,6 +645,85 @@ through `pending` to `firing` in the Prometheus UI. One local accident makes the
 than usual though — the monolith already runs a Telegram bot, so an Alertmanager webhook into
 Telegram is unusually little work here.
 
+**Done 2026-10-02.** Eight rules in `prometheus/rules/alerts.yml`, three groups
+(`instructors_availability`, `monolith_outbox`, `publication_ingest`), all eight loading with
+`health: ok`. `ServiceDown` has been verified end to end — it went `pending` → `firing` when
+`publication` was stopped.
+
+### Severity has to answer one question, or it answers none
+
+The first draft had six `warning` and one `critical`, and two rules at `info` that were strictly worse
+than a `warning` one: `ConsumerPollStalled` and `ConsumerHasNoPartitions` mean nothing is being
+consumed at all, so lag grows without bound, while `ConsumerLag` is only the symptom and may clear
+itself. The two are also stages of one failure — a poll loop stalled past `max.poll.interval.ms` gets
+the consumer evicted from the group, which is the second alert.
+
+The axis that fixed it: **is the pipeline down, or are individual records affected?**
+
+| `critical` — pipeline down | `warning` — individual records |
+|---|---|
+| `ServiceDown` | `DeadOutboxRows` |
+| `ConsumerPollStalled` | `OutboxNotDraining` |
+| `ConsumerHasNoPartitions` | `MessagesGoTo_DLT` |
+| `MessagesFailedGoTo_DLT` | `ConsumerLag` |
+
+`MessagesFailedGoTo_DLT` outranks `MessagesGoTo_DLT` because a record that never reached the DLT is
+stored nowhere and will be redelivered — which risks blocking the partition. One that did reach it is
+parked and waiting.
+
+### `promtool check rules` parses templates but does not execute them
+
+The sharpest finding of the stage. `{{ value }}` — no `$` — passes validation, loads, and breaks **when
+the alert fires**, which is the worst possible moment. Proven with a two-rule probe file:
+
+```
+summary: "{{ value }}"        → promtool says nothing
+summary: "{{ nosuchfunc }}"   → FAILED: function "nosuchfunc" not defined
+```
+
+`value` *is* a Prometheus template function (it takes a sample and returns its number), so the parser
+is satisfied; argument count is checked at execution. An unknown name fails at parse time, a known name
+misused does not.
+
+So the tool boundary here mirrors `docker compose config`, which validates the compose model but not
+flag names: **every check has an edge, and knowing it is cheaper than discovering it in an incident.**
+An earlier template bug in the same file — `{{ $protocols_outbox_rows{state=\"dead\"} }}` — *was* caught,
+because a `{` inside an action is a parse error. It also took down the whole process: one bad template
+fails the entire config load, not just its rule.
+
+Annotations have no access to metrics by name. Only `$value`, `$labels` and `$externalLabels` exist.
+
+### Three habits the rules file taught
+
+**Reload is a third step, easy to forget.** Editing the file and running `promtool` says nothing about
+what the running process holds: the mount is live, the in-memory copy is not. Four rules sat invisible
+until `POST /-/reload`. The cycle is edit → `promtool check rules` → reload.
+
+**`health: unknown` right after a reload is not an error**, just "not evaluated yet"; with
+`evaluation_interval: 15s` it clears in seconds.
+
+**`ALERTS` is how you answer "did it fire an hour ago".** A resolved alert disappears from
+`/api/v1/alerts` completely, but Prometheus records a synthetic `ALERTS{alertname, alertstate, …}`
+series while a rule is pending or firing, so `max_over_time(ALERTS[1h])` shows the history. That is how
+`ServiceDown` was confirmed after the service was already back up.
+
+### Do not put a threshold in the annotation text
+
+`"… больше 60 секунд. {{ $value }}"` hardcodes the threshold in prose, so changing `expr` leaves the
+text lying — the same defect as compiling a policy into a metric, which is what moved the 15 minutes out
+of Java in the first place. The number is also redundant: `$value` already prints the measurement.
+
+Other small rules learned the same way: `$value` carries nothing when the expression is an equality
+against a constant (`== 0` can only ever print `0`; use `$labels` instead); `humanizeDuration` turns
+`312` into `5m 12s` for a seconds-valued metric and `humanize` turns `14000` into `14k` for a count;
+and a topic pinned in `expr` should be printed from `{{ $labels.topic }}` rather than retyped.
+
+### Still to do
+
+Provoked verification of `DeadOutboxRows` (insert a row with `dead_at`) and `OutboxNotDraining` (stop
+Kafka and publish a protocol — with the threshold at 900 s that is a ~25-minute wait, or lower it
+temporarily). Everything else in the stage is verified.
+
 ## Out of scope, deliberately
 
 - **Distributed tracing.** `micrometer-observation` is already on the classpath transitively via
@@ -664,8 +743,8 @@ Telegram is unusually little work here.
 [Monitoring] DLT counter + non-retryable fix + tests        done
 [Monitoring] outbox gauges + tests                          done
 [Infra]      prometheus container, create_host_path debt     done
-[Infra]      alert rules                                     stage 6
-[Docs]       STATUS.md, README
+[Infra]      alert rules                                     done
+[Docs]       STATUS.md, README, this plan                    done
 ```
 
 ## Where this stands
@@ -680,7 +759,10 @@ Telegram is unusually little work here.
 | 3c — outbox gauges | done 2026-09-28; the 15-minute threshold moved into the alert rule |
 | 4 — tests for 3b and 3c | done 2026-09-29; gauge tests verified by mutation |
 | 5 — Prometheus container | done 2026-09-30; both targets up, custom metrics stored |
-| 6 — alert rules | next, and the one that makes the rest useful |
+| 6 — alert rules | done 2026-10-02; eight rules, `ServiceDown` verified by provocation |
+
+Two rules are still unproven by provocation — `DeadOutboxRows` and `OutboxNotDraining`. Nothing else
+remains.
 
 Nothing in stages 0–2 required application code beyond one Spring Security filter chain: the rest was
 configuration. Stage 3a is the last free one — from 3b onwards it is code and tests.

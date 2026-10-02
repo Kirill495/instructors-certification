@@ -78,6 +78,7 @@ outbox** — монолит пишет строку в outbox в той же т�
 - **Экспорт:** Apache POI (Excel)
 - **Маппинг:** MapStruct + Lombok
 - **Тестирование:** JUnit 5, Mockito, Testcontainers 2.x (PostgreSQL, Kafka)
+- **Наблюдаемость:** Spring Boot Actuator + Micrometer, Prometheus (метрики и правила алертов)
 - **Инфраструктура:** Docker Compose, nginx как reverse proxy
 
 ## Предварительные требования
@@ -138,8 +139,15 @@ docker compose up --build
 |-----|-------------|------------------------|
 | Монолит | `http://localhost/` | `http://localhost:8081` |
 | Сервис публикации | `http://localhost/pub/` | `http://localhost:8082` |
+| Actuator монолита | — | `http://localhost:7001/actuator` |
+| Actuator сервиса публикации | — | `http://localhost:7002/actuator` |
+| Prometheus | — | `http://localhost:7070` |
 | PostgreSQL | — | `localhost:5432` |
 | Kafka | — | `localhost:29092` |
+
+Actuator намеренно вынесен на отдельный порт (`management.server.port: 7001` внутри контейнера) и
+через nginx недоступен: метрики выдают устройство системы, а аутентификации на публичном API пока нет.
+В базовом compose этот порт не публикуется вовсе.
 
 Вход в монолит — `/login`, логин и пароль из `config/secrets.yaml` (`app.admin.*`, `app.user.*`).
 
@@ -147,7 +155,8 @@ docker compose up --build
 
 Базовый `docker-compose.yml` не публикует наружу ничего, кроме порта nginx. Dev-оверлей:
 
-- открывает порты Postgres, Kafka и обоих приложений напрямую;
+- открывает порты Postgres, Kafka, обоих приложений, их actuator-портов (**7001** и **7002**) и
+  Prometheus (**7070**) напрямую;
 - включает отладку: **5004** — монолит, **5005** — сервис публикации (`suspend=n`, подключаться можно
   в любой момент через Remote JVM Debug);
 - подкладывает монолиту тестовые данные — том с `instructors-app/src/test/resources/db/migration`
@@ -221,6 +230,7 @@ instructors/                        # корневой pom, агрегатор
 │
 ├── db/                             # образ Postgres с инициализацией двух баз
 ├── nginx/                          # конфигурация reverse proxy
+├── prometheus/                     # prometheus.yml и rules/alerts.yml
 ├── docker-compose.yml              # базовая конфигурация
 ├── docker-compose.dev.yml          # оверлей: порты, отладка, тестовые данные
 └── docs/                           # проектная документация
@@ -328,5 +338,5 @@ API-ключи в заголовке, ключи хранятся в базе с
   нагрузки.
 - [docs/multi-module-conventions.md](docs/multi-module-conventions.md) — правила многомодульной
   сборки и как проверить, что граница между модулями не размылась.
-- [docs/observability-plan.md](docs/observability-plan.md) — план по метрикам и здоровью сервисов:
-  actuator, micrometer, три сигнала (лаг консьюмера, непустой DLT, зависшие записи outbox).
+- [docs/observability-plan.md](docs/observability-plan.md) — метрики, health и алерты: что сделано,
+  какие решения приняты и какие ловушки встретились. Шесть этапов, все закрыты.
