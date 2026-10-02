@@ -4,6 +4,9 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.tourism.publication.DltTopicName.PROTOCOL_SNAPSHOT_DLT;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.MeterNotFoundException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -38,6 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.tourism.publication.contract.TopicName;
+import org.tourism.publication.ingest.exception.UnsupportedSnapshotVersionException;
 
 @SpringBootTest
 @Testcontainers
@@ -52,6 +56,7 @@ class ProtocolSnapshotListenerIT {
     static KafkaProducer<String, String> producer;
 
     @Autowired JdbcClient jdbcClient;
+    @Autowired MeterRegistry meterRegistry;
 
     @BeforeAll
     static void beforeAll() {
@@ -143,6 +148,8 @@ class ProtocolSnapshotListenerIT {
                                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                                 ByteArrayDeserializer.class))) {
             consumer.subscribe(List.of(PROTOCOL_SNAPSHOT_DLT));
+            int before = fetchCounterBefore();
+
             producer.send(record).get();
             List<ConsumerRecord<String, byte[]>> received = new ArrayList<>();
             await().atMost(Duration.ofSeconds(15))
@@ -172,8 +179,93 @@ class ProtocolSnapshotListenerIT {
                                         findProtocolNumbersOfProtocolId(protocolId);
                                 assertEquals(1, resProtocolNumbers.size());
                                 assertEquals(protocolNumber, resProtocolNumbers.getFirst());
+                                double count = fetchCounterValue();
+                                assertEquals(before + 1, (int) count);
                             });
         }
+    }
+
+    @Test
+    void testOnProtocolSnapshot_whenMalformedProtocolVersionSent_thenExistingRowsKept()
+            throws ExecutionException, InterruptedException {
+
+        int protocolId = 102;
+        String protocolNumber = "protocol-1";
+        insertRow(protocolId, protocolNumber);
+        String input =
+                """
+            {"version":2,"protocolId":102,"number":"15","date":"2026-03-14","orderNumber":"7","publishedAt":"2026-03-14T10:00:00Z","assignments":[{"rowNum":1,"lastName":"Иванов","firstName":"Пётр","middleName":null,"grade":"3 разряд","kindOfTourism":"горный","club":null,"assignmentDate":"2026-03-14","validUntil":null}]}
+            """;
+        String protocolIdStr = String.valueOf(protocolId);
+        ProducerRecord<String, String> record =
+                new ProducerRecord<>(TopicName.PROTOCOL_SNAPSHOTS, protocolIdStr, input);
+
+        try (KafkaConsumer<String, byte[]> consumer =
+                new KafkaConsumer<>(
+                        Map.of(
+                                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                                kafkaContainer.getBootstrapServers(),
+                                ConsumerConfig.GROUP_ID_CONFIG,
+                                "test-dlt-" + UUID.randomUUID(),
+                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+                                "earliest",
+                                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                                StringDeserializer.class,
+                                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                                ByteArrayDeserializer.class))) {
+            consumer.subscribe(List.of(PROTOCOL_SNAPSHOT_DLT));
+            int before = fetchCounterBefore();
+            producer.send(record).get();
+            List<ConsumerRecord<String, byte[]>> received = new ArrayList<>();
+            await().atMost(Duration.ofSeconds(15))
+                    .untilAsserted(
+                            () -> {
+                                consumer.poll(Duration.ofMillis(200)).forEach(received::add);
+                                Optional<ConsumerRecord<String, byte[]>> first =
+                                        received.stream()
+                                                .filter(r -> protocolIdStr.equals(r.key()))
+                                                .findFirst();
+                                assertTrue(first.isPresent());
+                                ConsumerRecord<String, byte[]> recordResult = first.get();
+                                assertEquals(protocolIdStr, recordResult.key());
+                                Header header =
+                                        recordResult
+                                                .headers()
+                                                .lastHeader(KafkaHeaders.DLT_EXCEPTION_CAUSE_FQCN);
+                                assertNotNull(header);
+                                assertEquals(
+                                        UnsupportedSnapshotVersionException.class.getName(),
+                                        new String(header.value(), StandardCharsets.UTF_8));
+                                // Проверим, что запись не была удалена из БД
+                                List<String> resProtocolNumbers =
+                                        findProtocolNumbersOfProtocolId(protocolId);
+                                assertEquals(1, resProtocolNumbers.size());
+                                assertEquals(protocolNumber, resProtocolNumbers.getFirst());
+                                double count = fetchCounterValue();
+                                int after = (int) count;
+                                assertEquals(before + 1, after);
+                            });
+        }
+    }
+
+    private int fetchCounterBefore() {
+        // обернуто в try-catch т.к. meterRegistry.counters() бросает исключение если не находит ни
+        // одного счетчика
+        try {
+            return (int) fetchCounterValue();
+        } catch (MeterNotFoundException ignored) {
+        }
+        return 0;
+    }
+
+    private double fetchCounterValue() {
+        return meterRegistry
+                .get("publication.ingest.dlt.records")
+                .tag("result", "sent")
+                .counters()
+                .stream()
+                .mapToDouble(Counter::count)
+                .sum();
     }
 
     @Test

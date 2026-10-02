@@ -1,0 +1,86 @@
+groups:
+#  Доступность
+  - name: instructors_availability
+    rules:
+#      Сервис не отвечает
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Недоступен сервис {{ $labels.job }}"
+
+#  Outbox монолита
+  - name: monolith_outbox
+    rules:
+#      Мёртвые записи: опубликованы не будут, а очистка трогает только sent_at IS NOT NULL,
+#      поэтому сами они не исчезнут. Условие постоянное, без for — гаснет только после разбора
+      - alert: DeadOutboxRows
+        expr: protocols_outbox_rows{state="dead"} > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Мёртвых записей в outbox: {{ $value }}. Опубликованы не будут и сами не исчезнут"
+
+#      Очередь не разгружается: реле не доносит записи до Kafka.
+#      Порог 900 с сам по себе фильтр от коротких заминок, поэтому for не нужен
+      - alert: OutboxNotDraining
+        expr: protocols_outbox_oldest_pending_age_seconds > 900
+        labels:
+          severity: warning
+        annotations:
+          summary: "Записи outbox не отправляются, самая старая ждёт {{ $value | humanizeDuration }}"
+
+#  Приём снапшотов в publication-service
+  - name: publication_ingest
+    rules:
+#      Сообщение отбраковано и отложено в DLT. Счётчик обнуляется при перезапуске,
+#      поэтому increase по окну, а не сравнение значения
+      - alert: MessagesGoTo_DLT
+        expr: increase(publication_ingest_dlt_records_total{result="sent"}[1h]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Сообщение отправлено в dead-letter топик"
+
+#      Сообщение не доехало даже до DLT: не сохранено нигде и будет переспрошено снова
+      - alert: MessagesFailedGoTo_DLT
+        expr: increase(publication_ingest_dlt_records_total{result="failed"}[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Сообщение не удалось отправить в dead-letter топик — оно не сохранено нигде"
+
+#      Лаг консьюмера. Метка topic прибита к настоящему имени: вариант с подчёркиваниями
+#      устаревший дубль, без селектора получили бы два срабатывания на одно событие
+      - alert: ConsumerLag
+        expr: kafka_consumer_fetch_manager_records_lag{topic="protocols.snapshots"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Консьюмер отстаёт от топика {{ $labels.topic }}: {{ $value | humanize }} непрочитанных записей"
+
+#      Цикл опроса встал: поток жив, но не опрашивает — завис в слушателе.
+#      Через max.poll.interval.ms Kafka выгонит консьюмера из группы, см. ConsumerHasNoPartitions
+      - alert: ConsumerPollStalled
+        expr: kafka_consumer_last_poll_seconds_ago > 300
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Консьюмер не опрашивает брокер {{ $value | humanizeDuration }} — приём снапшотов остановлен"
+
+#      Консьюмеру не принадлежит ни одна партиция: вышел из группы, вечный ребаланс,
+#      партиции забрал другой участник. Читать некому, лаг будет расти неограниченно.
+#      Если упал весь сервис, серии не станет вовсе и сработает ServiceDown
+      - alert: ConsumerHasNoPartitions
+        expr: kafka_consumer_coordinator_assigned_partitions == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Консьюмеру {{ $labels.job }} не принадлежит ни одна партиция — приём снапшотов остановлен"

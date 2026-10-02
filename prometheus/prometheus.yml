@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/alerts.yml"
+scrape_configs:
+  - job_name: 'instructors-app'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['app:7001']
+
+  - job_name: 'publication-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['publication:7001']

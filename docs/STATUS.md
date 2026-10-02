@@ -3,9 +3,10 @@
 Current state of the monolith-to-services split and the ordered plan for the next work session.
 
 Related: [Publication service design](publication-service-design.md),
-[Multi-module conventions](multi-module-conventions.md).
+[Multi-module conventions](multi-module-conventions.md),
+[Observability plan](observability-plan.md).
 
-**Last updated**: 2026-09-26
+**Last updated**: 2026-10-02
 
 ## Done and committed
 
@@ -209,6 +210,26 @@ Tested with `@JdbcTest` + Testcontainers + `@ServiceConnection`, fixture loaded 
 (3, 1, 2) so a broken `ORDER BY` is visible, one row has all three nullable columns empty, and a
 second protocol exists so `WHERE` has something to filter. A mocked `JdbcClient` would have proven
 nothing here — the SQL string is the risky part, and it is neither compiled nor type-checked.
+
+#### Open debt: a missing protocol answers `200` with a `null` body (found 2026-09-27)
+
+`GET /pub/api/v1/protocols/NOPE` returns **`200`** and the body `null`, where it should return `404`.
+
+The cause is one signature: `ProtocolController.getProtocolByNumber` returns
+`Optional<ProtocolResponse>` straight out as the response body. `ProtocolRegistry` is right to return
+`Optional` — "no such protocol" is a legitimate outcome, not an exception — but an `Optional` must be
+*translated* at the web boundary, and here it is serialised instead. Jackson renders the empty one as
+the literal `null` and the status code is never touched.
+
+Why this matters more than it looks: this is the **public** contract, the one the design doc says
+cannot be renegotiated once a client exists. `200` means "here is the resource", so every client has to
+learn that this particular API also says `200` when there is no resource, and each of them has to
+null-check a successful response. Worse for caches and proxies, which are entitled to store a `200`.
+The fix is to map at the boundary — `ResponseEntity`, `404` when empty — and it is a few characters.
+
+Not fixed on the spot because it is unrelated to the observability work that found it. It should go in
+before authentication (Next steps item 2), which touches this controller anyway: adding auth to an
+endpoint whose success semantics are wrong bakes the wrong contract in behind a key.
 
 Schema resolution ended up as `spring.datasource.hikari.schema: publication` in `application.yaml`.
 The schema is a property of the *application*, identical on a laptop, in a container and in a test —
@@ -1004,16 +1025,32 @@ publication-service   surefire   8      failsafe   8      → 381 tests
 
 Ordered by what would hurt most if left alone:
 
-1. **Observability.** `actuator` + `micrometer`, then the three signals that matter: consumer lag, a
-   non-empty DLT (always an incident), and outbox rows with `sent_at IS NULL` older than ~15 minutes.
-   That last one is deliberately time-based: `attempts` crosses any threshold within seconds of a brief
-   broker hiccup, so it cannot tell an outage from a stuck row. Do this **before** authentication —
-   while there are no external clients the cost of being blind is zero, and on the day the first one
-   arrives it is at its highest. Dead rows in particular are now produced, never cleaned, and watched by
-   nobody.
+1. ~~**Observability.**~~ **Done 2026-10-02, all six stages.** Actuator and micrometer in both services;
+   endpoints on their own `management.server.port: 7001` behind an `@Order(0)` filter chain; compose
+   healthchecks driving `depends_on`; a DLT counter in `IngestRetryListener`; three gauges over the
+   outbox in `ProtocolOutboxMetrics`; a Prometheus container scraping both services; and eight alert
+   rules in three groups. The three signals the plan set out to get are in place — consumer lag, a
+   non-empty DLT, and outbox rows that are not draining — plus four that were not in the original plan
+   and turned out to matter more: `up == 0`, a failed hand-off to the DLT, a stalled poll loop, and a
+   consumer holding no partitions. Those last two close the "a stuck partition is silent" gap recorded
+   below, which lag alone cannot see.
+
+   The outbox staleness signal is deliberately time-based rather than attempt-based: `attempts` crosses
+   any threshold within seconds of a brief broker hiccup, so it cannot tell an outage from a stuck row.
+   The 15-minute threshold itself lives in the Prometheus rule, not in Java — changing it is a config
+   reload, not a deploy.
+
+   Two rules remain unproven by provocation (`DeadOutboxRows`, `OutboxNotDraining`); everything else was
+   verified against the running stack. The full account — every decision, measurement and trap, including
+   six silent bugs in the metrics code and the exact limits of `promtool` and `docker compose config` —
+   is in [Observability plan](observability-plan.md).
+
+   Done **before** authentication on purpose: while there are no external clients the cost of being blind
+   is zero, and on the day the first one arrives it is at its highest.
 2. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
    clear model of who the client is, what it may do and how to revoke it. Keys live in the service's own
-   database — reading the monolith's `User` table is exactly the coupling the split removed. OAuth2
+   database — reading the monolith's `User` table is exactly the coupling the split removed. Fix the
+   `200`-with-`null`-body response while in that controller — see the registry section above. OAuth2
    client credentials earn their complexity once there are several clients.
 3. **Decide how durable the topic really is.** The design argues that a compacted topic makes the
    service database a cache that can be dropped and rebuilt, which is what excuses it from backups. But
@@ -1023,7 +1060,9 @@ Ordered by what would hurt most if left alone:
    reassignment is tedious but does not break per-key ordering.
 4. **Deferred debts.** Set `includeTestSourceDirectory` so checkstyle reaches test sources — this one
    has already cost something, see the star import above. Then: drop the dead `?currentschema=` from the
-   jdbc urls; apply `bind: { create_host_path: false }` to the single-file compose mounts; add
+   jdbc urls; ~~apply `bind: { create_host_path: false }` to the single-file compose mounts~~ done
+   2026-09-30, all three (`nginx.conf`, `secrets.yaml`, `prometheus.yml`) now use the long syntax with
+   `read_only: true` as well; add
    `additional-spring-configuration-metadata.json` for `cleanup-cron` if the unresolved-key warning in
    the IDE starts to annoy. A dedicated DLQ table remains the fuller answer to dead rows, worth building
    when the first real one appears and not before — it needs its own retention policy, which is the
