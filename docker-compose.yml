@@ -117,6 +117,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      - type: bind
+        source: ./prometheus/rules/alerts.yml
+        target: /etc/prometheus/rules/alerts.yml
+        read_only: true
+        bind:
+          create_host_path: false
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
