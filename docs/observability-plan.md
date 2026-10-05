@@ -6,7 +6,7 @@ The ordered plan for making both services observable. Item 1 of Next steps in
 Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md).
 
-**Created**: 2026-09-27
+**Created**: 2026-09-27 · **Closed**: 2026-10-05, every stage done and every alert rule seen firing
 
 ## Why this comes before authentication
 
@@ -648,7 +648,8 @@ Telegram is unusually little work here.
 **Done 2026-10-02.** Eight rules in `prometheus/rules/alerts.yml`, three groups
 (`instructors_availability`, `monolith_outbox`, `publication_ingest`), all eight loading with
 `health: ok`. `ServiceDown` has been verified end to end — it went `pending` → `firing` when
-`publication` was stopped.
+`publication` was stopped. `DeadOutboxRows` and `OutboxNotDraining` followed by provocation on
+2026-10-05 — see the last subsection of this stage.
 
 ### Severity has to answer one question, or it answers none
 
@@ -718,11 +719,26 @@ against a constant (`== 0` can only ever print `0`; use `$labels` instead); `hum
 `312` into `5m 12s` for a seconds-valued metric and `humanize` turns `14000` into `14k` for a count;
 and a topic pinned in `expr` should be printed from `{{ $labels.topic }}` rather than retyped.
 
-### Still to do
+### The last two rules, proven by provocation (2026-10-05)
 
-Provoked verification of `DeadOutboxRows` (insert a row with `dead_at`) and `OutboxNotDraining` (stop
-Kafka and publish a protocol — with the threshold at 900 s that is a ~25-minute wait, or lower it
-temporarily). Everything else in the stage is verified.
+Both fired against the running stack:
+
+- **`DeadOutboxRows`** — provoked with an outbox row carrying `dead_at`.
+- **`OutboxNotDraining`** — provoked by stopping Kafka and publishing a protocol, with the threshold
+  lowered from `900` to `30` for the run. At 900 s plus the five-minute gauge refresh the honest wait is
+  about twenty-five minutes; lowering the number tests the same rule.
+
+**A provocation leaves residue, and the residue is itself an alert.** Both experiments change state that
+outlives them, and each has a cost if left behind:
+
+| Left behind | Cost |
+|---|---|
+| The threshold at `30` in `alerts.yml` | Fires on every broker hiccup longer than half a minute — the noise the time-based threshold exists to avoid. One stray `git add -A` commits it. |
+| The test row with `dead_at` | Nothing removes dead rows — retention skips them by design — so `DeadOutboxRows` keeps firing, and the first real dead row arrives into an alert that is already on. |
+
+Cleanup is part of the experiment, not after it: `git restore` the rule file **and** reload Prometheus,
+since the in-memory rules survive the edit on disk (the "reload is a third step" habit above, in
+reverse); delete the row; then confirm in the UI that both rules are back to `inactive`.
 
 ## Out of scope, deliberately
 
@@ -759,10 +775,9 @@ temporarily). Everything else in the stage is verified.
 | 3c — outbox gauges | done 2026-09-28; the 15-minute threshold moved into the alert rule |
 | 4 — tests for 3b and 3c | done 2026-09-29; gauge tests verified by mutation |
 | 5 — Prometheus container | done 2026-09-30; both targets up, custom metrics stored |
-| 6 — alert rules | done 2026-10-02; eight rules, `ServiceDown` verified by provocation |
+| 6 — alert rules | done 2026-10-02; eight rules, all seen firing — the last two provoked 2026-10-05 |
 
-Two rules are still unproven by provocation — `DeadOutboxRows` and `OutboxNotDraining`. Nothing else
-remains.
+Nothing remains. Everything listed under "Out of scope, deliberately" stays out of scope.
 
 Nothing in stages 0–2 required application code beyond one Spring Security filter chain: the rest was
 configuration. Stage 3a is the last free one — from 3b onwards it is code and tests.
