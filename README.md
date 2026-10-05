@@ -1,4 +1,4 @@
-[![Quality gate Status](https://sonarcloud.io/api/project_badges/quality_gate?project=Kirill495_instructors-certification-2026-10-05)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
+[![Quality gate Status](https://sonarcloud.io/api/project_badges/quality_gate?project=Kirill495_instructors-certification)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kirill495_instructors-certification&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Kirill495_instructors-certification)
