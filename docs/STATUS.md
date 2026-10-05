@@ -6,7 +6,7 @@ Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md),
 [Observability plan](observability-plan.md).
 
-**Last updated**: 2026-10-02
+**Last updated**: 2026-10-05
 
 ## Done and committed
 
@@ -1000,10 +1000,8 @@ README corrected.
 
 ## Not started
 
-Observability. Neither module has `actuator` or `micrometer` — for two processes joined by a queue that
-means consumer lag, outbox depth and a non-empty DLT are invisible except by reading logs. This moved
-from "nice to have" to "needed" the moment rows started being marked dead: nothing removes them, and
-nothing watches them.
+Authentication on the public API — item 2 of Next steps. Observability, which stood here until
+2026-10-02, is done; see item 1.
 
 ## Next steps
 
@@ -1040,8 +1038,8 @@ Ordered by what would hurt most if left alone:
    The 15-minute threshold itself lives in the Prometheus rule, not in Java — changing it is a config
    reload, not a deploy.
 
-   Two rules remain unproven by provocation (`DeadOutboxRows`, `OutboxNotDraining`); everything else was
-   verified against the running stack. The full account — every decision, measurement and trap, including
+   All eight rules have been seen firing against the running stack: `ServiceDown` on 2026-10-02,
+   `DeadOutboxRows` and `OutboxNotDraining` by provocation on 2026-10-05. The full account — every decision, measurement and trap, including
    six silent bugs in the metrics code and the exact limits of `promtool` and `docker compose config` —
    is in [Observability plan](observability-plan.md).
 
@@ -1112,7 +1110,7 @@ never becomes a property and reaches the JVM as a literal.
 - How durable the topic has to be — RF ≥ 3 with `min.insync.replicas=2`, or backups for the service
   database. See Next steps; the design's "the topic is the backup" argument does not hold at
   `replicas(1)`.
-- Deferred cleanups, none urgent: drop the dead `?currentschema=` from the jdbc urls; apply
-  `bind: { create_host_path: false }` to the single-file mounts; set `includeTestSourceDirectory` on
-  checkstyle so its rules reach test sources. ~~Declare Mockito explicitly in `instructors-app`.~~ Done
+- Deferred cleanups, none urgent: drop the dead `?currentschema=` from the jdbc urls; set `includeTestSourceDirectory` on
+  checkstyle so its rules reach test sources. ~~Apply `bind: { create_host_path: false }` to the
+  single-file mounts.~~ Done 2026-09-30. ~~Declare Mockito explicitly in `instructors-app`.~~ Done
   2026-09-25.
