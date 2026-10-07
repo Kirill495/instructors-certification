@@ -151,6 +151,20 @@ Actuator намеренно вынесен на отдельный порт (`ma
 через nginx недоступен: метрики выдают устройство системы, а аутентификации на публичном API пока нет.
 В базовом compose этот порт не публикуется вовсе.
 
+Prometheus собирает метрики с обоих actuator-портов; правила алертов — в `prometheus/rules/alerts.yml`.
+
+- Текущие алерты и их состояние (`inactive` / `pending` / `firing`) — `http://localhost:7070/alerts`.
+- После правки `prometheus.yml` или правил: сначала проверка, потом перечитывание конфига.
+  Prometheus держит правила в памяти, поэтому правка файла без перечитывания ничего не меняет.
+
+  ```bash
+  docker compose exec prometheus promtool check rules /etc/prometheus/rules/alerts.yml
+  docker compose kill -s HUP prometheus
+  ```
+
+  `promtool` проверяет синтаксис шаблонов, но не выполняет их: ошибку вроде `{{ value }}` без `$`
+  он пропустит, и она проявится только при срабатывании алерта.
+
 Вход в монолит — `/login`, логин и пароль из `config/secrets.yaml` (`app.admin.*`, `app.user.*`).
 
 ### Что добавляет `docker-compose.dev.yml`
