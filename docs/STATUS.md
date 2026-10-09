@@ -255,7 +255,10 @@ Two decisions recorded while here:
 
 - **Equal dates are rejected.** `!since.isBefore(till)` means a single-day query is impossible: asking
   for "protocols of 9 October" with equal bounds is a `400`. This is deliberate and pinned by a test,
-  so it belongs in the endpoint's description — otherwise the first client will file it as a bug.
+  so it belongs in the endpoint's description — otherwise the first client will file it as a bug. Note
+  that it contradicts the query it guards: the SQL says `a.protocol_date between :since and :till`,
+  which is a **closed** interval, inclusive at both ends. So the endpoint treats the range as closed
+  everywhere except at its degenerate case, which it forbids. One of the two has to move.
 - **The cross-field check stays an `if`, not a Bean Validation annotation.** It cannot be one anyway: a
   constraint attaches to a single element, so relating two parameters needs either a cross-parameter
   validator over `Object[]` (positional, type-unsafe, breaks silently when parameters are reordered) or
@@ -279,6 +282,23 @@ element. Two of them are built so a specific wrong answer cannot pass: `hasSize(
 stub is what makes swapped `since`/`till` visible (swap them and the stub misses, Mockito returns an
 empty list, the size assertion fails), and the empty-period case needs its `verify` because a
 controller that returned `List.of()` without consulting the registry would produce the same body.
+
+#### Open debt: the period query's SQL is not tested (2026-10-09)
+
+`ProtocolRegistry.findProtocolsInPeriod` arrived in the same change, with its own `SELECT` and the
+grouping extracted into a shared `mapToResponse`. `ProtocolRegistryIT` does not mention it — there is
+no `@JdbcTest` case for it, and `ProtocolControllerTest` mocks the registry away. So the one part this
+section already argued is the risky part is the part with no coverage: the SQL string is neither
+compiled nor type-checked, and a mocked `JdbcClient` would prove nothing about it.
+
+Two specific things a test would pin. First the `BETWEEN` boundaries — the existing fixture is already
+well suited, holding protocols dated `2026-03-14` and `2026-04-02`, so a period of exactly
+`2026-03-14 … 2026-04-02` proves inclusivity at both ends, and `2026-03-15 … 2026-04-01` proves the
+other protocol is excluded. Second, the ordering: `ORDER BY a.protocol_id, a.row_num` with
+`LinkedHashMap` grouping means the public list comes back in **`protocol_id` order** — an internal
+surrogate key the design doc says must not reach a public contract. It does not leak as a field, but it
+does leak as the order of the response, which a client will depend on whether or not it is documented.
+For a date-range listing the defensible order is `a.protocol_date, a.protocol_id, a.row_num`.
 
 Schema resolution ended up as `spring.datasource.hikari.schema: publication` in `application.yaml`.
 The schema is a property of the *application*, identical on a laptop, in a container and in a test —
