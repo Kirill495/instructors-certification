@@ -6,7 +6,7 @@ Related: [Publication service design](publication-service-design.md),
 [Multi-module conventions](multi-module-conventions.md),
 [Observability plan](observability-plan.md).
 
-**Last updated**: 2026-10-05
+**Last updated**: 2026-10-09
 
 ## Done and committed
 
@@ -211,25 +211,74 @@ Tested with `@JdbcTest` + Testcontainers + `@ServiceConnection`, fixture loaded 
 second protocol exists so `WHERE` has something to filter. A mocked `JdbcClient` would have proven
 nothing here — the SQL string is the risky part, and it is neither compiled nor type-checked.
 
-#### Open debt: a missing protocol answers `200` with a `null` body (found 2026-09-27)
+#### ~~Open debt: a missing protocol answers `200` with a `null` body (found 2026-09-27)~~
 
-`GET /pub/api/v1/protocols/NOPE` returns **`200`** and the body `null`, where it should return `404`.
+**Closed 2026-10-09**, and it turned out not to be alone. Pulling on one `Optional` surfaced three
+more contract defects in the same forty-line controller, all of the same family: a status code that
+disagrees with the body.
 
-The cause is one signature: `ProtocolController.getProtocolByNumber` returns
-`Optional<ProtocolResponse>` straight out as the response body. `ProtocolRegistry` is right to return
-`Optional` — "no such protocol" is a legitimate outcome, not an exception — but an `Optional` must be
-*translated* at the web boundary, and here it is serialised instead. Jackson renders the empty one as
-the literal `null` and the status code is never touched.
+`GET /pub/api/v1/protocols/NOPE` returned **`200`** and the body `null`, where it should return `404`.
+The cause was one signature: `getProtocolByNumber` returned `Optional<ProtocolResponse>` straight out
+as the response body. `ProtocolRegistry` is right to return `Optional` — "no such protocol" is a
+legitimate outcome, not an exception — but an `Optional` must be *translated* at the web boundary, and
+here it was serialised instead. Jackson renders the empty one as the literal `null` and the status code
+is never touched.
 
-Why this matters more than it looks: this is the **public** contract, the one the design doc says
-cannot be renegotiated once a client exists. `200` means "here is the resource", so every client has to
-learn that this particular API also says `200` when there is no resource, and each of them has to
-null-check a successful response. Worse for caches and proxies, which are entitled to store a `200`.
-The fix is to map at the boundary — `ResponseEntity`, `404` when empty — and it is a few characters.
+Why this mattered more than it looked: this is the **public** contract, the one the design doc says
+cannot be renegotiated once a client exists. `200` means "here is the resource", so every client would
+have had to learn that this particular API also says `200` when there is no resource, and null-check a
+successful response. Worse for caches and proxies, which are entitled to store a `200`.
 
-Not fixed on the spot because it is unrelated to the observability work that found it. It should go in
-before authentication (Next steps item 2), which touches this controller anyway: adding auth to an
-endpoint whose success semantics are wrong bakes the wrong contract in behind a key.
+The other three, found while in the file:
+
+- **The collection endpoint answered `404` on its own canonical url.** `@GetMapping("/")` combines with
+  the class-level `/api/v1/protocols` into the pattern `/api/v1/protocols/`, *with* the trailing
+  slash — and Spring 6 dropped optional trailing-slash matching, which used to forgive both forms. So
+  `GET /api/v1/protocols`, the url that follows from the convention in `CLAUDE.md` and the one any
+  client tries first, matched nothing. Verified before and after with a standalone MockMvc probe:
+  `404 "No mapping"` → `200`. Fixed by dropping the argument: `@GetMapping`.
+- **An invalid period returned `200` with an empty body.** The first fix attempt was `return null` on
+  `!since.isBefore(till)`, which is the original defect wearing a different hat: `null` from a
+  `@RestController` method is not `[]` and not `null` either — `RequestResponseBodyMethodProcessor`
+  marks the response handled and writes zero bytes. A malformed query got "all good, here is nothing".
+  Now `ResponseStatusException(BAD_REQUEST, …)`, the same mechanism as the `404` above.
+- **`204 No Content` for an empty list, rejected after the fact.** The second attempt answered `204`
+  when the period held no protocols. An empty collection is a normal successful result that *has* a
+  representation — `[]` — while `204` means there is deliberately nothing to send, which is a status
+  for `DELETE` and `PUT`. The cost lands on every client: two success shapes instead of one, and
+  `r.json()` throws on an empty body, so each of them must branch on the status before parsing. It
+  also conflates "no protocols in that period", a fact about data, with "nothing to say", a fact about
+  the protocol — and it would have had to be removed, breakingly, the day a pagination envelope is
+  added. Now `200 []`.
+
+Two decisions recorded while here:
+
+- **Equal dates are rejected.** `!since.isBefore(till)` means a single-day query is impossible: asking
+  for "protocols of 9 October" with equal bounds is a `400`. This is deliberate and pinned by a test,
+  so it belongs in the endpoint's description — otherwise the first client will file it as a bug.
+- **The cross-field check stays an `if`, not a Bean Validation annotation.** It cannot be one anyway: a
+  constraint attaches to a single element, so relating two parameters needs either a cross-parameter
+  validator over `Object[]` (positional, type-unsafe, breaks silently when parameters are reordered) or
+  a `ProtocolPeriod` record carrying a class-level constraint. `publication-service` has neither the
+  validation starter nor `jakarta.validation` on its classpath, so the declarative route costs a
+  dependency, an annotation, a validator and a record — four new things for one `if`. The threshold for
+  revisiting is concrete: the second endpoint that takes a period. At that point the period stops being
+  two parameters and becomes a concept, the invariant moves into its constructor, and duplicating the
+  `if` would be the wrong answer.
+
+Worth noting what the convention says versus what the code does: `CLAUDE.md` prescribes `@Validated` +
+`@Valid` on controller parameters, and **nothing in either module does this**. The monolith declares
+`spring-boot-starter-validation` but uses `jakarta.validation` in exactly one file —
+`CleanUpProperties`, where it validates `@ConfigurationProperties`, not request input. None of the
+nineteen monolith controllers validate anything. So this is unclaimed ground, not a deviation.
+
+The endpoint also got its first tests at all: `ProtocolControllerTest`, a `@WebMvcTest` slice with a
+`@MockitoBean` registry, eight cases — `404` and `200` for the single protocol, `400` for an inverted
+period, an unparseable date and each missing parameter, `200 []` for an empty period and `200` with one
+element. Two of them are built so a specific wrong answer cannot pass: `hasSize(1)` against an exact
+stub is what makes swapped `since`/`till` visible (swap them and the stub misses, Mockito returns an
+empty list, the size assertion fails), and the empty-period case needs its `verify` because a
+controller that returned `List.of()` without consulting the registry would produce the same body.
 
 Schema resolution ended up as `spring.datasource.hikari.schema: publication` in `application.yaml`.
 The schema is a property of the *application*, identical on a laptop, in a container and in a test —
@@ -1012,14 +1061,23 @@ now dead-row handling. There is no "remove it from the monolith" stage — all n
 controllers are internal, so the registry was added rather than moved. What remains is hardening and the
 public-facing authentication.
 
-`mvn clean verify` on the whole reactor is green, with no model warnings, no Mockito self-attach warning
-and no skipped jacoco step anywhere. Coverage clears the 50% threshold in both modules on freshly merged
-data — 87.9% and 91.0%, see the coverage-gate section above:
+`mvn clean verify` on the whole reactor was green as of 2026-10-02, with no model warnings, no Mockito
+self-attach warning and no skipped jacoco step anywhere. Coverage clears the 50% threshold in both
+modules on freshly merged data — 87.9% and 91.0%, see the coverage-gate section above:
 
 ```
 instructors-app       surefire 342      failsafe 23
-publication-service   surefire   8      failsafe   8      → 381 tests
+publication-service   surefire  19      failsafe   8      → 392 tests
 ```
+
+The `publication-service` surefire figure is measured; the other three are carried over from 2026-10-02
+and nothing in `instructors-app` has been touched since. The reactor has **not** been re-verified after
+the registry work of 2026-10-09: at module level one assertion in `ProtocolControllerTest` still
+compares `validUntil` against the assignment date rather than the fixture's `validUntil` (it lost a
+`plusYears(2)` while the three duplicated `DateTimeFormatter.ofPattern("yyyy-MM-dd")` calls were being
+replaced by `LocalDate.toString()`, which is already ISO-8601), and `spotless:check` wants the
+`BAD_REQUEST` throw wrapped — the added reason string pushed the line past 100 characters. Run
+`mvn spotless:apply` and a full `verify` before the figures above are trustworthy again.
 
 Ordered by what would hurt most if left alone:
 
@@ -1047,9 +1105,22 @@ Ordered by what would hurt most if left alone:
    is zero, and on the day the first one arrives it is at its highest.
 2. **Authentication on the public API.** API keys in a header first, per the design doc: they give a
    clear model of who the client is, what it may do and how to revoke it. Keys live in the service's own
-   database — reading the monolith's `User` table is exactly the coupling the split removed. Fix the
-   `200`-with-`null`-body response while in that controller — see the registry section above. OAuth2
-   client credentials earn their complexity once there are several clients.
+   database — reading the monolith's `User` table is exactly the coupling the split removed. ~~Fix the
+   `200`-with-`null`-body response while in that controller~~ — done 2026-10-09, along with three more
+   contract defects in the same file; see the registry section above. The endpoint's success semantics
+   are now right, which was the precondition for putting a key in front of it. OAuth2 client
+   credentials earn their complexity once there are several clients.
+
+   Decided while fixing that controller, since it is the same file auth will touch: keys live in a
+   table of this service, stored as a SHA-256 hash of a 256-bit random secret plus a non-secret
+   `prefix` for lookup and logs — a slow KDF is for passwords, which have low entropy and can be
+   guessed from a dictionary; a random key has nothing to guess, and a deterministic hash can be
+   indexed. Transport is `Authorization: Bearer`, never a query parameter, which would land in nginx's
+   access log. The filter chain goes beside the actuator one, `securityMatcher("/api/v1/**")` and
+   `STATELESS`. Note that `publication-service` has **no Spring Security at all** today — not the
+   starter, not one `SecurityFilterChain` — so the first thing adding it will do is put
+   `/actuator/prometheus` on port 7001 behind basic auth and turn the Prometheus target red. The
+   `@Order(0)` chain in the monolith is the pattern to copy.
 3. **Decide how durable the topic really is.** The design argues that a compacted topic makes the
    service database a cache that can be dropped and rebuilt, which is what excuses it from backups. But
    `replicas(1)` on a single broker means that source of truth lives on one disk with no copy. Either
